@@ -184,7 +184,6 @@ function renderCards(apps) {
 
         const safeName = name.replace(/'/g, "\\'");
         
-        // Logika Tombol Info sekarang digabung di dalam bubble judul
         const isNetflix = name.toLowerCase().includes('netflix');
         const infoBtnHTML = isNetflix ? `
             <button onclick="openInfoNetflixModal()" class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-pink-400 text-white hover:bg-pink-500 transition-colors ml-2 outline-none shadow-sm" title="Info Tambahan">
@@ -196,7 +195,6 @@ function renderCards(apps) {
         card.className = 'card flex flex-col bg-pink-100 border border-pink-200 rounded-2xl p-5 shadow-xl shadow-pink-100/40 transition-all duration-300 hover:-translate-y-1 hover:border-pink-300 fade-in-down';
         card.style.animationDelay = `${delay}s`;
         
-        // Perubahan Header Card: Ikon kupu-kupu dihapus, Judul diberi bubble background, Tombol i nempel judul
         card.innerHTML = `
             <div class="mb-4 flex items-center">
                 <div class="flex items-center gap-2 bg-white/70 px-4 py-2 rounded-2xl border border-pink-200 shadow-sm">
@@ -220,7 +218,6 @@ function renderCards(apps) {
     }
 }
 
-// Sisa fungsi (cart, qty, modal, checkout) tetap sama...
 let cart = []; 
 let currentOrderApp = '';
 let selectedPackage = null;
@@ -462,20 +459,20 @@ function removeFromCart(index) {
 function checkoutCartWA() {
     if(cart.length === 0) return;
 
-    let textWA = "Halo Admin, saya mau proses pesanan berikut:\n\n";
+    let textWA = "୨ ⁺ ☀️🎀  haloo, aku mau jajan ini! ౿ 💭\n\n";
     let grandTotal = 0;
 
-    cart.forEach((item, i) => {
+    cart.forEach((item) => {
         const subTotal = extractNumK(item.price) * item.qty;
         grandTotal += subTotal;
         
-        textWA += `*${i+1}. ${item.app}*\n`;
-        textWA += `   - Paket: ${item.cat}\n`;
-        textWA += `   - Durasi: ${item.dur}\n`;
-        textWA += `   - Jumlah: ${item.qty} (Subtotal: ${subTotal}K)\n\n`;
+        textWA += `𖠗  💌 ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
+        textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
+        textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
     });
 
-    textWA += `*Total Tagihan: ${grandTotal}K*\n\nApakah stok tersedia?`;
+    textWA += `🍮🐰 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 🍀 ⟡ \n\n`;
+    textWA += ` ⑅ ౿ 🌸 bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ 🌷🥣 have a sweet day  𖠗`;
     
     const encodedText = encodeURIComponent(textWA);
     window.open(`https://wa.me/6285111571616?text=${encodedText}`, '_blank');
