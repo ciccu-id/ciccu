@@ -1,4 +1,4 @@
-const csvFileName = 'pricelist.csv';
+const csvFileName = 'https://docs.google.com/spreadsheets/d/18WQCx4BzrLTHv6EhXpm88bGS2y-CF9qK-BcAYdmTs5s/export?format=csv&gid=1460878251';
 let allApps = {};
 let currentCategory = 'all';
 
@@ -69,7 +69,8 @@ function parseCSVLine(row) {
 
 async function loadPricelist() {
     try {
-        const response = await fetch(csvFileName + '?t=' + new Date().getTime());
+        // Ditambahkan parameter waktu (?t=) agar browser tidak menyimpan cache dan data selalu update real-time dari Google Sheet
+        const response = await fetch(csvFileName + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error("File tidak ditemukan");
         
         const data = await response.text();
@@ -86,12 +87,15 @@ async function loadPricelist() {
             const duration = cols[2]; 
             const price = cols[3];    
             const notes = cols.length > 4 ? cols[4] : '';
+            // Membaca status kolom ke-6 (available). Jika kosong, otomatis bernilai 'ready'
+            const available = cols.length > 5 && cols[5].trim() !== '' ? cols[5].trim().toLowerCase() : 'ready';
 
             if (!apps[appName]) { apps[appName] = { categories: {} }; }
             if (!apps[appName].categories[category]) { apps[appName].categories[category] = []; }
             
             const itemNotes = (notes && notes.toLowerCase() !== 'nan') ? notes : '';
-            apps[appName].categories[category].push({ duration, price, notes: itemNotes });
+            // Memasukkan variabel available ke objek aplikasi
+            apps[appName].categories[category].push({ duration, price, notes: itemNotes, available });
         });
 
         allApps = apps;
@@ -100,7 +104,7 @@ async function loadPricelist() {
         updateCartUI();
 
     } catch (error) {
-        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200">Gagal memuat file CSV.</p>`;
+        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200">Gagal memuat data dari Spreadsheet.</p>`;
     }
 }
 
@@ -159,11 +163,15 @@ function renderCards(apps) {
                     `;
                 }
 
+                // Cek status ketersediaan item untuk halaman kartu utama
+                const isSold = item.available === 'sold';
+                const soldLabel = isSold ? `<span class="text-[10px] bg-red-100 text-red-500 font-bold px-1.5 py-0.5 rounded ml-1.5 uppercase tracking-wide">Habis</span>` : '';
+
                 itemsHTML += `
-                    <div class="mb-1 last:mb-0 hover:bg-pink-200/50 p-1.5 rounded-lg transition-colors">
+                    <div class="mb-1 last:mb-0 hover:bg-pink-200/50 p-1.5 rounded-lg transition-colors ${isSold ? 'opacity-60' : ''}">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600 font-bold">${item.duration}</span>
-                            <span class="text-gray-800 font-black">${item.price}</span>
+                            <span class="text-gray-600 font-bold flex items-center">${item.duration} ${soldLabel}</span>
+                            <span class="text-gray-800 font-black ${isSold ? 'line-through text-gray-400' : ''}">${item.price}</span>
                         </div>
                         ${noteHTML}
                     </div>`;
@@ -241,21 +249,39 @@ function openOrderModal(appName) {
         items.forEach((item, index) => {
             const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
             
+            // Logika pengecekan status sold di dalam Modal
+            const isSold = item.available === 'sold';
+            
             let modalNoteHTML = '';
             if (item.notes) {
                 modalNoteHTML = `<p class="text-[10px] text-pink-400 italic mt-1 leading-tight flex gap-1"><span class="text-pink-300">↳</span> ${item.notes}</p>`;
             }
 
+            // Membuat tampilan badge habis yang lucu
+            const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ml-2 border border-red-200">Habis</span>` : '';
+
+            // Menyesuaikan style container berdasarkan ketersediaan barang (desain utama tetap utuh)
+            const containerClass = isSold 
+                ? `border border-gray-200 bg-gray-50 p-4 rounded-xl cursor-not-allowed opacity-75 flex justify-between items-center select-none` 
+                : `package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group`;
+                
+            // Jika item terjual (sold) hapus fungsi klik pilih paketnya
+            const onClickAttr = isSold ? '' : `onclick="selectPackage('${pkgId}', '${cat}', '${item.duration}', '${item.price}')"`;
+            const checkIndicatorClass = isSold ? 'border-gray-200 bg-gray-200' : 'border-gray-300 bg-white check-indicator transition-colors';
+
             html += `
-                <div id="${pkgId}" onclick="selectPackage('${pkgId}', '${cat}', '${item.duration}', '${item.price}')" class="package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group">
+                <div id="${pkgId}" ${onClickAttr} class="${containerClass}">
                     <div class="flex-1 pr-3">
-                        <p class="text-[11px] text-pink-400 font-bold uppercase tracking-widest mb-1">${cat}</p>
-                        <p class="text-sm font-bold text-gray-600 group-hover:text-gray-800 transition-colors">${item.duration}</p>
+                        <div class="flex items-center">
+                            <p class="text-[11px] text-pink-400 font-bold uppercase tracking-widest mb-1">${cat}</p>
+                            ${soldBadge}
+                        </div>
+                        <p class="text-sm font-bold ${isSold ? 'text-gray-400 line-through' : 'text-gray-600 group-hover:text-gray-800'} transition-colors">${item.duration}</p>
                         ${modalNoteHTML}
                     </div>
                     <div class="flex items-center gap-3">
-                        <p class="font-bold text-pink-600 text-lg">${item.price}</p>
-                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center check-indicator transition-colors bg-white flex-shrink-0"></div>
+                        <p class="font-bold ${isSold ? 'text-gray-400' : 'text-pink-600'} text-lg">${item.price}</p>
+                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${checkIndicatorClass}"></div>
                     </div>
                 </div>
             `;
@@ -282,10 +308,12 @@ function selectPackage(pkgId, cat, dur, price) {
         el.classList.remove('border-pink-400', 'bg-pink-50');
         el.classList.add('border-pink-200', 'bg-white');
         const check = el.querySelector('.check-indicator');
-        check.innerHTML = '';
-        check.classList.replace('border-pink-500', 'border-gray-300');
-        check.classList.remove('bg-pink-500');
-        check.classList.add('bg-white');
+        if (check) {
+            check.innerHTML = '';
+            check.classList.replace('border-pink-500', 'border-gray-300');
+            check.classList.remove('bg-pink-500');
+            check.classList.add('bg-white');
+        }
     });
 
     const selectedEl = document.getElementById(pkgId);
