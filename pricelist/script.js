@@ -459,20 +459,20 @@ function removeFromCart(index) {
 function checkoutCartWA() {
     if(cart.length === 0) return;
 
-    let textWA = "୨ ⁺ ☀️🎀  haloo, aku mau jajan ini! ౿ 💭\n\n";
+    let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎ა  haloo, aku mau jajan ini! ౿ \n\n";
     let grandTotal = 0;
 
     cart.forEach((item) => {
         const subTotal = extractNumK(item.price) * item.qty;
         grandTotal += subTotal;
         
-        textWA += `𖠗  💌 ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
+        textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
         textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
         textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
     });
 
-    textWA += `🍮🐰 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 🍀 ⟡ \n\n`;
-    textWA += ` ⑅ ౿ 🌸 bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ 🌷🥣 have a sweet day  𖠗`;
+    textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
+    textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β have a sweet day  𖠗`;
     
     const encodedText = encodeURIComponent(textWA);
     window.open(`https://wa.me/6283877337798?text=${encodedText}`, '_blank');
