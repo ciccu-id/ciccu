@@ -475,7 +475,7 @@ function checkoutCartWA() {
     textWA += ` ⑅ ౿ 🌸 bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ 🌷🥣 have a sweet day  𖠗`;
     
     const encodedText = encodeURIComponent(textWA);
-    window.open(`https://wa.me/6285111571616?text=${encodedText}`, '_blank');
+    window.open(`https://wa.me/6283877337798?text=${encodedText}`, '_blank');
 }
 
 function openLoyaltyModal() {
