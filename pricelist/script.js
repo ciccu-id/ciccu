@@ -70,7 +70,6 @@ function parseCSVLine(row) {
 
 async function loadPricelist() {
     try {
-        // Ditambahkan parameter waktu (?t=) agar browser tidak menyimpan cache dan data selalu update real-time dari Google Sheet
         const response = await fetch(csvFileName + '&t=' + new Date().getTime());
         if (!response.ok) throw new Error("File tidak ditemukan");
         
@@ -88,14 +87,12 @@ async function loadPricelist() {
             const duration = cols[2]; 
             const price = cols[3];    
             const notes = cols.length > 4 ? cols[4] : '';
-            // Membaca status kolom ke-6 (available). Jika kosong, otomatis bernilai 'ready'
             const available = cols.length > 5 && cols[5].trim() !== '' ? cols[5].trim().toLowerCase() : 'ready';
 
             if (!apps[appName]) { apps[appName] = { categories: {} }; }
             if (!apps[appName].categories[category]) { apps[appName].categories[category] = []; }
             
             const itemNotes = (notes && notes.toLowerCase() !== 'nan') ? notes : '';
-            // Memasukkan variabel available ke objek aplikasi
             apps[appName].categories[category].push({ duration, price, notes: itemNotes, available });
         });
 
@@ -119,7 +116,16 @@ function switchCategory(cat) {
           "w-full py-2.5 md:py-3 rounded-xl border border-pink-400 bg-pink-400 text-[10px] md:text-xs font-bold text-white shadow-lg shadow-pink-200 transition-all outline-none" :
           "w-full py-2.5 md:py-3 rounded-xl border border-pink-200 bg-white text-[10px] md:text-xs font-bold text-pink-400 hover:bg-pink-50 transition-all outline-none";
     });
+    
     applyFilters();
+
+    // Fitur scroll otomatis ke grid aplikasi dengan animasi smooth
+    const gridElement = document.getElementById('pricingGrid');
+    if(gridElement) {
+        // -80 adalah offset agar tidak tertutup header
+        const y = gridElement.getBoundingClientRect().top + window.pageYOffset - 80;
+        window.scrollTo({top: y, behavior: 'smooth'});
+    }
 }
 
 function applyFilters() {
@@ -149,76 +155,67 @@ function renderCards(apps) {
 
     let delay = 0;
     for (const [name, info] of Object.entries(apps)) {
-        let packageHTML = '';
+        // Cari harga terendah untuk tulisan "Mulai Dari"
+        let minPrice = Infinity;
+        let totalPackages = 0;
+
         for (const [categoryName, items] of Object.entries(info.categories)) {
-            let itemsHTML = '';
             items.forEach(item => {
-                
-                let noteHTML = '';
-                if (item.notes) {
-                    noteHTML = `
-                        <div class="text-[10px] text-pink-400/90 mt-0.5 flex items-start gap-1">
-                            <span class="font-bold text-pink-300">↳</span>
-                            <span class="italic leading-tight">${item.notes}</span>
-                        </div>
-                    `;
-                }
-
-                // Cek status ketersediaan item untuk halaman kartu utama
-                const isSold = item.available === 'sold';
-                const soldLabel = isSold ? `<span class="text-[10px] bg-red-100 text-red-500 font-bold px-1.5 py-0.5 rounded ml-1.5 uppercase tracking-wide">Habis</span>` : '';
-
-                itemsHTML += `
-                    <div class="mb-1 last:mb-0 hover:bg-pink-200/50 p-1.5 rounded-lg transition-colors ${isSold ? 'opacity-60' : ''}">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600 font-bold flex items-center">${item.duration} ${soldLabel}</span>
-                            <span class="text-gray-800 font-black ${isSold ? 'line-through text-gray-400' : ''}">${item.price}</span>
-                        </div>
-                        ${noteHTML}
-                    </div>`;
+                totalPackages++;
+                const pVal = extractNumK(item.price);
+                if(pVal > 0 && pVal < minPrice) minPrice = pVal;
             });
-
-            packageHTML += `
-                <div class="bg-pink-50/50 rounded-xl p-3 border border-pink-100 h-full">
-                    <div class="text-[11px] text-pink-500 font-black uppercase tracking-widest mb-2 border-b border-pink-200/60 pb-1.5">${categoryName}</div>
-                    ${itemsHTML}
-                </div>`;
         }
+        const displayPrice = minPrice !== Infinity ? minPrice + 'K' : '-';
 
         const logoUrl = getLogoUrl(name);
-        let logoHTML = logoUrl ? `<img src="${logoUrl}" class="w-7 h-7 md:w-8 md:h-8 rounded-lg object-cover bg-white p-0.5 border border-pink-200 shadow-sm" alt="${name}">` : `
-                <div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
-                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        // Ukuran logo dikecilkan untuk HP
+        let logoHTML = logoUrl ? `<img src="${logoUrl}" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover bg-white p-0.5 border border-pink-200 shadow-sm" alt="${name}">` : `
+                <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 </div>`;
 
         const safeName = name.replace(/'/g, "\\'");
+        const categoryBadge = getAppCategory(name);
         
+        // Tombol info khusus untuk Netflix, dipindah ke pojok kanan atas kartu
         const isNetflix = name.toLowerCase().includes('netflix');
         const infoBtnHTML = isNetflix ? `
-            <button onclick="openInfoNetflixModal()" class="w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-pink-400 text-white hover:bg-pink-500 transition-colors ml-2 outline-none shadow-sm" title="Info Tambahan">
+            <button onclick="openInfoNetflixModal(); event.stopPropagation();" class="absolute top-2 right-2 md:top-3 md:right-3 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-pink-100 text-pink-500 hover:bg-pink-200 transition-colors outline-none shadow-sm z-20" title="Info Tambahan">
                 <span class="font-black text-[10px] md:text-xs">i</span>
             </button>
         ` : '';
 
         const card = document.createElement('div');
-        card.className = 'card flex flex-col bg-pink-100 border border-pink-200 rounded-2xl p-5 shadow-xl shadow-pink-100/40 transition-all duration-300 hover:-translate-y-1 hover:border-pink-300 fade-in-down';
+        // Desain disesuaikan dengan tema Ciccu (White/Pink)
+        card.className = 'group flex flex-col bg-white/90 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden';
         card.style.animationDelay = `${delay}s`;
         
         card.innerHTML = `
-            <div class="mb-4 flex items-center">
-                <div class="flex items-center gap-2 bg-white/70 px-4 py-2 rounded-2xl border border-pink-200 shadow-sm">
-                    ${logoHTML}
-                    <div class="flex items-center">
-                        <h2 class="text-lg md:text-xl font-black text-pink-600 uppercase tracking-tight whitespace-nowrap">${name}</h2>
-                        ${infoBtnHTML}
-                    </div>
-                </div>
+            <div class="absolute -top-10 -right-10 w-24 h-24 bg-pink-300/10 rounded-full blur-2xl group-hover:bg-pink-300/20 transition-all"></div>
+            ${infoBtnHTML}
+            
+            <div class="relative z-10 flex items-start justify-between mb-2 md:mb-4">
+                ${logoHTML}
+                <span class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded border border-pink-100">${categoryBadge}</span>
             </div>
-            <div class="flex-1 flex flex-col gap-2.5 mb-4">${packageHTML}</div>
-            <div class="mt-auto pt-3 border-t border-pink-200/50">
-                <button onclick="openOrderModal('${safeName}')" class="w-full flex items-center justify-center gap-2 py-2.5 bg-pink-400 text-white text-sm font-black rounded-xl hover:bg-pink-500 transition-colors shadow-sm outline-none">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    Pilih Paket 𓏲ּ𝄢
+
+            <div class="relative z-10 mb-3 md:mb-4 flex-1">
+                <h2 class="text-sm md:text-xl font-black text-pink-600 capitalize tracking-tight group-hover:text-pink-500 transition-all truncate pr-4">${name}</h2>
+                <div class="mt-2 md:mt-4 flex items-end gap-1">
+                    <span class="text-[10px] md:text-xs text-gray-500 font-bold pb-0.5 md:pb-1">Mulai</span>
+                    <span class="text-lg md:text-2xl font-black text-gray-800 leading-none">${displayPrice}</span>
+                </div>
+                <p class="text-[9px] md:text-[11px] text-gray-400 mt-1 md:mt-2 font-bold flex items-center gap-1">
+                    <svg class="w-3 h-3 md:w-3.5 md:h-3.5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    ${totalPackages} Paket
+                </p>
+            </div>
+
+            <div class="relative z-10 mt-auto pt-2 md:pt-4 border-t border-pink-100">
+                <button onclick="openOrderModal('${safeName}')" class="w-full flex items-center justify-center gap-1.5 md:gap-2 py-2 md:py-3 bg-pink-50 text-pink-500 text-[10px] md:text-sm font-black rounded-lg md:rounded-xl hover:bg-pink-400 hover:text-white transition-all outline-none border border-pink-200 hover:border-pink-400 shadow-sm">
+                    Pilih 𓏲ּ𝄢
+                    <svg class="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                 </button>
             </div>
         `;
@@ -250,7 +247,6 @@ function openOrderModal(appName) {
         items.forEach((item, index) => {
             const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
             
-            // Logika pengecekan status sold di dalam Modal
             const isSold = item.available === 'sold';
             
             let modalNoteHTML = '';
@@ -258,15 +254,12 @@ function openOrderModal(appName) {
                 modalNoteHTML = `<p class="text-[10px] text-pink-400 italic mt-1 leading-tight flex gap-1"><span class="text-pink-300">↳</span> ${item.notes}</p>`;
             }
 
-            // Membuat tampilan badge habis yang lucu
             const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ml-2 border border-red-200">Habis</span>` : '';
 
-            // Menyesuaikan style container berdasarkan ketersediaan barang (desain utama tetap utuh)
             const containerClass = isSold 
                 ? `border border-gray-200 bg-gray-50 p-4 rounded-xl cursor-not-allowed opacity-75 flex justify-between items-center select-none` 
                 : `package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group`;
                 
-            // Jika item terjual (sold) hapus fungsi klik pilih paketnya
             const onClickAttr = isSold ? '' : `onclick="selectPackage('${pkgId}', '${cat}', '${item.duration}', '${item.price}')"`;
             const checkIndicatorClass = isSold ? 'border-gray-200 bg-gray-200' : 'border-gray-300 bg-white check-indicator transition-colors';
 
