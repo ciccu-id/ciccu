@@ -42,8 +42,8 @@
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
       <div class="absolute top-10 left-8 md:left-20 md:top-20 text-3xl md:text-5xl opacity-20 animate-bounce">❤︎</div>
       <div class="absolute top-32 right-8 md:right-32 md:top-40 text-2xl md:text-4xl opacity-20 floaty">🌸</div>
-      <div class="absolute bottom-16 left-8 md:left-24 md:bottom-24 text-3xl md:text-5xl opacity-20 animate-bounce">❤︎</div>
-      <div class="absolute bottom-32 right-10 md:right-24 md:bottom-40 text-2xl md:text-4xl opacity-20 floaty" style="animation-delay: 1s;">✨</div>
+      <div class="absolute bottom-32 left-10 md:left-24 md:bottom-40 text-2xl md:text-4xl opacity-20 floaty" style="animation-delay: 1s;">✨</div>
+      <div class="absolute bottom-16 right-8 md:right-24 md:bottom-24 text-3xl md:text-5xl opacity-20 animate-bounce">❤︎</div>
     </div>
 
     <main class="w-full max-w-sm md:max-w-md lg:max-w-lg px-5 md:px-0 relative z-10 flex flex-col items-center h-full justify-center max-h-[850px] py-4">
@@ -96,7 +96,6 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             
-            // Efek transisi halus (fade & scale)
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 container.classList.remove('scale-95');
