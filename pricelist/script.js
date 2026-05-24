@@ -501,7 +501,8 @@ function checkoutCartWA() {
     });
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
-    textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β have a sweet day  𖠗`;
+    textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β have a sweet day  𖠗\n\n`;
+    textWA += `https://ciccu.biz.id/qris`;
     
     const encodedText = encodeURIComponent(textWA);
     window.open(`https://wa.me/6283877337798?text=${encodedText}`, '_blank');
