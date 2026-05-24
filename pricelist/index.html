@@ -120,7 +120,7 @@
             <p class="text-sm text-pink-500 font-bold tracking-wide">Menarik data dari server... ☁️🌸</p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="pricingGrid">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5" id="pricingGrid">
             <div id="noResults" class="hidden col-span-full text-center py-12 fade-in-down max-w-md mx-auto w-full">
                 <div class="bg-pink-50/80 rounded-2xl p-8 border border-pink-200 inline-block w-full text-center">
                     <p class="text-pink-500 text-sm font-bold">Aplikasi tidak ditemukan di kategori ini 🥺</p>
@@ -133,7 +133,7 @@
         </div>
     </main>
 
-    <button onclick="openCartModal()" id="floatingCartBtn" class="floaty fixed bottom-6 right-6 md:bottom-8 md:right-8 z- bg-gradient-to-r from-pink-400 to-rose-400 text-white p-4 md:px-5 md:py-4 rounded-full shadow-[0_10px_40px_rgba(244,114,182,0.4)] flex items-center gap-3 transition-all duration-500 transform translate-y-32 opacity-0 outline-none hover:scale-105 group">
+    <button onclick="openCartModal()" id="floatingCartBtn" class="floaty fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[60] bg-gradient-to-r from-pink-400 to-rose-400 text-white p-4 md:px-5 md:py-4 rounded-full shadow-[0_10px_40px_rgba(244,114,182,0.4)] flex items-center gap-3 transition-all duration-500 transform translate-y-32 opacity-0 outline-none hover:scale-105 group">
         <div class="relative">
             <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
             <span id="cartBadgeFloating" class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-white border-2 border-pink-400 text-[10px] text-pink-500 font-black shadow-md">0</span>
@@ -141,7 +141,7 @@
         <span class="font-bold text-sm hidden md:block">Keranjang 🌸</span>
     </button>
 
-    <div id="orderModal" class="fixed inset-0 z- hidden flex items-center justify-center p-4">
+    <div id="orderModal" class="fixed inset-0 z-[80] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="orderModalBackdrop" onclick="closeOrderModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 opacity-0" id="orderModalContent">
             
@@ -169,7 +169,7 @@
         </div>
     </div>
 
-    <div id="cartModal" class="fixed inset-0 z- hidden flex items-center justify-center p-4">
+    <div id="cartModal" class="fixed inset-0 z-[90] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="cartModalBackdrop" onclick="closeCartModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300 opacity-0" id="cartModalContent">
             
@@ -196,7 +196,7 @@
         </div>
     </div>
 
-    <div id="loyaltyModal" class="fixed inset-0 z- hidden flex items-center justify-center p-4">
+    <div id="loyaltyModal" class="fixed inset-0 z-[80] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="loyaltyModalBackdrop" onclick="closeLoyaltyModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 opacity-0" id="loyaltyModalContent">
             <div class="p-5 border-b border-pink-100 flex justify-between items-center bg-pink-50 rounded-t-3xl">
@@ -211,7 +211,7 @@
         </div>
     </div>
 
-    <div id="termsModal" class="fixed inset-0 z- hidden flex items-center justify-center p-4">
+    <div id="termsModal" class="fixed inset-0 z-[80] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="termsModalBackdrop" onclick="closeTermsModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 opacity-0" id="termsModalContent">
             <div class="p-5 border-b border-pink-100 flex justify-between items-center bg-pink-50 rounded-t-3xl">
@@ -248,7 +248,7 @@
         </div>
     </div>
 
-    <div id="infoNetflixModal" class="fixed inset-0 z- hidden flex items-center justify-center p-4">
+    <div id="infoNetflixModal" class="fixed inset-0 z-[80] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0" id="infoNetflixBackdrop" onclick="closeInfoNetflixModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl p-5 transform scale-95 transition-all duration-300 opacity-0" id="infoNetflixContent">
             <div class="flex justify-between items-center mb-4">
@@ -263,7 +263,7 @@
         </div>
     </div>
 
-    <div id="toastNotif" class="fixed bottom-24 right-6 md:bottom-24 md:right-8 z- bg-white border border-pink-200 text-gray-800 px-5 py-3 rounded-2xl shadow-xl shadow-pink-200/50 transition-all duration-300 opacity-0 translate-y-10 pointer-events-none flex items-center gap-3">
+    <div id="toastNotif" class="fixed bottom-24 right-6 md:bottom-24 md:right-8 z-[100] bg-white border border-pink-200 text-gray-800 px-5 py-3 rounded-2xl shadow-xl shadow-pink-200/50 transition-all duration-300 opacity-0 translate-y-10 pointer-events-none flex items-center gap-3">
         <div class="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-500">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
         </div>
