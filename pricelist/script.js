@@ -477,8 +477,8 @@ function checkoutCartWA() {
         grandTotal += subTotal;
         
         textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
-        textWA += `BB ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
-        textWA += `BB ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
+        textWA += `꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
+        textWA += `꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
     });
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
