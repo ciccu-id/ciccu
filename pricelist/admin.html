@@ -10,10 +10,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Admin Ciccu">
-    
     <link rel="icon" type="image/jpeg" sizes="192x192" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
     <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
-    <link rel="shortcut icon" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -21,7 +19,6 @@
         body { font-family: 'Quicksand', sans-serif; background-color: #fdf2f8; color: #1f2937; -webkit-tap-highlight-color: transparent; }
         .loader { border: 3px solid rgba(244, 114, 182, 0.2); border-left-color: #ec4899; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Toggle Switch CSS */
         .toggle-checkbox:checked { right: 0; border-color: #10B981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
         .toggle-checkbox { right: 0; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
@@ -32,16 +29,28 @@
 </head>
 <body class="min-h-screen pb-20 pt-4 md:pt-0">
 
-    <main class="max-w-3xl mx-auto p-4 md:p-6">
-        <div class="mb-8 border-b border-pink-200 pb-4 mt-2 text-center">
-            <h1 class="text-3xl font-black text-pink-500 drop-shadow-sm">❤︎ Ciccu<span class="text-sky-400">Admin</span> ❤︎</h1>
+    <div id="loginOverlay" class="fixed inset-0 bg-pink-50 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-[2rem] shadow-2xl shadow-pink-200 w-full max-w-sm text-center border border-pink-100">
+            <img src="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg" alt="Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-md border-4 border-pink-100">
+            <h2 class="text-2xl font-black text-pink-500 mb-1">Halo, Admin! 🌸</h2>
+            <p class="text-sm text-gray-500 mb-6 font-bold">Masukkan password untuk masuk.</p>
+            
+            <input type="password" id="adminPasswordInput" placeholder="Ketik password..." class="w-full bg-pink-50 border border-pink-200 text-center rounded-2xl py-3 px-4 outline-none focus:border-pink-400 font-bold mb-4 text-pink-600 shadow-inner">
+            <button onclick="loginAdmin()" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-2xl transition-all shadow-md shadow-pink-200">Masuk ✨</button>
+        </div>
+    </div>
+
+    <main class="max-w-3xl mx-auto p-4 md:p-6" id="mainContent" style="display: none;">
+        <div class="mb-8 border-b border-pink-200 pb-4 mt-2 flex justify-between items-center">
+            <h1 class="text-2xl font-black text-pink-500 drop-shadow-sm">❤︎ Ciccu<span class="text-sky-400">Admin</span></h1>
+            <button onclick="logoutAdmin()" class="text-xs bg-pink-100 text-pink-500 font-bold px-3 py-1.5 rounded-xl border border-pink-200 hover:bg-pink-200">Keluar 🚪</button>
         </div>
 
         <div class="bg-white p-5 rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50 mb-6">
             <h2 class="text-sm font-bold text-pink-500 mb-4 uppercase tracking-wider">Tambah Paket Manual 🌸</h2>
             <form id="addForm" class="space-y-3" onsubmit="addData(event)">
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="appName" placeholder="Nama Aplikasi (misal: Netflix)" required class="col-span-2 bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                    <input type="text" id="appName" placeholder="Nama Aplikasi" required class="col-span-2 bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                     <select id="appCat" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                         <option value="" disabled selected>Pilih Kategori</option>
                         <option value="streaming">Streaming</option>
@@ -49,8 +58,8 @@
                         <option value="editing">Editing</option>
                         <option value="study">Study Needs</option>
                     </select>
-                    <input type="text" id="appDur" placeholder="Durasi (1 Bulan)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
-                    <input type="text" id="appPrice" placeholder="Harga (50K)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                    <input type="text" id="appDur" placeholder="Durasi" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                    <input type="text" id="appPrice" placeholder="Harga" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                     <select id="appStatus" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full text-green-500 font-bold shadow-inner">
                         <option value="Ready" selected>Ready</option>
                         <option value="Sold" class="text-red-500">Sold</option>
@@ -63,18 +72,13 @@
 
         <div class="bg-white p-5 rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50 mb-6">
             <h2 class="text-sm font-bold text-pink-500 mb-2 uppercase tracking-wider">Upload dari CSV ☁️</h2>
-            <p class="text-xs text-gray-500 mb-4 font-medium">Pastikan urutan baris CSV dari atas ke bawah sesuai urutan yang Anda inginkan. Urutan kolom: Aplikasi, Kategori, Durasi, Harga, Notes.</p>
             <div class="flex gap-2">
-                <input type="file" id="csvFile" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-pink-100 file:text-pink-600 hover:file:bg-pink-200 cursor-pointer">
+                <input type="file" id="csvFile" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-pink-100 file:text-pink-600 cursor-pointer">
                 <button onclick="processCSV()" id="btnCsv" class="bg-pink-400 text-white px-4 py-2 rounded-xl text-sm font-bold border border-pink-500 hover:bg-pink-500 whitespace-nowrap shadow-sm">Upload</button>
             </div>
             <div id="csvProgress" class="text-xs text-pink-500 font-bold mt-2 hidden">Memproses...</div>
         </div>
 
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-bold text-pink-500 uppercase tracking-wider pl-1">Daftar Pricelist</h2>
-        </div>
-        
         <div class="relative mb-4">
             <input type="text" id="adminSearchInput" oninput="filterAdminList()" placeholder="Cari aplikasi atau kategori..." class="w-full bg-white border border-pink-200 text-sm text-gray-700 rounded-2xl py-3 pl-10 pr-4 outline-none focus:border-pink-400 transition-colors shadow-sm font-bold">
             <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
@@ -88,12 +92,52 @@
     </main>
 
     <script>
-        // URL WORKER CICCU
         const API_URL = "https://ciccu.ygpentinggmail22.workers.dev"; 
-        
         let globalAdminData = [];
+        let sessionPass = "";
+
+        // ----- SISTEM LOGIN -----
+        function checkSession() {
+            sessionPass = sessionStorage.getItem("ciccuAdminPass");
+            if (sessionPass) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                loadData();
+            } else {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'none';
+            }
+        }
+
+        function loginAdmin() {
+            const input = document.getElementById('adminPasswordInput').value;
+            if (!input) return alert("Isi passwordnya dulu ya!");
+            sessionStorage.setItem("ciccuAdminPass", input);
+            checkSession();
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem("ciccuAdminPass");
+            window.location.reload();
+        }
+
+        // Panggil pengecekan saat halaman dimuat
+        checkSession();
+
+        // ----- FUNGSI ADMIN -----
+        
+        // Cek response untuk error 403 (Password Salah)
+        function handleResponseStatus(res) {
+            if (res.status === 403) {
+                alert("Gagal menyimpan! Password yang Anda masukkan salah.");
+                logoutAdmin();
+                throw new Error("Unauthorized");
+            }
+            return res.json();
+        }
 
         async function loadData() {
+            if(!sessionPass) return; // Jangan load jika belum login
             const list = document.getElementById('dataList');
             try {
                 const response = await fetch(`${API_URL}/api/pricelist`);
@@ -102,13 +146,12 @@
                 globalAdminData = data.sort((a, b) => a.id - b.id);
                 renderData(globalAdminData);
             } catch (error) {
-                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200">Gagal memuat data. Cek koneksi / URL Worker.</div>`;
+                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200">Gagal memuat data. Cek koneksi internet.</div>`;
             }
         }
 
         function renderData(dataArray) {
             const list = document.getElementById('dataList');
-            
             if (dataArray.length === 0) {
                 list.innerHTML = `<div class="text-center py-10 text-gray-500 font-bold text-sm bg-white rounded-2xl border border-pink-200">Tidak ada paket aplikasi ditemukan.</div>`;
                 return;
@@ -136,7 +179,6 @@
                                     <div class="toggle-circle absolute top-0.5 left-0.5 pointer-events-none"></div>
                                 </div>
                             </div>
-                            
                             <button onclick="deleteData(${item.id})" class="text-pink-300 hover:text-red-500 bg-pink-50 p-2 rounded-xl transition-colors">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
@@ -172,16 +214,18 @@
             };
 
             try {
-                await fetch(`${API_URL}/api/pricelist`, {
+                const res = await fetch(`${API_URL}/api/pricelist`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
                     body: JSON.stringify(payload)
                 });
+                await handleResponseStatus(res);
+                
                 document.getElementById('addForm').reset();
                 document.getElementById('adminSearchInput').value = ''; 
                 loadData();
             } catch (error) {
-                alert("Gagal menyimpan data.");
+                console.error(error);
             } finally {
                 btn.innerHTML = "Simpan Data ✨"; btn.disabled = false;
             }
@@ -191,21 +235,23 @@
             const newStatus = isChecked ? 'Ready' : 'Sold';
             const statusTextEl = document.getElementById(`status-text-${id}`);
             
+            // Perubahan visual sementara
             statusTextEl.innerText = newStatus;
             statusTextEl.className = `text-[9px] font-black ${isChecked ? 'text-green-500' : 'text-red-500'} uppercase tracking-wider`;
 
-            const itemIndex = globalAdminData.findIndex(item => item.id === id);
-            if (itemIndex !== -1) globalAdminData[itemIndex].status = newStatus;
-
             try {
-                await fetch(`${API_URL}/api/status/${id}`, {
+                const res = await fetch(`${API_URL}/api/status/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
                     body: JSON.stringify({ status: newStatus })
                 });
+                await handleResponseStatus(res);
+
+                // Update data global jika berhasil
+                const itemIndex = globalAdminData.findIndex(item => item.id === id);
+                if (itemIndex !== -1) globalAdminData[itemIndex].status = newStatus;
             } catch (error) {
-                alert("Gagal mengubah status di server.");
-                loadData(); 
+                loadData(); // Revert visual jika gagal
             }
         }
 
@@ -213,10 +259,14 @@
             if(!confirm("Yakin ingin menghapus paket ini?")) return;
             
             try {
-                await fetch(`${API_URL}/api/delete/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${API_URL}/api/delete/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': sessionPass } 
+                });
+                await handleResponseStatus(res);
                 loadData();
             } catch (error) {
-                alert("Gagal menghapus data.");
+                console.error(error);
             }
         }
 
@@ -243,15 +293,20 @@
 
                     progress.innerText = `Mengirim baris ${i + 1} dari ${rows.length}...`;
                     
-                    await fetch(`${API_URL}/api/pricelist`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            app_name: cols[0], category: cols[1], duration: cols[2], 
-                            price: cols[3], notes: cols[4] || '', status: 'Ready'
-                        })
-                    });
-                    successCount++;
+                    try {
+                        const res = await fetch(`${API_URL}/api/pricelist`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
+                            body: JSON.stringify({
+                                app_name: cols[0], category: cols[1], duration: cols[2], 
+                                price: cols[3], notes: cols[4] || '', status: 'Ready'
+                            })
+                        });
+                        await handleResponseStatus(res);
+                        successCount++;
+                    } catch (error) {
+                        break; // Stop looping jika password salah / error
+                    }
                 }
                 progress.innerText = `Selesai! ${successCount} data berhasil diunggah.`;
                 setTimeout(() => progress.classList.add('hidden'), 3000);
@@ -261,8 +316,6 @@
             };
             reader.readAsText(file);
         }
-
-        loadData();
     </script>
 </body>
 </html>
