@@ -1,6 +1,7 @@
-const csvFileName = atob('aHR0cHM6Ly9kb2NzLmdvb2dsZS5jb20vc3ByZWFkc2hlZXRzL2QvMThXUUN4NEJ6ckxUSHY2RWhYcG04OGJHUzJ5LUNGOXFLLUJjQVlkbVRzNXMvZXhwb3J0P2Zvcm1hdD1jc3YmZ2lkPTE0NjA4NzgyNTE=');
+const API_URL = "https://ciccu.ygpentinggmail22.workers.dev";
 
 let allApps = {};
+let orderedAppNames = []; 
 let currentCategory = 'all';
 
 const appCategoryMap = {
@@ -52,44 +53,36 @@ function getLogoUrl(appName) {
     return '';
 }
 
-function parseCSVLine(row) {
-    const cols = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < row.length; i++) {
-        const char = row[i];
-        if (char === '"') { inQuotes = !inQuotes; } 
-        else if (char === ',' && !inQuotes) {
-            cols.push(current.trim().replace(/^"|"$/g, ''));
-            current = '';
-        } else { current += char; }
-    }
-    cols.push(current.trim().replace(/^"|"$/g, ''));
-    return cols;
+function extractNumK(priceStr) {
+    if (typeof priceStr !== 'string') priceStr = String(priceStr);
+    return parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
 }
 
 async function loadPricelist() {
     try {
-        const response = await fetch(csvFileName + '&t=' + new Date().getTime());
-        if (!response.ok) throw new Error("File tidak ditemukan");
+        const response = await fetch(`${API_URL}/api/pricelist`);
+        if (!response.ok) throw new Error("Gagal mengambil data dari server");
         
-        const data = await response.text();
-        const rows = data.split(/\r?\n/).slice(1); 
+        let data = await response.json();
+        
+        // MENGATUR URUTAN: Sortir ID terkecil ke terbesar sesuai baris CSV aslinya
+        data.sort((a, b) => a.id - b.id);
+
         const apps = {};
+        const appOrder = []; 
 
-        rows.forEach(row => {
-            if (!row.trim()) return;
-            const cols = parseCSVLine(row);
-            if (cols.length < 4) return;
+        data.forEach(item => {
+            const appName = item.app_name;
+            const category = item.category; 
+            const duration = item.duration; 
+            const price = item.price;    
+            const notes = item.notes || '';
+            const available = item.status ? item.status.toLowerCase() : 'ready'; 
 
-            const appName = cols[0];
-            const category = cols[1]; 
-            const duration = cols[2]; 
-            const price = cols[3];    
-            const notes = cols.length > 4 ? cols[4] : '';
-            const available = cols.length > 5 && cols[5].trim() !== '' ? cols[5].trim().toLowerCase() : 'ready';
-
-            if (!apps[appName]) { apps[appName] = { categories: {} }; }
+            if (!apps[appName]) { 
+                apps[appName] = { categories: {} }; 
+                appOrder.push(appName); 
+            }
             if (!apps[appName].categories[category]) { apps[appName].categories[category] = []; }
             
             const itemNotes = (notes && notes.toLowerCase() !== 'nan') ? notes : '';
@@ -97,12 +90,14 @@ async function loadPricelist() {
         });
 
         allApps = apps;
+        orderedAppNames = appOrder; 
+        
         applyFilters();
         document.getElementById('statusMessage').style.display = 'none';
         updateCartUI();
 
     } catch (error) {
-        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200">Gagal memuat data dari Spreadsheet.</p>`;
+        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200">Gagal memuat data dari Server Database.</p>`;
     }
 }
 
@@ -119,10 +114,8 @@ function switchCategory(cat) {
     
     applyFilters();
 
-    // Fitur scroll otomatis ke grid aplikasi dengan animasi smooth
     const gridElement = document.getElementById('pricingGrid');
     if(gridElement) {
-        // -80 adalah offset agar tidak tertutup header
         const y = gridElement.getBoundingClientRect().top + window.pageYOffset - 80;
         window.scrollTo({top: y, behavior: 'smooth'});
     }
@@ -131,31 +124,33 @@ function switchCategory(cat) {
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const filteredApps = {};
-    let hasVisibleCards = false;
+    const filteredOrder = []; 
 
-    for (const [name, info] of Object.entries(allApps)) {
+    orderedAppNames.forEach(name => {
+        const info = allApps[name];
         const matchesSearch = name.toLowerCase().includes(searchTerm);
         const appCat = getAppCategory(name);
         const matchesCategory = (currentCategory === 'all' || appCat === currentCategory);
         
         if (matchesSearch && matchesCategory) {
             filteredApps[name] = info;
-            hasVisibleCards = true;
+            filteredOrder.push(name);
         }
-    }
-    renderCards(filteredApps);
-    document.getElementById('noResults').style.display = (!hasVisibleCards) ? 'block' : 'none';
+    });
+    
+    renderCards(filteredApps, filteredOrder);
+    document.getElementById('noResults').style.display = (filteredOrder.length === 0) ? 'block' : 'none';
 }
 
-function renderCards(apps) {
+function renderCards(apps, orderedNames) {
     const grid = document.getElementById('pricingGrid');
     const noResults = document.getElementById('noResults');
     grid.innerHTML = '';
     grid.appendChild(noResults);
 
     let delay = 0;
-    for (const [name, info] of Object.entries(apps)) {
-        // Cari harga terendah untuk tulisan "Mulai Dari"
+    orderedNames.forEach(name => {
+        const info = apps[name];
         let minPrice = Infinity;
         let totalPackages = 0;
 
@@ -169,7 +164,6 @@ function renderCards(apps) {
         const displayPrice = minPrice !== Infinity ? minPrice + 'K' : '-';
 
         const logoUrl = getLogoUrl(name);
-        // Ukuran logo dikecilkan untuk HP
         let logoHTML = logoUrl ? `<img src="${logoUrl}" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover bg-white p-0.5 border border-pink-200 shadow-sm" alt="${name}">` : `
                 <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
@@ -178,7 +172,6 @@ function renderCards(apps) {
         const safeName = name.replace(/'/g, "\\'");
         const categoryBadge = getAppCategory(name);
         
-        // Tombol info khusus untuk Netflix, dipindah ke pojok kanan atas kartu
         const isNetflix = name.toLowerCase().includes('netflix');
         const infoBtnHTML = isNetflix ? `
             <button onclick="openInfoNetflixModal(); event.stopPropagation();" class="absolute top-2 right-2 md:top-3 md:right-3 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center rounded-full bg-pink-100 text-pink-500 hover:bg-pink-200 transition-colors outline-none shadow-sm z-20" title="Info Tambahan">
@@ -187,7 +180,6 @@ function renderCards(apps) {
         ` : '';
 
         const card = document.createElement('div');
-        // Desain disesuaikan dengan tema Ciccu (White/Pink)
         card.className = 'group flex flex-col bg-white/90 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden';
         card.style.animationDelay = `${delay}s`;
         
@@ -221,7 +213,7 @@ function renderCards(apps) {
         `;
         grid.appendChild(card);
         delay += 0.04;
-    }
+    });
 }
 
 let cart = []; 
@@ -246,18 +238,18 @@ function openOrderModal(appName) {
     Object.entries(info.categories).forEach(([cat, items]) => {
         items.forEach((item, index) => {
             const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
-            
             const isSold = item.available === 'sold';
             
+            // RENDERING NOTES BERGAYA SIKU SEPERTI REFERENSI GAMBAR
             let modalNoteHTML = '';
             if (item.notes) {
-                modalNoteHTML = `<p class="text-[10px] text-pink-400 italic mt-1 leading-tight flex gap-1"><span class="text-pink-300">↳</span> ${item.notes}</p>`;
+                modalNoteHTML = `<p class="text-[10px] text-pink-400 font-medium italic mt-1 leading-tight flex gap-1.5 items-center"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>`;
             }
 
             const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ml-2 border border-red-200">Habis</span>` : '';
 
             const containerClass = isSold 
-                ? `border border-gray-200 bg-gray-50 p-4 rounded-xl cursor-not-allowed opacity-75 flex justify-between items-center select-none` 
+                ? `border border-gray-200 bg-gray-50 p-4 rounded-xl flex justify-between items-center opacity-75 select-none` 
                 : `package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group`;
                 
             const onClickAttr = isSold ? '' : `onclick="selectPackage('${pkgId}', '${cat}', '${item.duration}', '${item.price}')"`;
@@ -273,7 +265,7 @@ function openOrderModal(appName) {
                         <p class="text-sm font-bold ${isSold ? 'text-gray-400 line-through' : 'text-gray-600 group-hover:text-gray-800'} transition-colors">${item.duration}</p>
                         ${modalNoteHTML}
                     </div>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 shrink-0">
                         <p class="font-bold ${isSold ? 'text-gray-400' : 'text-pink-600'} text-lg">${item.price}</p>
                         <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${checkIndicatorClass}"></div>
                     </div>
@@ -332,10 +324,6 @@ function changeQty(delta) {
     orderQty = newQty;
     document.getElementById('qtyDisplay').innerText = orderQty;
     updateAddBtn();
-}
-
-function extractNumK(priceStr) {
-    return parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
 }
 
 function updateAddBtn() {
@@ -489,8 +477,8 @@ function checkoutCartWA() {
         grandTotal += subTotal;
         
         textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
-        textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
-        textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
+        textWA += `BB ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
+        textWA += `BB ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
     });
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
