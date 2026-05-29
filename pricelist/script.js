@@ -660,6 +660,7 @@ function renderCheckoutForms() {
 function checkoutCartWA() {
     if(cart.length === 0) return;
 
+    // --- Validasi Form ---
     for (let i = 0; i < cart.length; i++) {
         const item = cart[i];
         const appKey = item.app.toLowerCase().trim();
@@ -707,28 +708,33 @@ function checkoutCartWA() {
         if (fields.length > 0) {
             textWA += `\n*DATA USER*\n`;
 
-            const isSeparate = item.separateForms;
-            const loopCount = isSeparate && item.qty > 1 ? item.qty : 1;
-
-            if (isSeparate && item.qty > 1) {
-                for(let fIdx = 0; fIdx < loopCount; fIdx++) {
-                    textWA += `[Akun #${fIdx + 1}]\n`;
-                    fields.forEach(field => {
-                        let val = '';
-                        if (item.useFirstItemData) {
-                            val = item.formData && item.formData[0] ? item.formData[0][field] : '';
-                        } else {
-                            val = item.formData && item.formData[fIdx] ? item.formData[fIdx][field] : '';
-                        }
-                        textWA += `- ${field} : ${val}\n`;
-                    });
-                    if (fIdx < loopCount - 1) textWA += `\n`;
+            if (item.useFirstItemData) {
+                // MENCARI NAMA PAKET PERTAMA YANG ADA DI KERANJANG
+                const firstItem = cart.find(c => c.app === item.app);
+                if (firstItem) {
+                    textWA += `(Data form sama dengan paket ${firstItem.cat} ${firstItem.dur})\n`;
+                } else {
+                    textWA += `(Data form sama dengan paket sebelumnya)\n`;
                 }
             } else {
-                 fields.forEach(field => {
-                     const val = item.formData && item.formData[0] ? item.formData[0][field] : '';
-                     textWA += `- ${field} : ${val}\n`;
-                 });
+                const isSeparate = item.separateForms;
+                const loopCount = isSeparate && item.qty > 1 ? item.qty : 1;
+
+                if (isSeparate && item.qty > 1) {
+                    for(let fIdx = 0; fIdx < loopCount; fIdx++) {
+                        textWA += `[Akun #${fIdx + 1}]\n`;
+                        fields.forEach(field => {
+                            const val = item.formData && item.formData[fIdx] && item.formData[fIdx][field] ? item.formData[fIdx][field] : '-';
+                            textWA += `- ${field} : ${val}\n`;
+                        });
+                        if (fIdx < loopCount - 1) textWA += `\n`;
+                    }
+                } else {
+                     fields.forEach(field => {
+                         const val = item.formData && item.formData[0] && item.formData[0][field] ? item.formData[0][field] : '-';
+                         textWA += `- ${field} : ${val}\n`;
+                     });
+                }
             }
             textWA += `\n\n`; 
         } else {
@@ -736,7 +742,7 @@ function checkoutCartWA() {
         }
     });
 
-    // Menghapus baris kosong ekstra di bagian akhir loop
+    // Menghapus spasi newline (baris kosong) yang berlebihan di akhir daftar pesanan
     textWA = textWA.trimEnd() + `\n\n`;
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
