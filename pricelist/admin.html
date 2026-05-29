@@ -3,263 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin Panel - Ciccu Store</title>
+    <title>Admin Panel - SteoType</title>
     
-    <meta name="theme-color" content="#fce7f3">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Admin Ciccu">
-    <link rel="icon" type="image/jpeg" sizes="192x192" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
-
+    <meta name="theme-color" content="#0b0f19">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Quicksand', sans-serif; background-color: #fdf2f8; color: #1f2937; -webkit-tap-highlight-color: transparent; }
-        .loader { border: 3px solid rgba(244, 114, 182, 0.2); border-left-color: #ec4899; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #e5e7eb; -webkit-tap-highlight-color: transparent; }
+        .loader { border: 3px solid rgba(59, 130, 246, 0.2); border-left-color: #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .toggle-checkbox:checked { right: 0; border-color: #10B981; }
         .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
         .toggle-checkbox { right: 0; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
-        .toggle-label { width: 3rem; height: 1.5rem; background-color: #EF4444; border-radius: 9999px; transition: all 0.3s; }
-        .toggle-circle { top: 0.125rem; left: 0.125rem; width: 1.25rem; height: 1.25rem; background-color: white; border-radius: 50%; transition: transform 0.3s; }
-        .toggle-checkbox:checked ~ .toggle-circle { transform: translateX(1.5rem); }
+        .toggle-label { width: 2.5rem; height: 1.25rem; background-color: #EF4444; transition: all 0.3s; }
+        .toggle-circle { transition: transform 0.3s; }
+        .toggle-checkbox:checked ~ .toggle-circle { transform: translateX(1.25rem); }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .sortable-ghost { opacity: 0.4; background-color: rgba(244, 114, 182, 0.1) !important; border-color: #f472b6 !important; }
+        .sortable-ghost { opacity: 0.4; background-color: rgba(59, 130, 246, 0.1) !important; border-color: #3b82f6 !important; }
         .sortable-drag { cursor: grabbing !important; }
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
     </style>
 </head>
-<body class="min-h-screen pb-20 pt-4 md:pt-0">
+<body class="min-h-screen pb-20"> 
 
-    <div id="loginOverlay" class="fixed inset-0 bg-pink-50 z-[200] flex items-center justify-center p-4 transition-opacity duration-300">
-        <div class="bg-white p-8 rounded-[2rem] shadow-2xl shadow-pink-200 w-full max-w-sm text-center border border-pink-100">
-            <img src="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg" alt="Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-md border-4 border-pink-100">
-            <h2 class="text-2xl font-black text-pink-500 mb-1">Halo, Admin! 🌸</h2>
-            <p class="text-sm text-gray-500 mb-6 font-bold">Masukkan password untuk masuk.</p>
+    <div id="loginOverlay" class="fixed inset-0 bg-[#0b0f19] z-[200] flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-[#151923] p-8 rounded-[2rem] shadow-2xl shadow-blue-900/10 w-full max-w-sm text-center border border-gray-800">
+            <h2 class="text-3xl font-black italic text-white mb-2 tracking-tighter">STEO<span class="text-blue-500">TYPE</span></h2>
+            <p class="text-xs text-gray-500 mb-6 font-medium">Masukkan password untuk masuk panel admin.</p>
             
-            <input type="password" id="adminPasswordInput" placeholder="Ketik password..." class="w-full bg-pink-50 border border-pink-200 text-center rounded-2xl py-3 px-4 outline-none focus:border-pink-400 font-bold mb-4 text-pink-600 shadow-inner">
-            <button onclick="loginAdmin()" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-2xl transition-all shadow-md shadow-pink-200">Masuk ✨</button>
+            <input type="password" id="adminPasswordInput" placeholder="Ketik password..." class="w-full bg-[#0b0f19] border border-gray-700/80 text-center rounded-xl py-3 px-4 outline-none focus:border-blue-500 font-bold mb-4 text-white shadow-inner">
+            <button onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/30">Masuk Akses</button>
         </div>
     </div>
 
-    <main class="max-w-3xl mx-auto p-4 md:p-6" id="mainContent" style="display: none;">
-        <div class="mb-6 border-b border-pink-200 pb-4 mt-2 flex justify-between items-center">
+    <main id="mainContent" style="display: none;" class="max-w-3xl mx-auto px-4 pb-4 pt-2 md:px-6 md:pb-6 md:pt-4">
+        
+        <div class="flex justify-between items-center mb-4 md:mb-5">
             <div>
-                <h1 class="text-2xl font-black text-pink-500 drop-shadow-sm leading-none">❤︎ Ciccu<span class="text-sky-400">Admin</span></h1>
+                <h1 class="text-2xl md:text-3xl font-black italic tracking-tighter text-white leading-none">STEO<span class="text-blue-500">TYPE</span> <span class="text-gray-500 font-bold text-sm md:text-base not-italic tracking-normal ml-1">ADMIN</span></h1>
             </div>
-            <div class="flex items-center gap-3">
-                <div id="savingIndicator" class="hidden text-[10px] text-green-500 font-bold bg-green-50 border border-green-200 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+            <div class="flex items-center gap-2 md:gap-3">
+                <div id="savingIndicator" class="hidden text-[10px] md:text-xs text-green-400 font-bold bg-green-500/10 border border-green-500/20 px-3.5 py-1.5 md:px-4 md:py-2 rounded-full flex items-center gap-1.5">
                     <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> Tersimpan
                 </div>
-                <button onclick="logoutAdmin()" class="text-xs bg-pink-100 text-pink-500 font-bold px-3 py-1.5 rounded-xl border border-pink-200 hover:bg-pink-200 transition-colors">Keluar 🚪</button>
+                <button onclick="logoutAdmin()" class="text-[10px] md:text-xs bg-gray-800 text-gray-400 font-bold px-3.5 py-1.5 md:px-4 md:py-2 rounded-full border border-gray-700 hover:text-white hover:bg-gray-700 transition-colors">Keluar</button>
             </div>
         </div>
 
-        <div class="bg-white p-5 rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50 mb-6">
-            <h2 class="text-sm font-bold text-pink-500 mb-4 uppercase tracking-wider flex items-center gap-1.5">
+        <div class="bg-[#151923] p-4 md:p-5 rounded-2xl border border-gray-800 shadow-lg mb-6">
+            <h2 class="text-xs font-bold text-blue-400 mb-3 uppercase tracking-wider flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Tambah Paket Manual 🌸
+                Tambah Paket Manual
             </h2>
-            <form id="addForm" class="space-y-3" onsubmit="addData(event)">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="appName" placeholder="Nama Aplikasi (misal: Netflix)" required class="col-span-2 bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
-                    <select id="appCat" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner cursor-pointer">
+            <form id="addForm" class="space-y-2.5" onsubmit="addData(event)">
+                <div class="grid grid-cols-2 gap-2 md:gap-3">
+                    <input type="text" id="appName" placeholder="Nama Aplikasi (misal: Netflix)" required class="col-span-2 bg-[#0b0f19] border border-gray-700/80 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 w-full text-white placeholder-gray-500">
+                    
+                    <select id="appCat" required class="appearance-none bg-[#0b0f19] border border-gray-700/80 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 w-full text-white cursor-pointer">
                         <option value="" disabled selected>Pilih Kategori</option>
                         <option value="streaming">Streaming</option>
-                        <option value="music">Music</option>
-                        <option value="editing">Editing</option>
-                        <option value="study">Study Needs</option>
+                        <option value="musik">Musik</option>
+                        <option value="produktivitas">Produktivitas</option>
+                        <option value="lainnya">Lainnya</option>
                     </select>
-                    <input type="text" id="appDur" placeholder="Durasi (1 Bulan)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
-                    <input type="text" id="appPrice" placeholder="Harga (50K)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
-                    <select id="appStatus" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full text-green-500 font-bold shadow-inner cursor-pointer">
+                    
+                    <input type="text" id="appDur" placeholder="Durasi (1 Bulan)" required class="bg-[#0b0f19] border border-gray-700/80 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 w-full text-white placeholder-gray-500">
+                    <input type="text" id="appPrice" placeholder="Harga (50K)" required class="bg-[#0b0f19] border border-gray-700/80 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 w-full text-white placeholder-gray-500">
+                    
+                    <select id="appStatus" class="appearance-none bg-[#0b0f19] border border-gray-700/80 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 w-full text-green-400 font-bold cursor-pointer">
                         <option value="Ready" selected>Ready</option>
-                        <option value="Sold" class="text-red-500">Sold</option>
+                        <option value="Sold" class="text-red-400">Sold</option>
                     </select>
-                    <input type="text" id="appNotes" placeholder="Catatan (Opsional)" class="col-span-2 bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                    
+                    <input type="text" id="appNotes" placeholder="Catatan (Opsional)" class="col-span-2 bg-[#0b0f19] border border-gray-700/80 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 w-full text-white placeholder-gray-500">
                 </div>
-                <button type="submit" id="btnSubmit" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-all mt-2 shadow-md">Simpan Data ✨</button>
+                <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-blue-900/20 mt-1">Simpan Data</button>
             </form>
         </div>
 
-        <div class="overflow-x-auto hide-scrollbar mb-5 bg-white p-3 rounded-3xl border border-pink-200 shadow-sm">
+        <div class="overflow-x-auto hide-scrollbar mb-4 bg-[#151923] p-3 rounded-2xl border border-gray-800">
             <div class="flex items-center gap-2 md:gap-3 w-max">
-                <button onclick="expandAll()" class="text-[10px] md:text-xs bg-pink-50 text-pink-600 px-4 py-2 rounded-xl border border-pink-200 hover:bg-pink-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
+                <button onclick="expandAll()" class="text-[10px] md:text-xs bg-gray-800 text-gray-300 px-4 py-2 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> Buka Semua
                 </button>
-                <button onclick="collapseAll()" class="text-[10px] md:text-xs bg-pink-50 text-pink-600 px-4 py-2 rounded-xl border border-pink-200 hover:bg-pink-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
+                <button onclick="collapseAll()" class="text-[10px] md:text-xs bg-gray-800 text-gray-300 px-4 py-2 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7m-7 17v-6m0 0h6m-6 0l7 7M10 4v6m0 0H4m6 0L3 3"></path></svg> Tutup Semua
                 </button>
                 
-                <button onclick="openReorderModal()" class="text-[10px] md:text-xs bg-sky-50 text-sky-500 px-4 py-2 rounded-xl border border-sky-200 hover:bg-sky-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5 ml-1 md:ml-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg> Atur Urutan
+                <button onclick="openReorderModal()" class="text-[10px] md:text-xs bg-purple-600/20 text-purple-400 px-4 py-2 rounded-xl border border-purple-500/30 hover:bg-purple-600/40 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5 ml-1 md:ml-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg> Atur Urutan Aplikasi
                 </button>
 
-                <div class="w-px h-6 bg-pink-200 mx-1"></div> 
-                <button onclick="openImportModal()" class="text-[10px] md:text-xs bg-purple-50 text-purple-500 px-4 py-2 rounded-xl border border-purple-200 hover:bg-purple-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
+                <div class="w-px h-6 bg-gray-700 mx-1"></div> 
+                <button onclick="openImportModal()" class="text-[10px] md:text-xs bg-[#0b0f19] text-blue-400 px-4 py-2 rounded-xl border border-blue-500/30 hover:bg-blue-500/20 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Import CSV
                 </button>
-                <button onclick="exportCSV()" class="text-[10px] md:text-xs bg-green-50 text-green-600 px-4 py-2 rounded-xl border border-green-200 hover:bg-green-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
+                <button onclick="exportCSV()" class="text-[10px] md:text-xs bg-[#0b0f19] text-green-400 px-4 py-2 rounded-xl border border-green-500/30 hover:bg-green-500/20 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Export CSV
                 </button>
             </div>
         </div>
         
-        <div class="relative mb-5">
-            <input type="text" id="adminSearchInput" oninput="filterAdminList()" placeholder="Cari aplikasi atau kategori... 🎀" class="w-full bg-white border border-pink-200 text-sm text-gray-700 rounded-2xl py-3 pl-10 pr-4 outline-none focus:border-pink-400 transition-colors shadow-sm font-bold">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                <svg class="w-4 h-4 text-pink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <div class="relative mb-4">
+            <input type="text" id="adminSearchInput" oninput="filterAdminList()" placeholder="Cari aplikasi atau kategori..." class="w-full bg-[#151923] border border-gray-800 text-sm text-white rounded-xl py-3 pl-10 pr-4 outline-none focus:border-blue-500 transition-colors shadow-inner">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
         </div>
 
         <div id="dataList" class="space-y-4">
-            <div class="text-center py-10"><div class="loader mx-auto mb-2"></div><p class="text-xs text-gray-500 font-bold">Memuat data...</p></div>
+            <div class="text-center py-10"><div class="loader mx-auto mb-2"></div><p class="text-xs text-gray-500">Memuat data...</p></div>
         </div>
     </main>
 
-    <!-- Modal Atur Urutan -->
     <div id="reorderModal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeReorderModal()"></div>
-        <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[85vh]">
-            <div class="p-5 border-b border-pink-100 flex justify-between items-center bg-pink-50 rounded-t-3xl">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeReorderModal()"></div>
+        <div class="relative bg-[#151923] border border-gray-800 rounded-2xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[85vh]">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#11141d] rounded-t-2xl">
                 <div>
-                    <h3 class="text-lg font-black text-pink-600">Atur Urutan</h3>
-                    <p class="text-[10px] text-gray-500 mt-0.5 font-bold">Tahan ikon kanan & geser</p>
+                    <h3 class="text-lg font-black text-white">Atur Urutan</h3>
+                    <p class="text-[10px] text-gray-400 mt-0.5">Tahan ikon kanan & geser untuk mengatur</p>
                 </div>
-                <button onclick="closeReorderModal()" class="text-pink-300 hover:text-pink-500 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button onclick="closeReorderModal()" class="text-gray-400 hover:text-white bg-gray-800 p-2 rounded-full transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
-            <div class="p-4 overflow-y-auto custom-scroll flex-1 bg-white">
+            <div class="p-3 overflow-y-auto custom-scroll flex-1">
                 <div id="reorderAppList" class="space-y-2"></div>
             </div>
-            <div class="p-4 border-t border-pink-100 bg-pink-50 rounded-b-3xl">
-                <button type="button" onclick="saveReorderModal()" id="btnSaveReorder" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-all shadow-md">Simpan Urutan Baru</button>
+            <div class="p-4 border-t border-gray-800 bg-[#11141d] rounded-b-2xl">
+                <button type="button" onclick="saveReorderModal()" id="btnSaveReorder" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/30">Simpan Urutan Baru</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Tambah Paket Spesifik -->
     <div id="addPackageModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeAddPackageModal()"></div>
-        <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
-            <div class="p-5 border-b border-pink-100 bg-pink-50 rounded-t-3xl">
-                <h3 class="text-lg font-black text-gray-800">Tambah Paket <span id="addPkgAppNameDisplay" class="text-pink-500"></span></h3>
-                <p class="text-[10px] text-gray-500 mt-1 font-bold">Ditambahkan ke dalam grup aplikasi ini.</p>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeAddPackageModal()"></div>
+        <div class="relative bg-[#151923] border border-gray-800 rounded-2xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-4 border-b border-gray-800">
+                <h3 class="text-lg font-black text-white">Tambah Paket <span id="addPkgAppNameDisplay" class="text-blue-400"></span></h3>
+                <p class="text-[10px] text-gray-400 mt-1">Ditambahkan ke dalam grup aplikasi ini.</p>
             </div>
-            <form id="addPackageForm" class="p-5 space-y-3 bg-white rounded-b-3xl" onsubmit="submitAddPackageForm(event)">
+            <form id="addPackageForm" class="p-5 space-y-3" onsubmit="submitAddPackageForm(event)">
                 <input type="hidden" id="addPkgAppName">
                 <input type="hidden" id="addPkgCat">
                 
-                <input type="text" id="addPkgDur" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Durasi (misal: 1 Bulan)">
-                <input type="text" id="addPkgPrice" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Harga (misal: 50K)">
-                <select id="addPkgStatus" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full text-green-500 font-bold">
-                    <option value="Ready" selected>Ready</option>
-                    <option value="Sold" class="text-red-500">Sold</option>
+                <input type="text" id="addPkgDur" required class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Durasi (misal: 1 Bulan)">
+                <input type="text" id="addPkgPrice" required class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Harga (misal: 50K)">
+                <select id="addPkgStatus" class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white font-bold">
+                    <option value="Ready" class="text-green-400" selected>Ready</option>
+                    <option value="Sold" class="text-red-400">Sold</option>
                 </select>
-                <input type="text" id="addPkgNotes" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Catatan (Opsional)">
+                <input type="text" id="addPkgNotes" class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Catatan (Opsional)">
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeAddPackageModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition-all">Batal</button>
-                    <button type="submit" id="btnSubmitAddPkg" class="flex-1 bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-all shadow-md">Tambahkan</button>
+                    <button type="button" onclick="closeAddPackageModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl transition-all">Batal</button>
+                    <button type="submit" id="btnSubmitAddPkg" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/20">Tambahkan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Edit -->
     <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
-        <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
-            <div class="p-5 border-b border-pink-100 bg-pink-50 rounded-t-3xl">
-                <h3 class="text-lg font-black text-pink-600">Edit Paket 🌸</h3>
-            </div>
-            <form id="editForm" class="p-5 space-y-3 bg-white rounded-b-3xl" onsubmit="submitEditForm(event)">
-                <input type="text" id="editAppName" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Nama Aplikasi">
-                <select id="editAppCat" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
+        <div class="relative bg-[#151923] border border-gray-800 rounded-2xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-4 border-b border-gray-800"><h3 class="text-lg font-black text-white">Edit Paket</h3></div>
+            <form id="editForm" class="p-5 space-y-3" onsubmit="submitEditForm(event)">
+                <input type="text" id="editAppName" required class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Nama Aplikasi">
+                <select id="editAppCat" required class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white">
                     <option value="streaming">Streaming</option>
-                    <option value="music">Music</option>
-                    <option value="editing">Editing</option>
-                    <option value="study">Study Needs</option>
+                    <option value="musik">Musik</option>
+                    <option value="produktivitas">Produktivitas</option>
+                    <option value="lainnya">Lainnya</option>
                 </select>
-                <input type="text" id="editAppDur" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Durasi">
-                <input type="text" id="editAppPrice" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Harga">
-                <select id="editAppStatus" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full text-green-500 font-bold">
-                    <option value="Ready">Ready</option>
-                    <option value="Sold" class="text-red-500">Sold</option>
+                <input type="text" id="editAppDur" required class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Durasi">
+                <input type="text" id="editAppPrice" required class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Harga">
+                <select id="editAppStatus" class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white font-bold">
+                    <option value="Ready" class="text-green-400">Ready</option>
+                    <option value="Sold" class="text-red-400">Sold</option>
                 </select>
-                <input type="text" id="editAppNotes" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Catatan (Opsional)">
+                <input type="text" id="editAppNotes" class="bg-[#0b0f19] border border-gray-700 text-sm rounded-xl p-3 outline-none focus:border-blue-500 w-full text-white" placeholder="Catatan (Opsional)">
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition-all">Batal</button>
-                    <button type="submit" id="btnSubmitEdit" class="flex-1 bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-all shadow-md">Simpan</button>
+                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl transition-all">Batal</button>
+                    <button type="submit" id="btnSubmitEdit" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/20">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Form Builder -->
     <div id="formBuilderModal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeFormModal()"></div>
-        <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[90vh]">
-            <div class="p-5 border-b border-pink-100 flex justify-between items-center bg-pink-50 rounded-t-3xl">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeFormModal()"></div>
+        <div class="relative bg-[#151923] border border-gray-800 rounded-2xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[90vh]">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#11141d] rounded-t-2xl">
                 <div>
-                    <h3 class="text-lg font-black text-gray-800">Kelola Form Pembeli</h3>
-                    <p class="text-xs text-sky-500 font-bold mt-0.5" id="builderAppName">Aplikasi</p>
+                    <h3 class="text-lg font-black text-white">Kelola Form Pembeli</h3>
+                    <p class="text-xs text-purple-400 font-medium mt-0.5" id="builderAppName">Aplikasi</p>
                 </div>
-                <button onclick="closeFormModal()" class="text-pink-300 hover:text-pink-500 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button onclick="closeFormModal()" class="text-gray-400 hover:text-white bg-gray-800 p-2 rounded-full"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             </div>
-            <div class="p-4 overflow-y-auto custom-scroll flex-1 bg-white">
+            <div class="p-4 overflow-y-auto custom-scroll flex-1">
                 <div id="formFieldsContainer" class="space-y-3 mb-4"></div>
-                <button type="button" onclick="addFormFieldBuilder()" class="w-full bg-pink-50 hover:bg-pink-100 border border-pink-200 border-dashed text-pink-500 font-bold py-3 rounded-xl transition-all text-sm flex items-center justify-center gap-2">
+                <button type="button" onclick="addFormFieldBuilder()" class="w-full bg-[#0b0f19] hover:bg-gray-800 border border-gray-700 border-dashed text-gray-300 font-bold py-2.5 rounded-xl transition-all text-sm flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Kolom
                 </button>
             </div>
-            <div class="p-4 border-t border-pink-100 bg-pink-50 rounded-b-3xl flex gap-2">
-                <button type="button" onclick="closeFormModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition-all">Batal</button>
-                <button type="button" onclick="saveFormBuilderConfig()" id="btnSaveForm" class="flex-1 bg-sky-400 hover:bg-sky-500 text-white font-bold py-3 rounded-xl transition-all shadow-md">Simpan Form</button>
+            <div class="p-4 border-t border-gray-800 bg-[#11141d] rounded-b-2xl flex gap-2">
+                <button type="button" onclick="closeFormModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-3 rounded-xl transition-all">Batal</button>
+                <button type="button" onclick="saveFormBuilderConfig()" id="btnSaveForm" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-purple-900/20">Simpan Form</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Import CSV -->
     <div id="importModal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeImportModal()"></div>
-        <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
-            <div class="p-5 border-b border-pink-100 bg-pink-50 rounded-t-3xl">
-                <h3 class="text-lg font-black text-pink-600">Import CSV ☁️</h3>
-                <p class="text-[10px] text-gray-500 mt-1 font-bold">Format: app_name, category, duration, price, status, notes</p>
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="closeImportModal()"></div>
+        <div class="relative bg-[#151923] border border-gray-800 rounded-2xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
+            <div class="p-4 border-b border-gray-800">
+                <h3 class="text-lg font-black text-white">Import CSV</h3>
+                <p class="text-[10px] text-gray-400 mt-1">Format: app_name, category, duration, price, status, notes</p>
             </div>
-            <div class="p-5 bg-white">
-                <input type="file" id="csvFileInputModal" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-pink-100 file:text-pink-600 hover:file:bg-pink-200 cursor-pointer border border-pink-200 rounded-xl bg-pink-50">
-                <div id="csvProgressModal" class="text-[11px] font-bold text-pink-500 mt-3 hidden text-center bg-pink-50 py-2 rounded-lg border border-pink-200">Memproses...</div>
+            <div class="p-5">
+                <input type="file" id="csvFileInputModal" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-500/10 file:text-blue-400 hover:file:bg-blue-500/20 cursor-pointer border border-gray-700 rounded-xl bg-[#0b0f19]">
+                <div id="csvProgressModal" class="text-[11px] font-bold text-blue-400 mt-3 hidden text-center bg-blue-500/10 py-2 rounded-lg border border-blue-500/20">Memproses...</div>
             </div>
-            <div class="p-4 border-t border-pink-100 bg-pink-50 rounded-b-3xl flex gap-2">
-                <button type="button" onclick="closeImportModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl transition-all">Batal</button>
-                <button type="button" onclick="processCSV()" id="btnSubmitImport" class="flex-1 bg-pink-400 hover:bg-pink-500 text-white font-bold py-2.5 rounded-xl transition-all shadow-md">Import Data</button>
+            <div class="p-4 border-t border-gray-800 flex gap-2">
+                <button type="button" onclick="closeImportModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2.5 rounded-xl transition-all">Batal</button>
+                <button type="button" onclick="processCSV()" id="btnSubmitImport" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-blue-900/20">Import Data</button>
             </div>
         </div>
     </div>
 
-    <!-- Bulk Action Bar -->
-    <div id="bulkActionBar" class="fixed bottom-0 left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-t border-pink-200 shadow-[0_-10px_40px_rgba(244,114,182,0.15)] transform translate-y-full transition-transform duration-300">
+    <div id="bulkActionBar" class="fixed bottom-0 left-0 right-0 z-[90] bg-[#11141d]/95 backdrop-blur-xl border-t border-gray-800 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] transform translate-y-full transition-transform duration-300">
         <div class="max-w-3xl mx-auto p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-            <span id="bulkCount" class="text-sm font-bold text-pink-500">0 item terpilih 🎀</span>
+            <span id="bulkCount" class="text-sm font-bold text-blue-400">0 item terpilih</span>
             <div class="flex flex-wrap justify-center items-center gap-2">
-                <button onclick="bulkUpdateStatus('Ready')" class="text-xs font-bold bg-green-50 text-green-600 px-4 py-2.5 rounded-xl border border-green-200 hover:bg-green-100 transition-colors">Set Ready</button>
-                <button onclick="bulkUpdateStatus('Sold')" class="text-xs font-bold bg-red-50 text-red-500 px-4 py-2.5 rounded-xl border border-red-200 hover:bg-red-100 transition-colors">Set Sold</button>
-                <button onclick="bulkDelete()" class="text-xs font-bold bg-white text-red-500 px-4 py-2.5 rounded-xl border border-red-200 hover:bg-red-50 transition-colors">Hapus</button>
-                <button onclick="clearSelection()" class="text-xs font-bold bg-gray-100 text-gray-600 px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-200 transition-colors">Batal</button>
+                <button onclick="bulkUpdateStatus('Ready')" class="text-xs font-bold bg-green-500/20 text-green-400 px-4 py-2.5 rounded-xl border border-green-500/30 hover:bg-green-500/40 transition-colors">Ready</button>
+                <button onclick="bulkUpdateStatus('Sold')" class="text-xs font-bold bg-red-500/20 text-red-400 px-4 py-2.5 rounded-xl border border-red-500/30 hover:bg-red-500/40 transition-colors">Sold</button>
+                <button onclick="bulkDelete()" class="text-xs font-bold bg-[#0b0f19] text-red-500 px-4 py-2.5 rounded-xl border border-gray-700 hover:border-red-500/50 transition-colors">Hapus</button>
+                <button onclick="clearSelection()" class="text-xs font-bold bg-gray-800 text-gray-300 px-4 py-2.5 rounded-xl border border-gray-700 hover:bg-gray-700 transition-colors">Batal</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://ciccu.ygpentinggmail22.workers.dev"; 
+        const API_URL = "https://pricelistapp.y7ipr8aax9sahy.workers.dev"; 
         
         let globalAdminData = [];
         let globalFormsData = {};
@@ -271,12 +260,11 @@
 
         let builderCurrentApp = '';
         let builderFields = [];
-        
         let sortableReorder = null;
 
-        // ----- SISTEM LOGIN -----
+        // --- SISTEM LOGIN ADMIN ---
         function checkSession() {
-            sessionPass = sessionStorage.getItem("ciccuAdminPass");
+            sessionPass = sessionStorage.getItem("steoAdminPass");
             if (sessionPass) {
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
@@ -290,33 +278,39 @@
         function loginAdmin() {
             const input = document.getElementById('adminPasswordInput').value;
             if (!input) return alert("Isi passwordnya dulu ya!");
-            sessionStorage.setItem("ciccuAdminPass", input);
+            sessionStorage.setItem("steoAdminPass", input);
             checkSession();
         }
 
         function logoutAdmin() {
-            sessionStorage.removeItem("ciccuAdminPass");
+            sessionStorage.removeItem("steoAdminPass");
             window.location.reload();
         }
 
-        function handleResponseStatus(res) {
+        async function handleResponseStatus(res) {
             if (res.status === 403) {
-                alert("Gagal memproses! Password admin Anda salah atau sesi berakhir.");
+                alert("Gagal memproses! Password admin salah atau sesi berakhir.");
                 logoutAdmin();
                 throw new Error("Unauthorized");
             }
-            if (!res.ok) throw new Error("Server response error: " + res.status);
+            if (!res.ok) throw new Error("Server error: " + res.status);
             return res.json();
         }
 
+        const getHeaders = () => ({
+            'Content-Type': 'application/json',
+            'x-admin-password': sessionPass
+        });
+
         checkSession();
 
-        // ----- CORE LOGIC -----
+        // --- FETCH DATA ---
         async function loadData() {
             if(!sessionPass) return;
             const list = document.getElementById('dataList');
             try {
-                const response = await fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`);
+                // Untuk GET, tidak butuh password (publik)
+                const response = await fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`, { cache: 'no-store' });
                 const data = await response.json();
                 
                 globalAdminData = data.sort((a, b) => {
@@ -327,19 +321,15 @@
                     return (aApp - bApp) || (aPkg - bPkg) || (a.id - b.id);
                 });
 
-                // Coba ambil data form (jika backend ciccu sudah support endpoint ini)
-                try {
-                    const formResponse = await fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`);
-                    if(formResponse.ok) {
-                        const formData = await formResponse.json();
-                        globalFormsData = {};
-                        formData.forEach(f => { globalFormsData[f.app_name.toLowerCase().trim()] = f; });
-                    }
-                } catch(e) { console.log("Forms API not ready yet."); }
+                const formResponse = await fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`, { cache: 'no-store' });
+                const formData = await formResponse.json();
+                
+                globalFormsData = {};
+                formData.forEach(f => { globalFormsData[f.app_name.toLowerCase().trim()] = f; });
                 
                 filterAdminList(); 
             } catch (error) {
-                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200">Gagal memuat data. Cek koneksi internet.</div>`;
+                list.innerHTML = `<div class="text-center py-10 text-red-500 text-sm">Gagal memuat data. Cek koneksi / URL Worker.</div>`;
             }
         }
 
@@ -347,8 +337,7 @@
             if (!str) return [];
             try {
                 if (str.trim().startsWith('[')) {
-                    const parsedJson = JSON.parse(str);
-                    return parsedJson.map(item => item.name);
+                    return JSON.parse(str).map(item => item.name);
                 }
             } catch(e) {}
             return str.split(',').map(s => s.trim()).filter(s => s);
@@ -357,13 +346,11 @@
         function renderData(dataArray) {
             const list = document.getElementById('dataList');
             if (dataArray.length === 0) {
-                list.innerHTML = `<div class="text-center py-10 text-gray-500 font-bold text-sm bg-white rounded-3xl border border-pink-200 shadow-sm">Tidak ada paket aplikasi ditemukan 🥺</div>`;
+                list.innerHTML = `<div class="text-center py-10 text-gray-500 text-sm bg-[#151923] rounded-xl border border-gray-800">Tidak ada paket aplikasi ditemukan.</div>`;
                 return;
             }
 
-            const appOrders = {};
-            const appFirstIds = {};
-            const groupedData = {};
+            const appOrders = {}; const appFirstIds = {}; const groupedData = {};
 
             dataArray.forEach(item => {
                 if (!groupedData[item.app_name]) groupedData[item.app_name] = [];
@@ -373,10 +360,7 @@
                 if (!appFirstIds[item.app_name] || item.id < appFirstIds[item.app_name]) appFirstIds[item.app_name] = item.id;
             });
 
-            const orderedAppNames = Object.keys(groupedData).sort((a, b) => {
-                return (appOrders[a] - appOrders[b]) || (appFirstIds[a] - appFirstIds[b]);
-            });
-
+            const orderedAppNames = Object.keys(groupedData).sort((a, b) => (appOrders[a] - appOrders[b]) || (appFirstIds[a] - appFirstIds[b]));
             orderedAppNames.forEach(appName => {
                 groupedData[appName].sort((a, b) => {
                     const aPkg = (a.sort_order && a.sort_order > 0) ? a.sort_order : 9999;
@@ -400,25 +384,25 @@
                 const isAppAllSelected = packageIds.length > 0 && packageIds.every(id => selectedItems.has(id));
 
                 let headerFormText = parsedFields.length > 0 
-                    ? `📋 Form Pembeli: <span class="text-sky-500 font-bold">${parsedFields.join(', ')}</span>` 
-                    : `🌸 Tidak memakai formulir khusus`;
+                    ? `📋 Form: <span class="text-purple-400 font-bold">${parsedFields.join(', ')}</span>` 
+                    : `⚠ Tidak memakai formulir`;
 
                 let accordionFormHTML = `
-                    <div class="bg-pink-50 p-4 rounded-2xl border border-pink-200 mb-4">
+                    <div class="bg-[#0b0f19] p-4 rounded-xl border border-gray-800/80 mb-4 shadow-inner">
                         <div class="flex justify-between items-center ${parsedFields.length > 0 ? 'mb-3' : ''}">
-                             <h4 class="text-[11px] md:text-xs font-black text-sky-500 tracking-widest uppercase flex items-center gap-1.5">
-                                 ${parsedFields.length > 0 ? '📋 FORM PEMBELI' : '🌸 TIDAK ADA FORMULIR KHUSUS'}
+                             <h4 class="text-[11px] md:text-xs font-black text-purple-400 tracking-widest uppercase flex items-center gap-1.5">
+                                 ${parsedFields.length > 0 ? '📋 FORM PEMBELI' : '⚠ TIDAK ADA FORMULIR'}
                              </h4>
-                             <button onclick="openFormModal('${exactAppNameInDb}', '${encodeURIComponent(rawFields)}')" class="text-[10px] md:text-[11px] bg-white text-sky-500 px-3 py-1.5 rounded-xl font-bold border border-sky-200 hover:bg-sky-50 transition-colors flex items-center gap-1.5 shadow-sm">
-                                 ${parsedFields.length > 0 ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Edit Form' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Buat Form'}
+                             <button onclick="openFormModal('${exactAppNameInDb.replace(/'/g, "\\'")}', '${encodeURIComponent(rawFields)}')" class="text-[10px] md:text-[11px] bg-purple-500/10 text-purple-400 px-3 py-1.5 rounded-lg font-bold border border-purple-500/20 hover:bg-purple-500/20 transition-colors flex items-center gap-1.5">
+                                 ${parsedFields.length > 0 ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Edit Form' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Tambah Form'}
                              </button>
                         </div>
                         ${parsedFields.length > 0 ? `
-                        <div class="space-y-2 border-t border-pink-200 pt-3">
+                        <div class="space-y-2 border-t border-gray-800/80 pt-3">
                             ${parsedFields.map((f, i) => `
-                                <div class="flex items-center text-[11px] md:text-xs text-gray-700 bg-white px-3 py-2.5 rounded-xl border border-pink-100 gap-2.5 shadow-sm font-bold">
-                                    <span class="w-5 h-5 rounded-lg bg-sky-100 text-sky-500 flex items-center justify-center font-black text-[10px]">${i+1}</span>
-                                    <span>${f}</span>
+                                <div class="flex items-center text-[11px] md:text-xs text-gray-300 bg-[#11141d] px-3 py-2.5 rounded-lg border border-gray-800/50 gap-2.5">
+                                    <span class="w-5 h-5 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[9px] border border-purple-500/30 shrink-0">${i+1}</span>
+                                    <span class="font-medium">${f}</span>
                                 </div>
                             `).join('')}
                         </div>` : ''}
@@ -426,39 +410,38 @@
                 `;
 
                 html += `
-                    <div class="app-accordion-group bg-white rounded-3xl border border-pink-200 shadow-md shadow-pink-100/50 mb-5 overflow-hidden" data-app="${exactAppNameInDb}">
-                        <div class="p-3 md:p-4 flex items-center bg-pink-50 hover:bg-pink-100/60 transition-colors gap-3 select-none border-b border-transparent ${isExpanded ? 'border-pink-200' : ''}">
-                            
-                            <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center" onclick="toggleExpand('${exactAppNameInDb}')">
-                                <h3 class="font-black text-pink-500 text-base md:text-lg capitalize flex items-center gap-2">${appName}</h3>
-                                <p class="text-[10px] md:text-[11px] text-gray-500 font-bold truncate w-full mt-0.5">${headerFormText}</p>
+                    <div class="app-accordion-group bg-[#151923] rounded-2xl border border-gray-800 shadow-md mb-4 overflow-hidden" data-app="${exactAppNameInDb}">
+                        <div class="p-3 md:p-4 flex items-center bg-[#11141d] hover:bg-gray-800/40 transition-colors gap-3 select-none">
+                            <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center" onclick="toggleExpand('${exactAppNameInDb.replace(/'/g, "\\'")}')">
+                                <h3 class="font-black text-white text-base md:text-lg capitalize flex items-center gap-2">${appName}</h3>
+                                <p class="text-[10px] md:text-[11px] text-gray-400 truncate w-full mt-0.5">${headerFormText}</p>
                                 <div class="mt-1.5 flex items-center">
-                                    <span class="text-[9px] md:text-[10px] bg-white text-pink-400 px-2.5 py-1 rounded-lg font-bold border border-pink-200 shadow-sm">${packages.length} Paket</span>
+                                    <span class="text-[9px] md:text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded font-bold border border-blue-500/20">${packages.length} Paket</span>
                                 </div>
                             </div>
 
-                            <div class="cursor-pointer p-2 shrink-0 flex items-center justify-center text-pink-300 hover:text-pink-500 transition-colors" onclick="toggleExpand('${exactAppNameInDb}')">
-                                <svg class="w-6 h-6 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <div class="cursor-pointer p-2 shrink-0 flex items-center justify-center text-gray-500 hover:text-white transition-colors" onclick="toggleExpand('${exactAppNameInDb.replace(/'/g, "\\'")}')">
+                                <svg class="w-5 h-5 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
 
-                            <div class="flex items-center gap-3 md:gap-4 shrink-0 border-l border-pink-200 pl-3 md:pl-4">
-                                <button onclick="deleteApplication('${exactAppNameInDb.replace(/'/g, "\\'")}', [${packageIds.join(',')}])" class="text-pink-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-colors" title="Hapus Aplikasi">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <div class="flex items-center gap-3 md:gap-4 shrink-0 border-l border-gray-800 pl-3 md:pl-4">
+                                <button onclick="deleteApplication('${exactAppNameInDb.replace(/'/g, "\\'")}', [${packageIds.join(',')}])" class="text-gray-500 hover:text-red-400 hover:bg-red-500/20 p-1.5 md:p-2 rounded-lg transition-colors" title="Hapus Aplikasi">
+                                    <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
-                                <input type="checkbox" onchange="toggleSelectApp('${exactAppNameInDb.replace(/'/g, "\\'")}', this.checked, [${packageIds.join(',')}])" class="w-5 h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500" ${isAppAllSelected ? 'checked' : ''} title="Pilih Semua Paket">
+                                <input type="checkbox" onchange="toggleSelectApp('${exactAppNameInDb.replace(/'/g, "\\'")}', this.checked, [${packageIds.join(',')}])" class="w-4 h-4 md:w-5 md:h-5 text-blue-600 bg-gray-900 border-gray-600 rounded outline-none cursor-pointer accent-blue-600" ${isAppAllSelected ? 'checked' : ''} title="Pilih Semua Paket">
                             </div>
                         </div>
                         
                         <div class="grid transition-all duration-300 ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}">
                             <div class="overflow-hidden">
-                                <div class="p-4 md:p-5">
+                                <div class="p-4 md:p-5 border-t border-gray-800/50">
                                     ${accordionFormHTML}
                                     <div class="flex justify-between items-center mb-3 mt-1">
-                                        <span class="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg> 
+                                        <span class="text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg> 
                                             Daftar Paket
                                         </span>
-                                        <button onclick="openAddPackageModal('${exactAppNameInDb.replace(/'/g, "\\'")}', '${packages[0].category}')" class="text-[10px] md:text-[11px] bg-pink-400 hover:bg-pink-500 text-white px-3 py-2 rounded-xl font-bold shadow-md shadow-pink-200 transition-all flex items-center gap-1.5">
+                                        <button onclick="openAddPackageModal('${exactAppNameInDb.replace(/'/g, "\\'")}', '${packages[0].category}')" class="text-[10px] md:text-[11px] bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold shadow-lg shadow-blue-900/30 transition-all flex items-center gap-1.5 outline-none transform active:scale-95">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
                                             Tambah Paket
                                         </button>
@@ -468,39 +451,37 @@
 
                 packages.forEach(item => {
                     const isReady = item.status === 'Ready';
-                    const statusColor = isReady ? 'text-green-500' : 'text-red-500';
+                    const statusColor = isReady ? 'text-green-400' : 'text-red-400';
                     const isSelected = selectedItems.has(item.id);
                     
                     html += `
-                        <div class="package-item bg-white p-3 md:p-4 rounded-2xl border ${isSelected ? 'border-pink-400 bg-pink-50/50' : 'border-pink-100'} flex justify-between items-center gap-2 md:gap-3 transition-colors shadow-sm" data-id="${item.id}">
-                            
-                            <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-pink-500 shrink-0 p-1">
+                        <div class="package-item bg-[#0b0f19] p-3 rounded-xl border ${isSelected ? 'border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.1)]' : 'border-gray-800/60'} flex justify-between items-center gap-2 md:gap-3 transition-colors" data-id="${item.id}">
+                            <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-600 hover:text-white shrink-0 p-1">
                                 <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
                             </div>
-
                             <div class="flex items-start md:items-center gap-2 md:gap-3 flex-1 overflow-hidden">
-                                <input type="checkbox" onchange="toggleSelect(${item.id}, this.checked)" class="mt-1 md:mt-0 w-5 h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500 shrink-0" ${isSelected ? 'checked' : ''}>
+                                <input type="checkbox" onchange="toggleSelect(${item.id}, this.checked)" class="mt-1 md:mt-0 w-4 h-4 text-blue-600 bg-gray-900 border-gray-600 rounded outline-none cursor-pointer accent-blue-600 shrink-0" ${isSelected ? 'checked' : ''}>
                                 <div class="flex-1 overflow-hidden">
-                                    <p class="text-[11px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">${item.category} • <span class="text-gray-800">${item.duration}</span> • <span class="text-pink-500 font-black">${item.price}</span></p>
-                                    ${item.notes && item.notes.toLowerCase() !== 'nan' ? `<p class="text-[10px] text-pink-400 mt-1 italic font-bold">↳ ${item.notes}</p>` : ''}
+                                    <p class="text-[11px] md:text-xs font-bold text-gray-300 uppercase tracking-wider">${item.category} • ${item.duration} • <span class="text-blue-400 font-black">${item.price}</span></p>
+                                    ${item.notes && item.notes.toLowerCase() !== 'nan' ? ` <p class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 italic">↳ ${item.notes}</p>` : ''}
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 md:gap-4 border-l border-pink-100 pl-2 md:pl-4 shrink-0">
-                                <div class="flex flex-col items-center gap-1 hidden md:flex">
-                                    <span class="text-[9px] font-black ${statusColor} uppercase tracking-wider" id="status-text-${item.id}">${item.status}</span>
-                                    <div class="relative inline-block w-12 h-6 align-middle select-none">
-                                        <input type="checkbox" id="toggle-${item.id}" ${isReady ? 'checked' : ''} onchange="toggleStatus(${item.id}, this.checked)" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0"/>
-                                        <label for="toggle-${item.id}" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-200 cursor-pointer"></label>
-                                        <div class="toggle-circle absolute top-0.5 left-0.5 pointer-events-none shadow-sm"></div>
+                            <div class="flex items-center gap-2 md:gap-4 border-l border-gray-800 pl-2 md:pl-4 shrink-0">
+                                <div class="flex flex-col items-center gap-0.5 hidden md:flex">
+                                    <span class="text-[8px] font-bold ${statusColor} uppercase tracking-wider" id="status-text-${item.id}">${item.status}</span>
+                                    <div class="relative inline-block w-10 h-5 align-middle select-none">
+                                        <input type="checkbox" id="toggle-${item.id}" ${isReady ? 'checked' : ''} onchange="toggleStatus(${item.id}, this.checked)" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0"/>
+                                        <label for="toggle-${item.id}" class="toggle-label block overflow-hidden h-5 w-10 rounded-full bg-gray-300 cursor-pointer"></label>
+                                        <div class="toggle-circle absolute top-[2px] left-[2px] w-4 h-4 pointer-events-none"></div>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-1 bg-pink-50 p-1 rounded-xl border border-pink-100">
-                                    <button onclick="editPackage(${item.id})" class="text-pink-400 hover:text-white hover:bg-pink-400 p-1.5 md:p-2 rounded-lg transition-colors" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                <div class="flex items-center gap-1 bg-[#151923] p-1 rounded-lg border border-gray-800">
+                                    <button onclick="editPackage(${item.id})" class="text-blue-400 hover:text-white hover:bg-blue-600/30 p-1.5 md:p-2 rounded-md transition-colors" title="Edit">
+                                        <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
-                                    <div class="w-px h-5 bg-pink-200"></div>
-                                    <button onclick="deleteData(${item.id})" class="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 md:p-2 rounded-lg transition-colors" title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <div class="w-px h-4 bg-gray-700"></div>
+                                    <button onclick="deleteData(${item.id})" class="text-gray-500 hover:text-red-400 hover:bg-red-500/20 p-1.5 md:p-2 rounded-md transition-colors" title="Hapus">
+                                        <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </div>
                             </div>
@@ -513,7 +494,7 @@
             initSortable();
         }
 
-        // ----- DRAG AND DROP (Sortable) -----
+        // --- SORTABLE LOGIC ---
         function initSortable() {
             document.querySelectorAll('.sortable-list').forEach(container => {
                 new Sortable(container, {
@@ -531,8 +512,7 @@
                         filterAdminList(); 
                         try {
                             const res = await fetch(`${API_URL}/api/pricelist/reorder`, {
-                                method: 'PUT',
-                                headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
+                                method: 'PUT', headers: getHeaders(),
                                 body: JSON.stringify({ order: newOrder })
                             });
                             await handleResponseStatus(res);
@@ -558,12 +538,12 @@
             uniqueApps.sort((a, b) => (appOrders[a] - appOrders[b]) || (appFirstIds[a] - appFirstIds[b]));
 
             list.innerHTML = uniqueApps.map((appName, index) => `
-                <div class="reorder-item bg-white border border-pink-100 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-pink-300 transition-colors shadow-sm" data-app="${appName}">
+                <div class="reorder-item bg-[#11141d] border border-gray-700/80 p-2 pl-4 rounded-xl flex items-center justify-between gap-3 hover:border-blue-500 transition-colors shadow-sm" data-app="${appName}">
                     <div class="flex items-center gap-3 w-full overflow-hidden select-none">
-                        <span class="reorder-num text-[10px] font-black bg-pink-100 text-pink-500 w-7 h-7 rounded-xl flex items-center justify-center shrink-0">${index + 1}</span>
-                        <span class="font-bold text-sm text-gray-800 capitalize truncate">${appName}</span>
+                        <span class="reorder-num text-[10px] font-black bg-blue-500/10 border border-blue-500/20 text-blue-400 w-6 h-6 rounded flex items-center justify-center shrink-0">${index + 1}</span>
+                        <span class="font-black text-sm text-white capitalize truncate">${appName}</span>
                     </div>
-                    <div class="reorder-handle cursor-grab active:cursor-grabbing bg-pink-50 hover:bg-pink-100 p-2 rounded-xl text-pink-300 hover:text-pink-500 transition-colors shrink-0 flex items-center justify-center">
+                    <div class="reorder-handle cursor-grab active:cursor-grabbing bg-gray-800/40 hover:bg-gray-700/80 p-2 rounded-lg text-gray-500 hover:text-white transition-colors shrink-0 flex items-center justify-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
                     </div>
                 </div>
@@ -575,9 +555,7 @@
             sortableReorder = new Sortable(list, {
                 animation: 150, handle: '.reorder-handle', ghostClass: 'sortable-ghost', dragClass: 'sortable-drag',
                 onEnd: function() {
-                    list.querySelectorAll('.reorder-item').forEach((item, idx) => {
-                        item.querySelector('.reorder-num').innerText = idx + 1;
-                    });
+                    list.querySelectorAll('.reorder-item').forEach((item, idx) => { item.querySelector('.reorder-num').innerText = idx + 1; });
                 }
             });
         }
@@ -593,15 +571,14 @@
             const newOrder = Array.from(items).map((el, index) => ({ app_name: el.dataset.app, app_sort_order: index + 1 }));
             try {
                 const res = await fetch(`${API_URL}/api/pricelist/reorder-apps`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
-                    body: JSON.stringify({ order: newOrder })
+                    method: 'PUT', headers: getHeaders(), body: JSON.stringify({ order: newOrder })
                 });
                 await handleResponseStatus(res);
                 closeReorderModal(); loadData();
-            } catch (e) { console.error(e); } finally { btn.innerHTML = "Simpan Urutan Baru"; btn.disabled = false; }
+            } catch (e) { } finally { btn.innerHTML = "Simpan Urutan Baru"; btn.disabled = false; }
         }
 
-        // ----- FORM BUILDER -----
+        // --- FORM BUILDER LOGIC ---
         function openFormModal(appName, rawFieldsEnc) {
             builderCurrentApp = appName;
             builderFields = parseFormFields(decodeURIComponent(rawFieldsEnc));
@@ -622,14 +599,14 @@
         function renderFormBuilderFields() {
             const container = document.getElementById('formFieldsContainer');
             if(builderFields.length === 0) {
-                container.innerHTML = `<p class="text-center text-xs text-gray-500 py-4 font-bold border border-pink-200 border-dashed rounded-xl bg-pink-50">Belum ada kolom form 🌸</p>`;
+                container.innerHTML = `<p class="text-center text-xs text-gray-500 py-4 italic border border-gray-800 border-dashed rounded-xl bg-[#0b0f19]">Belum ada kolom form.</p>`;
                 return;
             }
             container.innerHTML = builderFields.map((f, i) => `
-                <div class="flex gap-2 items-center bg-white p-2.5 rounded-2xl border border-pink-100 shadow-sm">
-                    <span class="w-7 h-7 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center text-[10px] font-black shrink-0">${i+1}</span>
-                    <input type="text" value="${f}" oninput="updateFormFieldBuilder(${i}, this.value)" class="flex-1 bg-transparent text-sm font-bold text-gray-700 outline-none border-b border-pink-100 focus:border-sky-400 px-2 py-1" placeholder="Misal: Nama Profil">
-                    <button onclick="removeFormFieldBuilder(${i})" class="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-2 rounded-xl transition-colors shrink-0">
+                <div class="flex gap-2 items-center bg-[#0b0f19] p-2 rounded-xl border border-gray-700/80">
+                    <span class="w-6 h-6 rounded bg-gray-800 text-gray-400 flex items-center justify-center text-[10px] font-bold shrink-0">${i+1}</span>
+                    <input type="text" value="${f}" oninput="updateFormFieldBuilder(${i}, this.value)" class="flex-1 bg-transparent text-sm text-white outline-none border-b border-gray-700 focus:border-purple-500 px-2 py-1" placeholder="Misal: Nama Profil">
+                    <button onclick="removeFormFieldBuilder(${i})" class="text-gray-500 hover:text-red-400 bg-gray-800/50 hover:bg-red-500/20 p-1.5 rounded-lg transition-colors shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
@@ -641,19 +618,19 @@
             const validFields = builderFields.map(f => f.trim()).filter(f => f !== '');
             try {
                 if (validFields.length === 0) {
-                    await fetch(`${API_URL}/api/forms/${encodeURIComponent(builderCurrentApp)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} });
+                    const res = await fetch(`${API_URL}/api/forms/${encodeURIComponent(builderCurrentApp)}`, { method: 'DELETE', headers: getHeaders() });
+                    await handleResponseStatus(res);
                 } else {
                     const res = await fetch(`${API_URL}/api/forms`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
-                        body: JSON.stringify({ app_name: builderCurrentApp, form_fields: validFields.join(', ') })
+                        method: 'POST', headers: getHeaders(), body: JSON.stringify({ app_name: builderCurrentApp, form_fields: validFields.join(', ') })
                     });
                     await handleResponseStatus(res);
                 }
                 closeFormModal(); expandedApps[builderCurrentApp] = true; loadData();
-            } catch (e) { console.error(e); } finally { btn.innerHTML = "Simpan Form"; btn.disabled = false; }
+            } catch (error) { } finally { btn.innerHTML = "Simpan Form"; btn.disabled = false; }
         }
 
-        // ----- BULK & EXPORT & MODALS DLL -----
+        // --- BULK & MODAL ACTIONS ---
         function openImportModal() {
             const modal = document.getElementById('importModal');
             document.getElementById('csvFileInputModal').value = '';
@@ -666,11 +643,38 @@
             modal.lastElementChild.classList.replace('scale-100', 'scale-95');
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
+        async function processCSV() {
+            const fileInput = document.getElementById('csvFileInputModal');
+            const progress = document.getElementById('csvProgressModal');
+            const btn = document.getElementById('btnSubmitImport');
+            const file = fileInput.files[0];
+            if (!file) return alert("Pilih file CSV dulu!");
+            progress.classList.remove('hidden'); btn.disabled = true; btn.innerHTML = "Menyimpan...";
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const text = e.target.result; const rows = text.split(/\r?\n/).slice(1); 
+                let successCount = 0;
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i]; if (!row.trim()) continue;
+                    const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+                    if (cols.length < 4) continue;
+                    progress.innerText = `Mengirim baris ${i + 1} dari ${rows.length}...`;
+                    try {
+                        const res = await fetch(`${API_URL}/api/pricelist`, {
+                            method: 'POST', headers: getHeaders(),
+                            body: JSON.stringify({ app_name: cols[0], category: cols[1], duration: cols[2], price: cols[3], notes: cols[4] || '', status: cols[5] || 'Ready' })
+                        });
+                        await handleResponseStatus(res); successCount++;
+                    } catch (error) { break; }
+                }
+                progress.innerText = `Selesai! ${successCount} data berhasil diunggah.`;
+                setTimeout(() => { closeImportModal(); btn.disabled = false; btn.innerHTML = "Import Data"; loadData(); }, 1500);
+            };
+            reader.readAsText(file);
+        }
         function exportCSV() {
             const keyword = document.getElementById('adminSearchInput').value.toLowerCase();
-            const dataToExport = globalAdminData.filter(item => {
-                return item.app_name.toLowerCase().includes(keyword) || item.category.toLowerCase().includes(keyword) || item.status.toLowerCase().includes(keyword);
-            });
+            const dataToExport = globalAdminData.filter(item => item.app_name.toLowerCase().includes(keyword) || item.category.toLowerCase().includes(keyword) || item.status.toLowerCase().includes(keyword));
             if(dataToExport.length === 0) return alert('Tidak ada data untuk diekspor.');
             let csvContent = "app_name,category,duration,price,status,notes\n";
             dataToExport.forEach(item => {
@@ -678,133 +682,111 @@
                 csvContent += [escapeQuotes(item.app_name), escapeQuotes(item.category), escapeQuotes(item.duration), escapeQuotes(item.price), escapeQuotes(item.status), escapeQuotes(item.notes || '')].join(",") + "\n";
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a"); link.setAttribute("href", url);
-            link.setAttribute("download", `ciccu-pricelist.csv`);
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob));
+            link.setAttribute("download", `pricelist.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
-        function toggleSelect(id, isChecked) {
-            if(isChecked) selectedItems.add(id); else selectedItems.delete(id);
-            updateBulkUI(); filterAdminList(); 
-        }
-        function toggleSelectApp(appName, isChecked, packageIds) {
-            packageIds.forEach(id => { if (isChecked) selectedItems.add(id); else selectedItems.delete(id); });
-            updateBulkUI(); filterAdminList(); 
+
+        function toggleSelect(id, isChecked) { if(isChecked) selectedItems.add(id); else selectedItems.delete(id); updateBulkUI(); filterAdminList(); }
+        function toggleSelectApp(appName, isChecked, packageIds) { packageIds.forEach(id => { if (isChecked) selectedItems.add(id); else selectedItems.delete(id); }); updateBulkUI(); filterAdminList(); }
+        async function deleteApplication(appName, packageIds) {
+            if (packageIds.length === 0) {
+                if (!confirm(`Hapus data form konfigurasi aplikasi "${appName}"?`)) return;
+                try {
+                    const res = await fetch(`${API_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: getHeaders() });
+                    await handleResponseStatus(res); loadData();
+                } catch (e) { } return;
+            }
+            if (!confirm(`Hapus permanen aplikasi "${appName}" beserta seluruh ${packageIds.length} paket?`)) return;
+            try {
+                const res = await fetch(`${API_URL}/api/delete/bulk`, { method: 'DELETE', headers: getHeaders(), body: JSON.stringify({ ids: packageIds }) });
+                await handleResponseStatus(res);
+                try { await fetch(`${API_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: getHeaders() }); } catch (e) { }
+                packageIds.forEach(id => selectedItems.delete(id)); updateBulkUI(); loadData(); 
+            } catch (error) { }
         }
         function clearSelection() { selectedItems.clear(); updateBulkUI(); filterAdminList(); }
         function updateBulkUI() {
-            const bar = document.getElementById('bulkActionBar');
-            const count = document.getElementById('bulkCount');
-            if(selectedItems.size > 0) {
-                bar.classList.remove('translate-y-full'); count.innerText = `${selectedItems.size} item terpilih 🎀`;
-            } else { bar.classList.add('translate-y-full'); }
+            const bar = document.getElementById('bulkActionBar'); const count = document.getElementById('bulkCount');
+            if(selectedItems.size > 0) { bar.classList.remove('translate-y-full'); count.innerText = `${selectedItems.size} item terpilih`; } else { bar.classList.add('translate-y-full'); }
         }
         async function bulkUpdateStatus(status) {
             if(!confirm(`Ubah status ${selectedItems.size} paket menjadi ${status}?`)) return;
             try {
-                const res = await fetch(`${API_URL}/api/status/bulk`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
-                    body: JSON.stringify({ ids: Array.from(selectedItems), status: status })
-                });
-                await handleResponseStatus(res);
-                clearSelection(); loadData();
-            } catch(e) { console.error(e); }
+                const res = await fetch(`${API_URL}/api/status/bulk`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ ids: Array.from(selectedItems), status: status }) });
+                await handleResponseStatus(res); clearSelection(); loadData();
+            } catch(e) { }
         }
         async function bulkDelete() {
             if(!confirm(`Hapus permanen ${selectedItems.size} paket terpilih?`)) return;
             try {
-                const res = await fetch(`${API_URL}/api/delete/bulk`, {
-                    method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
-                    body: JSON.stringify({ ids: Array.from(selectedItems) })
-                });
-                await handleResponseStatus(res);
-                clearSelection(); loadData();
-            } catch(e) { console.error(e); }
-        }
-        async function deleteApplication(appName, packageIds) {
-            if (packageIds.length === 0) {
-                if (!confirm(`Aplikasi "${appName}" kosong. Hapus data form konfigurasinya?`)) return;
-                try {
-                    await fetch(`${API_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} });
-                    loadData();
-                } catch (e) {} return;
-            }
-            if (!confirm(`Hapus permanen "${appName}" beserta seluruh ${packageIds.length} paket di dalamnya?`)) return;
-            try {
-                const res = await fetch(`${API_URL}/api/delete/bulk`, {
-                    method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
-                    body: JSON.stringify({ ids: packageIds })
-                });
-                await handleResponseStatus(res);
-                try { await fetch(`${API_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} }); } catch(e){}
-                packageIds.forEach(id => selectedItems.delete(id)); updateBulkUI(); loadData(); 
-            } catch (error) { console.error(error); }
-        }
-        function openAddPackageModal(appName, appCat) {
-            document.getElementById('addPkgAppName').value = appName;
-            document.getElementById('addPkgAppNameDisplay').innerText = appName;
-            document.getElementById('addPkgCat').value = appCat;
-            document.getElementById('addPackageForm').reset();
-            const modal = document.getElementById('addPackageModal');
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
-        }
-        function closeAddPackageModal() {
-            const modal = document.getElementById('addPackageModal');
-            modal.lastElementChild.classList.replace('scale-100', 'scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-        async function submitAddPackageForm(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmitAddPkg'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
-            const appName = document.getElementById('addPkgAppName').value;
-            const payload = {
-                app_name: appName, category: document.getElementById('addPkgCat').value,
-                duration: document.getElementById('addPkgDur').value, price: document.getElementById('addPkgPrice').value,
-                status: document.getElementById('addPkgStatus').value, notes: document.getElementById('addPkgNotes').value,
-            };
-            try {
-                const res = await fetch(`${API_URL}/api/pricelist`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload)
-                });
-                await handleResponseStatus(res);
-                expandedApps[appName] = true; closeAddPackageModal(); loadData();
-            } catch (e) { console.error(e); } finally { btn.innerHTML = "Tambahkan"; btn.disabled = false; }
-        }
-        function editPackage(id) {
-            const item = globalAdminData.find(d => d.id === id); if(!item) return;
-            currentEditId = id;
-            document.getElementById('editAppName').value = item.app_name; document.getElementById('editAppCat').value = item.category;
-            document.getElementById('editAppDur').value = item.duration; document.getElementById('editAppPrice').value = item.price;
-            document.getElementById('editAppStatus').value = item.status; document.getElementById('editAppNotes').value = item.notes || '';
-            const modal = document.getElementById('editModal');
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
-        }
-        function closeEditModal() {
-            const modal = document.getElementById('editModal');
-            modal.lastElementChild.classList.replace('scale-100', 'scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300); currentEditId = null;
-        }
-        async function submitEditForm(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmitEdit'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
-            const payload = {
-                app_name: document.getElementById('editAppName').value, category: document.getElementById('editAppCat').value,
-                duration: document.getElementById('editAppDur').value, price: document.getElementById('editAppPrice').value,
-                status: document.getElementById('editAppStatus').value, notes: document.getElementById('editAppNotes').value,
-            };
-            try {
-                const res = await fetch(`${API_URL}/api/pricelist/${currentEditId}`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload)
-                });
-                await handleResponseStatus(res);
-                closeEditModal(); loadData();
-            } catch (e) { console.error(e); } finally { btn.innerHTML = "Simpan"; btn.disabled = false; }
+                const res = await fetch(`${API_URL}/api/delete/bulk`, { method: 'DELETE', headers: getHeaders(), body: JSON.stringify({ ids: Array.from(selectedItems) }) });
+                await handleResponseStatus(res); clearSelection(); loadData();
+            } catch(e) { }
         }
         function toggleExpand(appKey) { expandedApps[appKey] = !expandedApps[appKey]; filterAdminList(); }
         function expandAll() { Object.keys(globalAdminData.reduce((acc, item) => { acc[item.app_name] = true; return acc; }, {})).forEach(app => expandedApps[app] = true); filterAdminList(); }
         function collapseAll() { expandedApps = {}; filterAdminList(); }
+        function filterAdminList() {
+            const keyword = document.getElementById('adminSearchInput').value.toLowerCase();
+            const filteredData = globalAdminData.filter(item => item.app_name.toLowerCase().includes(keyword) || item.category.toLowerCase().includes(keyword) || item.status.toLowerCase().includes(keyword));
+            renderData(filteredData);
+        }
+
+        // --- CRUD SATUAN ---
+        function openAddPackageModal(appName, appCat) {
+            document.getElementById('addPkgAppName').value = appName; document.getElementById('addPkgAppNameDisplay').innerText = appName;
+            document.getElementById('addPkgCat').value = appCat; document.getElementById('addPackageForm').reset(); document.getElementById('addPkgStatus').value = 'Ready';
+            const modal = document.getElementById('addPackageModal'); modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
+        }
+        function closeAddPackageModal() {
+            const modal = document.getElementById('addPackageModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+        async function submitAddPackageForm(e) {
+            e.preventDefault(); const btn = document.getElementById('btnSubmitAddPkg'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
+            const appName = document.getElementById('addPkgAppName').value;
+            const payload = { app_name: appName, category: document.getElementById('addPkgCat').value, duration: document.getElementById('addPkgDur').value, price: document.getElementById('addPkgPrice').value, status: document.getElementById('addPkgStatus').value, notes: document.getElementById('addPkgNotes').value };
+            try {
+                const res = await fetch(`${API_URL}/api/pricelist`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(payload) });
+                await handleResponseStatus(res); expandedApps[appName] = true; closeAddPackageModal(); loadData();
+            } catch (error) { } finally { btn.innerHTML = "Tambahkan"; btn.disabled = false; }
+        }
+        function editPackage(id) {
+            const item = globalAdminData.find(d => d.id === id); if(!item) return; currentEditId = id;
+            document.getElementById('editAppName').value = item.app_name; document.getElementById('editAppCat').value = item.category; document.getElementById('editAppDur').value = item.duration; document.getElementById('editAppPrice').value = item.price; document.getElementById('editAppStatus').value = item.status; document.getElementById('editAppNotes').value = (item.notes && item.notes.toLowerCase() !== 'nan') ? item.notes : '';
+            const modal = document.getElementById('editModal'); modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
+        }
+        function closeEditModal() { const modal = document.getElementById('editModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); currentEditId = null; }
+        async function submitEditForm(e) {
+            e.preventDefault(); const btn = document.getElementById('btnSubmitEdit'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
+            const payload = { app_name: document.getElementById('editAppName').value, category: document.getElementById('editAppCat').value, duration: document.getElementById('editAppDur').value, price: document.getElementById('editAppPrice').value, status: document.getElementById('editAppStatus').value, notes: document.getElementById('editAppNotes').value };
+            try {
+                const res = await fetch(`${API_URL}/api/pricelist/${currentEditId}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(payload) });
+                await handleResponseStatus(res); closeEditModal(); loadData();
+            } catch (error) { } finally { btn.innerHTML = "Simpan"; btn.disabled = false; }
+        }
+        async function addData(e) {
+            e.preventDefault(); const btn = document.getElementById('btnSubmit'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
+            const payload = { app_name: document.getElementById('appName').value, category: document.getElementById('appCat').value, duration: document.getElementById('appDur').value, price: document.getElementById('appPrice').value, status: document.getElementById('appStatus').value, notes: document.getElementById('appNotes').value };
+            try {
+                const res = await fetch(`${API_URL}/api/pricelist`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(payload) });
+                await handleResponseStatus(res); document.getElementById('addForm').reset(); document.getElementById('adminSearchInput').value = ''; loadData();
+            } catch (error) { } finally { btn.innerHTML = "Simpan Data"; btn.disabled = false; }
+        }
+        async function toggleStatus(id, isChecked) {
+            const newStatus = isChecked ? 'Ready' : 'Sold';
+            const itemIndex = globalAdminData.findIndex(item => item.id === id); if (itemIndex !== -1) globalAdminData[itemIndex].status = newStatus;
+            try {
+                const res = await fetch(`${API_URL}/api/status/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify({ status: newStatus }) });
+                await handleResponseStatus(res);
+            } catch (error) { loadData(); }
+        }
+        async function deleteData(id) {
+            if(!confirm("Yakin ingin menghapus paket ini?")) return;
+            try {
+                const res = await fetch(`${API_URL}/api/delete/${id}`, { method: 'DELETE', headers: getHeaders() });
+                await handleResponseStatus(res); loadData();
+            } catch (error) { }
+        }
     </script>
 </body>
 </html>
