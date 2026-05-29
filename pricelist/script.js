@@ -1,4 +1,5 @@
 const API_URL = "https://ciccu.ygpentinggmail22.workers.dev";
+const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
 
 let allApps = {};
 let orderedAppNames = []; 
@@ -63,7 +64,7 @@ function extractNumK(priceStr) {
 // --- AMBIL DATA DARI SERVER ---
 async function loadPricelist() {
     try {
-        const response = await fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`, {
+        const response = await fetch(`${BASE_URL}/api/pricelist?t=${new Date().getTime()}`, {
             cache: 'no-store'
         });
         if (!response.ok) throw new Error("Gagal mengambil data");
@@ -82,14 +83,15 @@ async function loadPricelist() {
         const appMinOrder = {}; 
         const appFirstId = {};
 
+        // PERBAIKAN: Menghapus baris "if (item.status !== 'Ready') return;"
+        // Sekarang item SOLD tetap ditambahkan ke dalam daftar aplikasi.
         data.forEach(item => {
-            if (item.status !== 'Ready') return; 
-
             const appName = item.app_name;
             const category = item.category; 
             const duration = item.duration; 
             const price = item.price;    
             const notes = item.notes || ''; 
+            const status = item.status || 'Ready'; // Simpan statusnya
 
             const appOrderVal = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
 
@@ -102,7 +104,8 @@ async function loadPricelist() {
                 if (item.id < appFirstId[appName]) appFirstId[appName] = item.id;
             }
             
-            apps[appName].packages.push({ category, duration, price, notes, id: item.id });
+            // Masukkan beserta statusnya (Ready/Sold)
+            apps[appName].packages.push({ category, duration, price, notes, status, id: item.id });
         });
 
         allApps = apps;
@@ -111,7 +114,7 @@ async function loadPricelist() {
         orderedAppNames.sort((a, b) => (appMinOrder[a] - appMinOrder[b]) || (appFirstId[a] - appFirstId[b]));
 
         try {
-            const formRes = await fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`, { cache: 'no-store' });
+            const formRes = await fetch(`${BASE_URL}/api/forms?t=${new Date().getTime()}`, { cache: 'no-store' });
             if (formRes.ok) {
                 const formsData = await formRes.json();
                 appForms = {};
@@ -162,7 +165,8 @@ function applyFilters() {
         const appCat = getAppCategory(name);
         const matchesCategory = (currentCategory === 'all' || appCat === currentCategory);
         
-        if (matchesSearch && matchesCategory) {
+        // Memastikan aplikasi memiliki setidaknya 1 paket sebelum ditampilkan
+        if (matchesSearch && matchesCategory && info.packages.length > 0) {
             filteredApps[name] = info;
             filteredOrder.push(name);
             hasVisibleCards = true;
@@ -262,23 +266,47 @@ function openOrderModal(appName) {
             ? `<p class="text-[9px] text-pink-400 font-medium italic mt-1 flex items-center gap-1"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>` 
             : '';
 
+        // CEK STATUS SOLD
+        const isSold = item.status && item.status.toLowerCase() !== 'ready';
+
         const cartItem = cart.find(c => c.app === appName && c.cat === cat && c.dur === item.duration);
         const qty = cartItem ? cartItem.qty : 0;
         
-        const activeClass = qty > 0 ? 'bg-pink-50' : 'bg-transparent';
-        const activeBorder = qty > 0 ? 'border-l-[4px] border-l-pink-400' : 'border-l-[4px] border-l-transparent';
+        let activeClass = 'bg-transparent';
+        let activeBorder = 'border-l-[4px] border-l-transparent';
+        
+        if (isSold) {
+            activeClass = 'bg-gray-50 opacity-60 grayscale-[50%]'; // Visual redup untuk sold
+        } else if (qty > 0) {
+            activeClass = 'bg-pink-50';
+            activeBorder = 'border-l-[4px] border-l-pink-400';
+        }
+
+        const hoverClass = isSold ? '' : 'hover:bg-pink-50/50';
+        const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest ml-2 border border-red-200">Habis</span>` : '';
+
+        // Tampilkan tombol tambah jika Ready, tombol merah jika Sold
+        let actionButton = '';
+        if (isSold) {
+            actionButton = `<span class="text-[9px] font-bold text-red-400 bg-red-50 px-3 py-1.5 rounded-full border border-red-100">Kosong</span>`;
+        } else {
+            actionButton = getQuickAddButtonHTML(appName, cat, item.duration, item.price, pkgId, qty);
+        }
 
         html += `
-            <div id="row-${pkgId}" class="flex items-center justify-between p-3.5 md:p-4 transition-all duration-300 hover:bg-pink-50/50 ${activeClass} ${activeBorder}">
+            <div id="row-${pkgId}" class="flex items-center justify-between p-3.5 md:p-4 transition-all duration-300 ${hoverClass} ${activeClass} ${activeBorder}">
                 <div class="flex-1 pr-3 min-w-0">
-                    <p class="text-[9px] md:text-[10px] text-pink-500 font-black uppercase tracking-widest mb-0.5 truncate">${cat}</p>
-                    <h4 class="text-xs md:text-sm font-bold text-gray-700 truncate">${item.duration}</h4>
+                    <div class="flex items-center mb-0.5">
+                        <p class="text-[9px] md:text-[10px] ${isSold ? 'text-gray-500' : 'text-pink-500'} font-black uppercase tracking-widest truncate">${cat}</p>
+                        ${soldBadge}
+                    </div>
+                    <h4 class="text-xs md:text-sm font-bold ${isSold ? 'text-gray-500 line-through' : 'text-gray-700'} truncate">${item.duration}</h4>
                     ${noteHtml}
                 </div>
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
-                    <span class="font-black text-pink-600 text-xs md:text-sm">${item.price}</span>
+                    <span class="font-black ${isSold ? 'text-gray-400' : 'text-pink-600'} text-xs md:text-sm">${item.price}</span>
                     <div id="btn-container-${pkgId}">
-                        ${getQuickAddButtonHTML(appName, cat, item.duration, item.price, pkgId, qty)}
+                        ${actionButton}
                     </div>
                 </div>
             </div>
