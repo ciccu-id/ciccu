@@ -738,6 +738,36 @@
         }
 
         // ==========================================
+        // FUNGSI UNTUK PENCARIAN & FILTER (YANG TADI HILANG)
+        // ==========================================
+        function filterAdminList() {
+            const keyword = document.getElementById('adminSearchInput').value.toLowerCase();
+            const filteredData = globalAdminData.filter(item => {
+                return item.app_name.toLowerCase().includes(keyword) || 
+                       item.category.toLowerCase().includes(keyword) || 
+                       item.status.toLowerCase().includes(keyword);
+            });
+            renderData(filteredData);
+        }
+
+        function toggleExpand(appKey) { 
+            expandedApps[appKey] = !expandedApps[appKey]; 
+            filterAdminList(); 
+        }
+
+        function expandAll() { 
+            Object.keys(globalAdminData.reduce((acc, item) => { 
+                acc[item.app_name] = true; return acc; 
+            }, {})).forEach(app => expandedApps[app] = true); 
+            filterAdminList(); 
+        }
+
+        function collapseAll() { 
+            expandedApps = {}; 
+            filterAdminList(); 
+        }
+
+        // ==========================================
         // FUNGSI UNTUK QUICK ADD & EDIT
         // ==========================================
         function openAddPackageModal(appName, appCat) {
@@ -836,9 +866,6 @@
                 await handleResponseStatus(res); clearSelection(); loadData();
             } catch(e) { }
         }
-        function toggleExpand(appKey) { expandedApps[appKey] = !expandedApps[appKey]; filterAdminList(); }
-        function expandAll() { Object.keys(globalAdminData.reduce((acc, item) => { acc[item.app_name] = true; return acc; }, {})).forEach(app => expandedApps[app] = true); filterAdminList(); }
-        function collapseAll() { expandedApps = {}; filterAdminList(); }
 
         // --- SINGLE CRUD ---
         async function addData(e) {
