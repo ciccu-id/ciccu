@@ -3,6 +3,7 @@ const API_URL = "https://ciccu.ygpentinggmail22.workers.dev";
 let allApps = {};
 let orderedAppNames = []; 
 let currentCategory = 'all';
+let globalFormsData = {}; // Menyimpan struktur form dari database
 
 const appCategoryMap = {
     'netflix': 'streaming', 'iqiyi': 'streaming', 'vidio': 'streaming', 'viu': 'streaming', 
@@ -10,11 +11,8 @@ const appCategoryMap = {
     'prime': 'streaming', 'amazon': 'streaming', 'hbo': 'streaming', 'apple tv': 'streaming',
     'gagaoolala': 'streaming', 'crunchyroll': 'streaming', 'dramabox': 'streaming',
     'wetv': 'streaming', 'we tv': 'streaming',
-    
     'spotify': 'music', 'apple music': 'music', 'apple': 'music',
-    
     'capcut': 'editing', 'canva': 'editing', 'alight motion': 'editing', 'alight': 'editing',
-    
     'turnitin': 'study', 'cek turnitin': 'study', 'cek ai': 'study', 'chatgpt': 'study', 
     'claude': 'study', 'grok': 'study', 'grokai': 'study', 'ms365': 'study', 'microsoft': 'study'
 };
@@ -25,11 +23,8 @@ const logoMap = {
     'hbo': 'hbogoasia.id', 'wetv': 'wetv.vip', 'we tv': 'wetv.vip',
     'vidio': 'vidio.com', 'crunchyroll': 'crunchyroll.com', 'loklok': 'loklok.com', 'loktv': 'loklok.com',
     'gagaoolala': 'gagaoolala.com', 'dramabox': 'dramaboxapp.com', 'apple tv': 'tv.apple.com',
-    
     'spotify': 'open.spotify.com', 'apple music': 'music.apple.com', 'apple': 'music.apple.com',
-    
     'canva': 'canva.com', 'capcut': 'capcut.com', 'alight motion': 'alightcreative.com', 'alight': 'alightcreative.com',
-    
     'chatgpt': 'openai.com', 'claude': 'anthropic.com', 'grok': 'x.ai', 'grokai': 'x.ai', 
     'ms365': 'office.com', 'microsoft': 'microsoft.com', 'turnitin': 'turnitin.com', 
     'cek turnitin': 'turnitin.com', 'cek ai': 'zerogpt.com'
@@ -58,35 +53,78 @@ function extractNumK(priceStr) {
     return parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
 }
 
+function parseFormFields(str) {
+    if (!str) return [];
+    try {
+        if (str.trim().startsWith('[')) {
+            const parsedJson = JSON.parse(str);
+            return parsedJson.map(item => item.name);
+        }
+    } catch(e) {}
+    return str.split(',').map(s => s.trim()).filter(s => s);
+}
+
 async function loadPricelist() {
     try {
-        const response = await fetch(`${API_URL}/api/pricelist`);
-        if (!response.ok) throw new Error("Gagal mengambil data dari server");
+        // Ambil data pricelist dan form sekaligus
+        const [priceRes, formRes] = await Promise.all([
+            fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`),
+            fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`).catch(() => null)
+        ]);
+
+        if (!priceRes.ok) throw new Error("Gagal mengambil data dari server");
         
-        let data = await response.json();
+        let data = await priceRes.json();
         
-        // MENGATUR URUTAN: Sortir ID terkecil ke terbesar sesuai baris CSV aslinya
-        data.sort((a, b) => a.id - b.id);
+        // Simpan data form ke variabel global
+        globalFormsData = {};
+        if (formRes && formRes.ok) {
+            const formData = await formRes.json();
+            formData.forEach(f => { globalFormsData[f.app_name.toLowerCase().trim()] = f; });
+        }
+        
+        // MENGATUR URUTAN SESUAI ADMIN (Steotype Logic)
+        const appOrders = {};
+        const appFirstIds = {};
+        const groupedData = {};
+
+        data.forEach(item => {
+            if (!groupedData[item.app_name]) groupedData[item.app_name] = [];
+            groupedData[item.app_name].push(item);
+            
+            const appOrder = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
+            if (!appOrders[item.app_name] || appOrder < appOrders[item.app_name]) appOrders[item.app_name] = appOrder;
+            if (!appFirstIds[item.app_name] || item.id < appFirstIds[item.app_name]) appFirstIds[item.app_name] = item.id;
+        });
+
+        const sortedAppNames = Object.keys(groupedData).sort((a, b) => {
+            return (appOrders[a] - appOrders[b]) || (appFirstIds[a] - appFirstIds[b]);
+        });
 
         const apps = {};
         const appOrder = []; 
 
-        data.forEach(item => {
-            const appName = item.app_name;
-            const category = item.category; 
-            const duration = item.duration; 
-            const price = item.price;    
-            const notes = item.notes || '';
-            const available = item.status ? item.status.toLowerCase() : 'ready'; 
-
-            if (!apps[appName]) { 
-                apps[appName] = { categories: {} }; 
-                appOrder.push(appName); 
-            }
-            if (!apps[appName].categories[category]) { apps[appName].categories[category] = []; }
+        sortedAppNames.forEach(appName => {
+            appOrder.push(appName);
+            apps[appName] = { categories: {} };
             
-            const itemNotes = (notes && notes.toLowerCase() !== 'nan') ? notes : '';
-            apps[appName].categories[category].push({ duration, price, notes: itemNotes, available });
+            // Urutkan paket dalam aplikasi
+            groupedData[appName].sort((a, b) => {
+                const aPkg = (a.sort_order && a.sort_order > 0) ? a.sort_order : 9999;
+                const bPkg = (b.sort_order && b.sort_order > 0) ? b.sort_order : 9999;
+                return (aPkg - bPkg) || (a.id - b.id);
+            });
+
+            groupedData[appName].forEach(item => {
+                const category = item.category; 
+                if (!apps[appName].categories[category]) { apps[appName].categories[category] = []; }
+                apps[appName].categories[category].push({ 
+                    duration: item.duration, 
+                    price: item.price, 
+                    notes: (item.notes && item.notes.toLowerCase() !== 'nan') ? item.notes : '', 
+                    available: item.status ? item.status.toLowerCase() : 'ready' 
+                });
+            });
         });
 
         allApps = apps;
@@ -97,7 +135,7 @@ async function loadPricelist() {
         updateCartUI();
 
     } catch (error) {
-        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200">Gagal memuat data dari Server Database.</p>`;
+        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">Gagal memuat data dari Server. Cek koneksi ya! 🥺</p>`;
     }
 }
 
@@ -113,12 +151,6 @@ function switchCategory(cat) {
     });
     
     applyFilters();
-
-    const gridElement = document.getElementById('pricingGrid');
-    if(gridElement) {
-        const y = gridElement.getBoundingClientRect().top + window.pageYOffset - 80;
-        window.scrollTo({top: y, behavior: 'smooth'});
-    }
 }
 
 function applyFilters() {
@@ -216,6 +248,7 @@ function renderCards(apps, orderedNames) {
     });
 }
 
+// ----- CART & FORM LOGIC (Steotype Workflow) -----
 let cart = []; 
 let currentOrderApp = '';
 let selectedPackage = null;
@@ -240,7 +273,6 @@ function openOrderModal(appName) {
             const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
             const isSold = item.available === 'sold';
             
-            // RENDERING NOTES BERGAYA SIKU SEPERTI REFERENSI GAMBAR
             let modalNoteHTML = '';
             if (item.notes) {
                 modalNoteHTML = `<p class="text-[10px] text-pink-400 font-medium italic mt-1 leading-tight flex gap-1.5 items-center"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>`;
@@ -250,7 +282,7 @@ function openOrderModal(appName) {
 
             const containerClass = isSold 
                 ? `border border-gray-200 bg-gray-50 p-4 rounded-xl flex justify-between items-center opacity-75 select-none` 
-                : `package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group`;
+                : `package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group shadow-sm`;
                 
             const onClickAttr = isSold ? '' : `onclick="selectPackage('${pkgId}', '${cat}', '${item.duration}', '${item.price}')"`;
             const checkIndicatorClass = isSold ? 'border-gray-200 bg-gray-200' : 'border-gray-300 bg-white check-indicator transition-colors';
@@ -348,6 +380,11 @@ function closeOrderModal() {
 
 function addToCart() {
     if(!selectedPackage) return;
+    
+    const appKey = selectedPackage.app.toLowerCase().trim();
+    const formObj = globalFormsData[appKey];
+    const formFields = formObj ? parseFormFields(formObj.form_fields) : [];
+
     const existIndex = cart.findIndex(item => 
         item.app === selectedPackage.app && 
         item.cat === selectedPackage.cat && 
@@ -356,8 +393,19 @@ function addToCart() {
 
     if(existIndex !== -1) {
         cart[existIndex].qty += orderQty;
+        // Tambahkan placeholder data form sesuai qty baru
+        for(let i = 0; i < orderQty; i++) {
+            cart[existIndex].formData.push({});
+        }
     } else {
-        cart.push({ ...selectedPackage, qty: orderQty });
+        let initialFormData = [];
+        for(let i = 0; i < orderQty; i++) { initialFormData.push({}); }
+        cart.push({ 
+            ...selectedPackage, 
+            qty: orderQty,
+            formFields: formFields,
+            formData: initialFormData
+        });
     }
 
     updateCartUI();
@@ -431,19 +479,24 @@ function renderCartList() {
     cart.forEach((item, index) => {
         const itemTotalK = extractNumK(item.price) * item.qty;
         grandTotalK += itemTotalK;
+        
+        const formTag = item.formFields.length > 0 
+            ? `<span class="bg-sky-100 text-sky-500 text-[9px] px-2 py-0.5 rounded border border-sky-200 mt-1 inline-block">Wajib isi Form</span>` 
+            : '';
 
         html += `
-            <div class="flex justify-between items-center bg-pink-50 p-4 rounded-xl border border-pink-200 mb-3">
+            <div class="flex justify-between items-center bg-pink-50 p-4 rounded-xl border border-pink-200 mb-3 shadow-sm">
                 <div class="flex-1">
                     <h4 class="text-gray-800 font-bold text-sm mb-1">${item.app} <span class="text-xs font-normal text-gray-500">(${item.dur})</span></h4>
                     <p class="text-[10px] text-pink-400 uppercase font-bold tracking-wider mb-2">${item.cat}</p>
                     <div class="flex items-center gap-4 text-xs font-medium text-gray-500">
                         <span>Harga: ${item.price}</span>
-                        <span>Jumlah: x${item.qty}</span>
+                        <span class="text-pink-500 font-bold bg-white px-2 py-0.5 rounded border border-pink-100 shadow-sm">Jumlah: x${item.qty}</span>
                     </div>
+                    ${formTag}
                 </div>
                 <div class="flex flex-col items-end gap-2 pl-3 border-l border-pink-200">
-                    <button onclick="removeFromCart(${index})" class="text-pink-300 hover:text-red-500 transition p-1 outline-none">
+                    <button onclick="removeFromCart(${index})" class="text-pink-300 hover:text-red-500 bg-white hover:bg-red-50 p-2 rounded-xl border border-pink-100 transition-colors outline-none shadow-sm">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                     <p class="text-gray-800 font-black">${itemTotalK}K</p>
@@ -466,9 +519,125 @@ function removeFromCart(index) {
     }
 }
 
+// ----- CHECKOUT INTERCEPTION (Form Workflow) -----
 function checkoutCartWA() {
     if(cart.length === 0) return;
 
+    // Cek apakah ada item yang butuh form
+    const needsForm = cart.some(item => item.formFields && item.formFields.length > 0);
+    
+    if (needsForm) {
+        closeCartModal();
+        openCheckoutFormModal();
+    } else {
+        generateFinalWA();
+    }
+}
+
+function openCheckoutFormModal() {
+    const container = document.getElementById('checkoutFormContainer');
+    let html = '';
+
+    cart.forEach((item, cartIndex) => {
+        if (!item.formFields || item.formFields.length === 0) return;
+
+        html += `
+        <div class="bg-pink-50 rounded-2xl border border-pink-200 p-4 mb-4 shadow-sm">
+            <h4 class="font-black text-pink-500 mb-1 border-b border-pink-200 pb-2 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                ${item.app} <span class="text-xs text-gray-500 font-bold bg-white px-2 py-0.5 rounded-lg border border-pink-100 shadow-sm">${item.cat} | ${item.dur}</span>
+            </h4>
+            <div class="space-y-4 mt-3">
+        `;
+
+        for(let q = 0; q < item.qty; q++) {
+            html += `
+                <div class="bg-white p-3 rounded-xl border border-pink-100 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-xs font-bold text-gray-700 bg-pink-100 text-pink-600 px-2.5 py-1 rounded-lg">Data #${q + 1}</p>
+                        ${q > 0 ? `<button type="button" onclick="copyFirstData(${cartIndex}, ${q})" class="text-[10px] bg-sky-50 text-sky-500 border border-sky-200 hover:bg-sky-100 font-bold px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Samakan dengan Data #1</button>` : ''}
+                    </div>
+            `;
+
+            item.formFields.forEach((field, fIndex) => {
+                const inputId = `form_input_${cartIndex}_${q}_${fIndex}`;
+                // Pertahankan input jika user menutup modal dan buka lagi
+                const existingVal = (item.formData[q] && item.formData[q][field]) ? item.formData[q][field] : '';
+                
+                html += `
+                    <div class="mb-2 last:mb-0">
+                        <label class="block text-[10px] md:text-xs font-bold text-gray-500 mb-1 pl-1">${field} <span class="text-red-400">*</span></label>
+                        <input type="text" id="${inputId}" value="${existingVal}" required onchange="saveFormData(${cartIndex}, ${q}, '${field}', this.value)" class="w-full bg-pink-50/50 border border-pink-200 text-sm rounded-xl py-2.5 px-3 outline-none focus:border-pink-400 font-bold text-gray-700 placeholder-pink-200" placeholder="Ketik ${field} disini...">
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        }
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+
+    const modal = document.getElementById('checkoutFormModal');
+    const backdrop = document.getElementById('checkoutFormBackdrop');
+    const content = document.getElementById('checkoutFormContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
+}
+
+function closeCheckoutFormModal() {
+    const modal = document.getElementById('checkoutFormModal');
+    const backdrop = document.getElementById('checkoutFormBackdrop');
+    const content = document.getElementById('checkoutFormContent');
+    backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); openCartModal(); }, 300);
+}
+
+function saveFormData(cartIndex, qtyIndex, fieldName, value) {
+    if(!cart[cartIndex].formData[qtyIndex]) cart[cartIndex].formData[qtyIndex] = {};
+    cart[cartIndex].formData[qtyIndex][fieldName] = value;
+}
+
+function copyFirstData(cartIndex, targetQtyIndex) {
+    const sourceData = cart[cartIndex].formData[0];
+    if(!sourceData) return;
+    
+    cart[cartIndex].formFields.forEach((field, fIndex) => {
+        const val = sourceData[field] || '';
+        cart[cartIndex].formData[targetQtyIndex][field] = val;
+        // Update DOM Input visually
+        const inputId = `form_input_${cartIndex}_${targetQtyIndex}_${fIndex}`;
+        const inputEl = document.getElementById(inputId);
+        if(inputEl) inputEl.value = val;
+    });
+}
+
+function processFinalCheckout(e) {
+    e.preventDefault(); // Mencegah reload form
+    
+    // Validasi apakah semua field sudah terisi (meski HTML 'required' sudah ada, pencegahan ganda via JS)
+    let isValid = true;
+    cart.forEach(item => {
+        if(item.formFields && item.formFields.length > 0) {
+            for(let q=0; q<item.qty; q++) {
+                item.formFields.forEach(field => {
+                    if(!item.formData[q] || !item.formData[q][field] || item.formData[q][field].trim() === '') {
+                        isValid = false;
+                    }
+                });
+            }
+        }
+    });
+
+    if(!isValid) {
+        alert("Mohon isi semua data formulir yang diwajibkan 🥺🎀");
+        return;
+    }
+
+    generateFinalWA();
+}
+
+function generateFinalWA() {
     let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎ა  haloo, aku mau jajan ini! ౿ \n\n";
     let grandTotal = 0;
 
@@ -478,7 +647,19 @@ function checkoutCartWA() {
         
         textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
         textWA += `꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
-        textWA += `꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n\n`;
+        textWA += `꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n`;
+
+        // Inject Form Data ke WA
+        if (item.formFields && item.formFields.length > 0) {
+            for(let q = 0; q < item.qty; q++) {
+                textWA += `\n   [ Data #${q + 1} ]\n`;
+                item.formFields.forEach(field => {
+                    const val = (item.formData[q] && item.formData[q][field]) ? item.formData[q][field] : '-';
+                    textWA += `   ↳ ${field}: ${val}\n`;
+                });
+            }
+        }
+        textWA += `\n`;
     });
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
@@ -489,69 +670,47 @@ function checkoutCartWA() {
     window.open(`https://wa.me/6283877337798?text=${encodedText}`, '_blank');
 }
 
-function openLoyaltyModal() {
+// ----- OTHER MODALS (Loyalty, T&C, Info) -----
+function openLoyaltyModal() { /* Kode asli tetap sama */
     const modal = document.getElementById('loyaltyModal');
     const backdrop = document.getElementById('loyaltyModalBackdrop');
     const content = document.getElementById('loyaltyModalContent');
     modal.classList.remove('hidden');
-    setTimeout(() => {
-        backdrop.classList.replace('opacity-0', 'opacity-100');
-        content.classList.replace('opacity-0', 'opacity-100');
-        content.classList.replace('scale-95', 'scale-100');
-    }, 10);
+    setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
 }
-
-function closeLoyaltyModal() {
+function closeLoyaltyModal() { /* Kode asli tetap sama */
     const modal = document.getElementById('loyaltyModal');
     const backdrop = document.getElementById('loyaltyModalBackdrop');
     const content = document.getElementById('loyaltyModalContent');
-    backdrop.classList.replace('opacity-100', 'opacity-0');
-    content.classList.replace('opacity-100', 'opacity-0');
-    content.classList.replace('scale-100', 'scale-95');
+    backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
-
-function openTermsModal() {
+function openTermsModal() { /* Kode asli tetap sama */
     const modal = document.getElementById('termsModal');
     const backdrop = document.getElementById('termsModalBackdrop');
     const content = document.getElementById('termsModalContent');
     modal.classList.remove('hidden');
-    setTimeout(() => {
-        backdrop.classList.replace('opacity-0', 'opacity-100');
-        content.classList.replace('opacity-0', 'opacity-100');
-        content.classList.replace('scale-95', 'scale-100');
-    }, 10);
+    setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
 }
-
-function closeTermsModal() {
+function closeTermsModal() { /* Kode asli tetap sama */
     const modal = document.getElementById('termsModal');
     const backdrop = document.getElementById('termsModalBackdrop');
     const content = document.getElementById('termsModalContent');
-    backdrop.classList.replace('opacity-100', 'opacity-0');
-    content.classList.replace('opacity-100', 'opacity-0');
-    content.classList.replace('scale-100', 'scale-95');
+    backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
-
-function openInfoNetflixModal() {
+function openInfoNetflixModal() { /* Kode asli tetap sama */
     const modal = document.getElementById('infoNetflixModal');
     const backdrop = document.getElementById('infoNetflixBackdrop');
     const content = document.getElementById('infoNetflixContent');
     modal.classList.remove('hidden');
-    setTimeout(() => {
-        backdrop.classList.replace('opacity-0', 'opacity-100');
-        content.classList.replace('opacity-0', 'opacity-100');
-        content.classList.replace('scale-95', 'scale-100');
-    }, 10);
+    setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
 }
-
-function closeInfoNetflixModal() {
+function closeInfoNetflixModal() { /* Kode asli tetap sama */
     const modal = document.getElementById('infoNetflixModal');
     const backdrop = document.getElementById('infoNetflixBackdrop');
     const content = document.getElementById('infoNetflixContent');
-    backdrop.classList.replace('opacity-100', 'opacity-0');
-    content.classList.replace('opacity-100', 'opacity-0');
-    content.classList.replace('scale-100', 'scale-95');
+    backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
 
