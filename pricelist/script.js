@@ -657,7 +657,6 @@ function renderCheckoutForms() {
     document.getElementById('checkoutGrandTotal').innerText = grandTotalK + 'K';
 }
 
-// --- PERBAIKAN GENERATE PESAN WHATSAPP ---
 function checkoutCartWA() {
     if(cart.length === 0) return;
 
@@ -686,20 +685,14 @@ function checkoutCartWA() {
         }
     }
 
-    let cartGroups = {};
     let grandTotal = 0;
-
-    cart.forEach((item, index) => {
-        const appKey = item.app.toLowerCase().trim();
-        if(!cartGroups[appKey]) cartGroups[appKey] = { appName: item.app, items: [] };
-        const itemTotalK = extractNumK(item.price) * item.qty;
-        grandTotal += itemTotalK;
-        cartGroups[appKey].items.push({ ...item, cartIndex: index, itemTotalK });
-    });
-
     let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎აhaloo, aku mau jajan ini! ౿ \n\n";
 
-    for (const [appKey, group] of Object.entries(cartGroups)) {
+    cart.forEach((item) => {
+        const itemTotalK = extractNumK(item.price) * item.qty;
+        grandTotal += itemTotalK;
+
+        const appKey = item.app.toLowerCase().trim();
         const fieldsStr = appForms[appKey] || '';
         let fields = [];
         try {
@@ -707,43 +700,44 @@ function checkoutCartWA() {
             else fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : [];
         } catch(e) { fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : []; }
 
-        group.items.forEach((gItem, indexInGroup) => {
-            textWA += `𖠗  ⊹  ☆̲  ${group.appName} — ${gItem.dur}\n`;
-            textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${gItem.cat}\n`;
-            textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${gItem.qty} pcs\n`;
+        textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
+        textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
+        textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n`;
 
-            if (fields.length > 0) {
-                let dataSourceItem = gItem;
-                if (gItem.useFirstItemData && indexInGroup > 0) {
-                    dataSourceItem = group.items[0];
-                }
+        if (fields.length > 0) {
+            textWA += `\n*DATA USER*\n`;
 
-                const isSeparate = dataSourceItem.separateForms;
-                const loopCount = isSeparate && dataSourceItem.qty > 1 ? dataSourceItem.qty : 1;
+            const isSeparate = item.separateForms;
+            const loopCount = isSeparate && item.qty > 1 ? item.qty : 1;
 
-                textWA += `\n*DATA USER*\n`;
-
-                if (isSeparate && dataSourceItem.qty > 1) {
-                    for(let fIdx = 0; fIdx < loopCount; fIdx++) {
-                        textWA += `[Akun #${fIdx + 1}]\n`;
-                        fields.forEach(field => {
-                            const val = dataSourceItem.formData && dataSourceItem.formData[fIdx] ? dataSourceItem.formData[fIdx][field] : '';
-                            textWA += `- ${field} : ${val}\n`;
-                        });
-                        textWA += `\n`;
-                    }
-                } else {
-                     fields.forEach(field => {
-                         const val = dataSourceItem.formData && dataSourceItem.formData[0] ? dataSourceItem.formData[0][field] : '';
-                         textWA += `- ${field} : ${val}\n`;
-                     });
-                     textWA += `\n`;
+            if (isSeparate && item.qty > 1) {
+                for(let fIdx = 0; fIdx < loopCount; fIdx++) {
+                    textWA += `[Akun #${fIdx + 1}]\n`;
+                    fields.forEach(field => {
+                        let val = '';
+                        if (item.useFirstItemData) {
+                            val = item.formData && item.formData[0] ? item.formData[0][field] : '';
+                        } else {
+                            val = item.formData && item.formData[fIdx] ? item.formData[fIdx][field] : '';
+                        }
+                        textWA += `- ${field} : ${val}\n`;
+                    });
+                    if (fIdx < loopCount - 1) textWA += `\n`;
                 }
             } else {
-                textWA += `\n`;
+                 fields.forEach(field => {
+                     const val = item.formData && item.formData[0] ? item.formData[0][field] : '';
+                     textWA += `- ${field} : ${val}\n`;
+                 });
             }
-        });
-    }
+            textWA += `\n\n`; 
+        } else {
+            textWA += `\n\n`; 
+        }
+    });
+
+    // Menghapus baris kosong ekstra di bagian akhir loop
+    textWA = textWA.trimEnd() + `\n\n`;
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
     textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β \nhave a sweet day  𖠗\n\n`;
