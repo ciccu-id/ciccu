@@ -75,7 +75,7 @@
                     <input type="text" id="appCat" placeholder="Nama Paket (misal: 1P1U)" required class="col-span-2 bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                     
                     <input type="text" id="appDur" placeholder="Durasi (misal: 1 Hari)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
-                    <input type="text" id="appPrice" placeholder="Harga (misal: 50K)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                    <input type="text" id="appPrice" placeholder="Harga (misal: 5K)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                     <select id="appStatus" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full text-green-500 font-bold shadow-inner cursor-pointer">
                         <option value="Ready" selected>Ready</option>
                         <option value="Sold" class="text-red-500">Sold</option>
@@ -150,7 +150,7 @@
             <form id="addPackageForm" class="p-5 space-y-3 bg-white rounded-b-3xl" onsubmit="submitAddPackageForm(event)">
                 <input type="hidden" id="addPkgAppName">
                 
-                <input type="text" id="addPkgCat" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Nama Paket (misal: Semi Private)">
+                <input type="text" id="addPkgCat" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Nama Paket (misal: 1P1U)">
                 
                 <input type="text" id="addPkgDur" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Durasi (misal: 1 Bulan)">
                 <input type="text" id="addPkgPrice" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Harga (misal: 50K)">
@@ -247,7 +247,12 @@
     </div>
 
     <script>
+        // =========================================================
+        // PASTIKAN URL INI SAMA PERSIS DENGAN YANG ADA DI script.js
+        // =========================================================
         const API_URL = "https://ciccu.ygpentinggmail22.workers.dev"; 
+        
+        // Pembersih otomatis jika ada kelebihan garis miring di akhir URL
         const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
         
         let globalAdminData = [];
@@ -260,6 +265,7 @@
 
         let builderCurrentApp = '';
         let builderFields = [];
+        
         let sortableReorder = null;
 
         // ----- SISTEM LOGIN -----
@@ -305,6 +311,7 @@
             const list = document.getElementById('dataList');
             try {
                 const response = await fetch(`${BASE_URL}/api/pricelist?t=${new Date().getTime()}`);
+                
                 if (!response.ok) throw new Error(`Server membalas dengan status: ${response.status}`);
                 const data = await response.json();
                 if (!Array.isArray(data)) throw new Error("Data yang ditarik dari server bukan format tabel (Array).");
@@ -461,13 +468,15 @@
                 `;
 
                 packages.forEach(item => {
-                    const isReady = item.status === 'Ready';
+                    // PERBAIKAN: Deteksi status secara aman dan berikan style visual berbeda
+                    const currentStatus = item.status ? item.status.trim() : 'Ready';
+                    const isReady = currentStatus.toLowerCase() === 'ready';
                     const isSelected = selectedItems.has(item.id);
                     
-                    // PERBAIKAN: Warna Baris (Jika Sold, jadi abu-abu kusam)
+                    // Warna baris: Jika Sold, jadi abu-abu kusam dan teks redup
                     const rowBgClass = isSelected ? 'bg-pink-50 border-pink-400' : (isReady ? 'bg-white border-pink-100' : 'bg-gray-100 border-gray-300 grayscale-[30%] opacity-80');
                     
-                    // PERBAIKAN: Label Status yang Jelas
+                    // Badge yang membedakan warna secara kentara
                     const statusBadgeHTML = isReady 
                         ? `<span class="text-[9px] font-black text-green-500 bg-green-50 border-green-200 px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm" id="status-text-${item.id}">READY</span>`
                         : `<span class="text-[9px] font-black text-red-500 bg-red-50 border-red-200 px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm" id="status-text-${item.id}">SOLD</span>`;
