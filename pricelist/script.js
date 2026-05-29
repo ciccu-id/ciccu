@@ -83,15 +83,13 @@ async function loadPricelist() {
         const appMinOrder = {}; 
         const appFirstId = {};
 
-        // PERBAIKAN: Menghapus baris "if (item.status !== 'Ready') return;"
-        // Sekarang item SOLD tetap ditambahkan ke dalam daftar aplikasi.
         data.forEach(item => {
             const appName = item.app_name;
             const category = item.category; 
             const duration = item.duration; 
             const price = item.price;    
             const notes = item.notes || ''; 
-            const status = item.status || 'Ready'; // Simpan statusnya
+            const status = item.status || 'Ready';
 
             const appOrderVal = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
 
@@ -104,7 +102,6 @@ async function loadPricelist() {
                 if (item.id < appFirstId[appName]) appFirstId[appName] = item.id;
             }
             
-            // Masukkan beserta statusnya (Ready/Sold)
             apps[appName].packages.push({ category, duration, price, notes, status, id: item.id });
         });
 
@@ -165,7 +162,6 @@ function applyFilters() {
         const appCat = getAppCategory(name);
         const matchesCategory = (currentCategory === 'all' || appCat === currentCategory);
         
-        // Memastikan aplikasi memiliki setidaknya 1 paket sebelum ditampilkan
         if (matchesSearch && matchesCategory && info.packages.length > 0) {
             filteredApps[name] = info;
             filteredOrder.push(name);
@@ -266,7 +262,6 @@ function openOrderModal(appName) {
             ? `<p class="text-[9px] text-pink-400 font-medium italic mt-1 flex items-center gap-1"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>` 
             : '';
 
-        // CEK STATUS SOLD
         const isSold = item.status && item.status.toLowerCase() !== 'ready';
 
         const cartItem = cart.find(c => c.app === appName && c.cat === cat && c.dur === item.duration);
@@ -276,7 +271,7 @@ function openOrderModal(appName) {
         let activeBorder = 'border-l-[4px] border-l-transparent';
         
         if (isSold) {
-            activeClass = 'bg-gray-50 opacity-60 grayscale-[50%]'; // Visual redup untuk sold
+            activeClass = 'bg-gray-50 opacity-60 grayscale-[50%]';
         } else if (qty > 0) {
             activeClass = 'bg-pink-50';
             activeBorder = 'border-l-[4px] border-l-pink-400';
@@ -285,7 +280,6 @@ function openOrderModal(appName) {
         const hoverClass = isSold ? '' : 'hover:bg-pink-50/50';
         const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest ml-2 border border-red-200">Habis</span>` : '';
 
-        // Tampilkan tombol tambah jika Ready, tombol merah jika Sold
         let actionButton = '';
         if (isSold) {
             actionButton = `<span class="text-[9px] font-bold text-red-400 bg-red-50 px-3 py-1.5 rounded-full border border-red-100">Kosong</span>`;
@@ -663,6 +657,7 @@ function renderCheckoutForms() {
     document.getElementById('checkoutGrandTotal').innerText = grandTotalK + 'K';
 }
 
+// --- PERBAIKAN GENERATE PESAN WHATSAPP ---
 function checkoutCartWA() {
     if(cart.length === 0) return;
 
@@ -702,12 +697,9 @@ function checkoutCartWA() {
         cartGroups[appKey].items.push({ ...item, cartIndex: index, itemTotalK });
     });
 
-    let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎ა haloo kak ciccu, aku mau jajan ini! ౿ \n\n";
+    let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎აhaloo, aku mau jajan ini! ౿ \n\n";
 
-    let appCounter = 1;
     for (const [appKey, group] of Object.entries(cartGroups)) {
-        textWA += `𖠗  ⊹  ☆̲  *${appCounter}. ${group.appName.toUpperCase()}*\n`;
-        
         const fieldsStr = appForms[appKey] || '';
         let fields = [];
         try {
@@ -716,46 +708,45 @@ function checkoutCartWA() {
         } catch(e) { fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : []; }
 
         group.items.forEach((gItem, indexInGroup) => {
-            textWA += `   ꒰ 𓈒 ♡ —— Paket: ${gItem.cat} • ${gItem.dur} (x${gItem.qty}) - ${gItem.itemTotalK}K\n`;
+            textWA += `𖠗  ⊹  ☆̲  ${group.appName} — ${gItem.dur}\n`;
+            textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${gItem.cat}\n`;
+            textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${gItem.qty} pcs\n`;
 
             if (fields.length > 0) {
                 let dataSourceItem = gItem;
-                let copyNote = "";
-                
                 if (gItem.useFirstItemData && indexInGroup > 0) {
                     dataSourceItem = group.items[0];
-                    copyNote = ` (Mengikuti form ${dataSourceItem.cat} ${dataSourceItem.dur})`;
                 }
 
                 const isSeparate = dataSourceItem.separateForms;
                 const loopCount = isSeparate && dataSourceItem.qty > 1 ? dataSourceItem.qty : 1;
 
-                if (copyNote) textWA += `   │  *Data Akun:*${copyNote}\n`;
-                else textWA += `   │  *Data Akun:*\n`;
+                textWA += `\n*DATA USER*\n`;
 
                 if (isSeparate && dataSourceItem.qty > 1) {
                     for(let fIdx = 0; fIdx < loopCount; fIdx++) {
-                        textWA += `   │  [Akun #${fIdx + 1}]\n`;
+                        textWA += `[Akun #${fIdx + 1}]\n`;
                         fields.forEach(field => {
                             const val = dataSourceItem.formData && dataSourceItem.formData[fIdx] ? dataSourceItem.formData[fIdx][field] : '';
-                            textWA += `   │  - ${field}: ${val}\n`;
+                            textWA += `- ${field} : ${val}\n`;
                         });
+                        textWA += `\n`;
                     }
                 } else {
                      fields.forEach(field => {
                          const val = dataSourceItem.formData && dataSourceItem.formData[0] ? dataSourceItem.formData[0][field] : '';
-                         textWA += `   │  - ${field}: ${val}\n`;
+                         textWA += `- ${field} : ${val}\n`;
                      });
+                     textWA += `\n`;
                 }
+            } else {
+                textWA += `\n`;
             }
-            textWA += `   │\n`; 
         });
-        textWA += `\n`;
-        appCounter++;
     }
 
-    textWA += `ఌ︎. 𓈄 Total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
-    textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β have a sweet day  𖠗\n\n`;
+    textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
+    textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β \nhave a sweet day  𖠗\n\n`;
     textWA += `https://ciccu.biz.id/qris`;
     
     const encodedText = encodeURIComponent(textWA);
