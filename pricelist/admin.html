@@ -75,7 +75,7 @@
                     <input type="text" id="appCat" placeholder="Nama Paket (misal: 1P1U)" required class="col-span-2 bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                     
                     <input type="text" id="appDur" placeholder="Durasi (misal: 1 Hari)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
-                    <input type="text" id="appPrice" placeholder="Harga (misal: 5K)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                    <input type="text" id="appPrice" placeholder="Harga (misal: 50K)" required class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
                     <select id="appStatus" class="bg-pink-50 border border-pink-200 text-sm rounded-xl p-3 outline-none focus:border-pink-400 w-full text-green-500 font-bold shadow-inner cursor-pointer">
                         <option value="Ready" selected>Ready</option>
                         <option value="Sold" class="text-red-500">Sold</option>
@@ -399,6 +399,9 @@
 
                 const packageIds = packages.map(p => p.id);
                 const isAppAllSelected = packageIds.length > 0 && packageIds.every(id => selectedItems.has(id));
+                
+                // CEK JIKA SEMUA PAKET SOLD OUT
+                const isAllSold = packages.length > 0 && packages.every(p => p.status && p.status.toLowerCase() !== 'ready');
 
                 let headerFormText = parsedFields.length > 0 
                     ? `📋 Form Pembeli: <span class="text-sky-500 font-bold">${parsedFields.join(', ')}</span>` 
@@ -425,16 +428,21 @@
                         </div>` : ''}
                     </div>
                 `;
+                
+                // VISUAL HEADER APLIKASI
+                const appHeaderBg = isAllSold ? 'bg-gray-100/80 hover:bg-gray-200/80' : 'bg-pink-50 hover:bg-pink-100/60';
+                const appTitleColor = isAllSold ? 'text-gray-500' : 'text-pink-500';
+                const appBadge = isAllSold ? `<span class="ml-2 bg-red-100 text-red-500 border border-red-200 text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-widest shadow-sm">Habis</span>` : '';
 
                 html += `
                     <div class="app-accordion-group bg-white rounded-3xl border border-pink-200 shadow-md shadow-pink-100/50 mb-5 overflow-hidden" data-app="${exactAppNameInDb}">
-                        <div class="p-3 md:p-4 flex items-center bg-pink-50 hover:bg-pink-100/60 transition-colors gap-3 select-none border-b border-transparent ${isExpanded ? 'border-pink-200' : ''}">
+                        <div class="p-3 md:p-4 flex items-center ${appHeaderBg} transition-colors gap-3 select-none border-b border-transparent ${isExpanded ? 'border-pink-200' : ''}">
                             
                             <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center" onclick="toggleExpand('${exactAppNameInDb}')">
-                                <h3 class="font-black text-pink-500 text-base md:text-lg capitalize flex items-center gap-2">${appName}</h3>
+                                <h3 class="font-black ${appTitleColor} text-base md:text-lg capitalize flex items-center gap-1">${appName} ${appBadge}</h3>
                                 <p class="text-[10px] md:text-[11px] text-gray-500 font-bold truncate w-full mt-0.5">${headerFormText}</p>
                                 <div class="mt-1.5 flex items-center">
-                                    <span class="text-[9px] md:text-[10px] bg-white text-pink-400 px-2.5 py-1 rounded-lg font-bold border border-pink-200 shadow-sm">${packages.length} Paket</span>
+                                    <span class="text-[9px] md:text-[10px] bg-white text-gray-400 px-2.5 py-1 rounded-lg font-bold border border-gray-200 shadow-sm">${packages.length} Paket</span>
                                 </div>
                             </div>
 
@@ -468,21 +476,29 @@
                 `;
 
                 packages.forEach(item => {
-                    // PERBAIKAN: Deteksi status secara aman dan berikan style visual berbeda
+                    // CEK STATUS SOLD UNTUK BARIS ITEM
                     const currentStatus = item.status ? item.status.trim() : 'Ready';
                     const isReady = currentStatus.toLowerCase() === 'ready';
                     const isSelected = selectedItems.has(item.id);
                     
-                    // Warna baris: Jika Sold, jadi abu-abu kusam dan teks redup
-                    const rowBgClass = isSelected ? 'bg-pink-50 border-pink-400' : (isReady ? 'bg-white border-pink-100' : 'bg-gray-100 border-gray-300 grayscale-[30%] opacity-80');
+                    // PERBAIKAN: Gaya Sebaris (Inline Style) agar kebal dari error Tailwind
+                    let rowInlineStyle = '';
+                    let rowClass = 'package-item p-3 md:p-4 rounded-2xl border flex justify-between items-center gap-2 md:gap-3 transition-all shadow-sm';
                     
-                    // Badge yang membedakan warna secara kentara
+                    if (isSelected) {
+                        rowClass += ' bg-pink-50 border-pink-400 ring-2 ring-pink-200';
+                    } else if (isReady) {
+                        rowInlineStyle = 'background-color: #ffffff; border-color: #fce7f3;';
+                    } else {
+                        rowInlineStyle = 'background-color: #f9fafb; border-color: #e5e7eb; opacity: 0.6; filter: grayscale(100%);';
+                    }
+                    
                     const statusBadgeHTML = isReady 
-                        ? `<span class="text-[9px] font-black text-green-500 bg-green-50 border-green-200 px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm" id="status-text-${item.id}">READY</span>`
-                        : `<span class="text-[9px] font-black text-red-500 bg-red-50 border-red-200 px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm" id="status-text-${item.id}">SOLD</span>`;
+                        ? `<span class="text-[9px] font-black text-green-500 bg-green-50 border-green-200 px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm">READY</span>`
+                        : `<span class="text-[9px] font-black text-red-500 bg-red-50 border-red-200 px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm">SOLD</span>`;
 
                     html += `
-                        <div class="package-item ${rowBgClass} p-3 md:p-4 rounded-2xl border flex justify-between items-center gap-2 md:gap-3 transition-all shadow-sm" data-id="${item.id}" id="row-item-${item.id}">
+                        <div class="${rowClass}" style="${rowInlineStyle}" data-id="${item.id}">
                             
                             <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-pink-500 shrink-0 p-1">
                                 <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
@@ -873,33 +889,24 @@
             } catch (error) { } finally { btn.innerHTML = "Simpan Data ✨"; btn.disabled = false; }
         }
         
-        // PERBAIKAN: Fungsi Toggle Status Langsung Merubah UI secara Real-Time
+        // PERBAIKAN: Fungsi Toggle Status Merubah Warna Seketika dan Memperbarui Header Aplikasi
         async function toggleStatus(id, isChecked) {
             const newStatus = isChecked ? 'Ready' : 'Sold';
-            const statusTextEl = document.getElementById(`status-text-${id}`);
-            const rowItemEl = document.getElementById(`row-item-${id}`);
-            
-            if(statusTextEl) { 
-                statusTextEl.innerText = newStatus.toUpperCase(); 
-                statusTextEl.className = `text-[9px] font-black ${isChecked ? 'text-green-500 bg-green-50 border-green-200' : 'text-red-500 bg-red-50 border-red-200'} px-2 py-0.5 rounded-md border uppercase tracking-wider shadow-sm`; 
-            }
-            if(rowItemEl) {
-                if(isChecked) {
-                    rowItemEl.classList.remove('bg-gray-100', 'border-gray-300', 'grayscale-[30%]', 'opacity-80');
-                    rowItemEl.classList.add('bg-white', 'border-pink-100');
-                } else {
-                    rowItemEl.classList.remove('bg-white', 'border-pink-100');
-                    rowItemEl.classList.add('bg-gray-100', 'border-gray-300', 'grayscale-[30%]', 'opacity-80');
-                }
-            }
-
             const itemIndex = globalAdminData.findIndex(item => item.id === id);
-            if (itemIndex !== -1) globalAdminData[itemIndex].status = newStatus;
+            
+            if (itemIndex !== -1) {
+                globalAdminData[itemIndex].status = newStatus;
+            }
+            
+            // Instantly re-render the UI so App header badge & Row colors update perfectly!
+            filterAdminList(); 
             
             try {
                 const res = await fetch(`${BASE_URL}/api/status/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ status: newStatus }) });
                 await handleResponseStatus(res);
-            } catch (error) { loadData(); }
+            } catch (error) { 
+                loadData(); 
+            }
         }
         
         async function deleteData(id) {
