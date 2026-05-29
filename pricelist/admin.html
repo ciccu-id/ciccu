@@ -39,7 +39,6 @@
 </head>
 <body class="min-h-screen pb-20 pt-4 md:pt-0">
 
-    <!-- HALAMAN LOGIN CICCU -->
     <div id="loginOverlay" class="fixed inset-0 bg-pink-50 z-[200] flex items-center justify-center p-4 transition-opacity duration-300">
         <div class="bg-white p-8 rounded-[2rem] shadow-2xl shadow-pink-200 w-full max-w-sm text-center border border-pink-100">
             <img src="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg" alt="Logo" class="w-24 h-24 rounded-full mx-auto mb-4 shadow-md border-4 border-pink-100">
@@ -51,7 +50,6 @@
         </div>
     </div>
 
-    <!-- KONTEN UTAMA ADMIN CICCU -->
     <main class="max-w-3xl mx-auto p-4 md:p-6" id="mainContent" style="display: none;">
         <div class="mb-6 border-b border-pink-200 pb-4 mt-2 flex justify-between items-center">
             <div>
@@ -127,7 +125,6 @@
         </div>
     </main>
 
-    <!-- Modal Atur Urutan -->
     <div id="reorderModal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeReorderModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[85vh]">
@@ -147,7 +144,6 @@
         </div>
     </div>
 
-    <!-- Modal Tambah Paket Spesifik -->
     <div id="addPackageModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeAddPackageModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
@@ -174,7 +170,6 @@
         </div>
     </div>
 
-    <!-- Modal Edit -->
     <div id="editModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeEditModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
@@ -204,7 +199,6 @@
         </div>
     </div>
 
-    <!-- Modal Form Builder -->
     <div id="formBuilderModal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeFormModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[90vh]">
@@ -228,7 +222,6 @@
         </div>
     </div>
 
-    <!-- Modal Import CSV -->
     <div id="importModal" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeImportModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
@@ -247,7 +240,6 @@
         </div>
     </div>
 
-    <!-- Bulk Action Bar -->
     <div id="bulkActionBar" class="fixed bottom-0 left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-t border-pink-200 shadow-[0_-10px_40px_rgba(244,114,182,0.15)] transform translate-y-full transition-transform duration-300">
         <div class="max-w-3xl mx-auto p-4 flex flex-col md:flex-row items-center justify-between gap-3">
             <span id="bulkCount" class="text-sm font-bold text-pink-500">0 item terpilih 🎀</span>
@@ -261,7 +253,13 @@
     </div>
 
     <script>
+        // =========================================================
+        // PASTIKAN URL INI SAMA PERSIS DENGAN YANG ADA DI script.js
+        // =========================================================
         const API_URL = "https://ciccu.ygpentinggmail22.workers.dev"; 
+        
+        // Pembersih otomatis jika ada kelebihan garis miring di akhir URL
+        const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
         
         let globalAdminData = [];
         let globalFormsData = {};
@@ -301,7 +299,7 @@
             window.location.reload();
         }
 
-        function handleResponseStatus(res) {
+        async function handleResponseStatus(res) {
             if (res.status === 403) {
                 alert("Gagal memproses! Password admin Anda salah atau sesi berakhir.");
                 logoutAdmin();
@@ -318,8 +316,19 @@
             if(!sessionPass) return;
             const list = document.getElementById('dataList');
             try {
-                const response = await fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`);
+                const response = await fetch(`${BASE_URL}/api/pricelist?t=${new Date().getTime()}`);
+                
+                // Tambahan: Pendeteksi Error Server
+                if (!response.ok) {
+                    throw new Error(`Server membalas dengan status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                
+                // Tambahan: Pastikan format yang ditarik adalah Array
+                if (!Array.isArray(data)) {
+                    throw new Error("Data yang ditarik dari server bukan format tabel (Array).");
+                }
                 
                 globalAdminData = data.sort((a, b) => {
                     const aApp = (a.app_sort_order && a.app_sort_order > 0) ? a.app_sort_order : 9999;
@@ -330,17 +339,24 @@
                 });
 
                 try {
-                    const formResponse = await fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`);
+                    const formResponse = await fetch(`${BASE_URL}/api/forms?t=${new Date().getTime()}`);
                     if(formResponse.ok) {
                         const formData = await formResponse.json();
                         globalFormsData = {};
-                        formData.forEach(f => { globalFormsData[f.app_name.toLowerCase().trim()] = f; });
+                        if(Array.isArray(formData)) {
+                            formData.forEach(f => { globalFormsData[f.app_name.toLowerCase().trim()] = f; });
+                        }
                     }
                 } catch(e) {}
                 
                 filterAdminList(); 
             } catch (error) {
-                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200">Gagal memuat data. Cek koneksi internet.</div>`;
+                list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200 shadow-sm mx-2">
+                    Gagal memuat data!<br><br>
+                    <span class="text-xs text-gray-500 font-medium">${error.message}</span><br><br>
+                    <span class="text-[10px] text-pink-400">Pastikan URL API di file ini sama dengan script.js</span>
+                </div>`;
+                console.error("Error Detail:", error);
             }
         }
 
@@ -531,7 +547,7 @@
                         });
                         filterAdminList(); 
                         try {
-                            const res = await fetch(`${API_URL}/api/pricelist/reorder`, {
+                            const res = await fetch(`${BASE_URL}/api/pricelist/reorder`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
                                 body: JSON.stringify({ order: newOrder })
@@ -597,7 +613,7 @@
                 app_name: el.dataset.app, app_sort_order: index + 1
             }));
             try {
-                const res = await fetch(`${API_URL}/api/pricelist/reorder-apps`, {
+                const res = await fetch(`${BASE_URL}/api/pricelist/reorder-apps`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
                     body: JSON.stringify({ order: newOrder })
                 });
@@ -650,9 +666,9 @@
             const validFields = builderFields.map(f => f.trim()).filter(f => f !== '');
             try {
                 if (validFields.length === 0) {
-                    await fetch(`${API_URL}/api/forms/${encodeURIComponent(builderCurrentApp)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} });
+                    await fetch(`${BASE_URL}/api/forms/${encodeURIComponent(builderCurrentApp)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} });
                 } else {
-                    const res = await fetch(`${API_URL}/api/forms`, {
+                    const res = await fetch(`${BASE_URL}/api/forms`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
                         body: JSON.stringify({ app_name: builderCurrentApp, form_fields: validFields.join(', ') })
                     });
@@ -692,7 +708,7 @@
                     if (cols.length < 4) continue;
                     progress.innerText = `Mengirim baris ${i + 1} dari ${rows.length}...`;
                     try {
-                        const res = await fetch(`${API_URL}/api/pricelist`, {
+                        const res = await fetch(`${BASE_URL}/api/pricelist`, {
                             method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
                             body: JSON.stringify({ app_name: cols[0], category: cols[1], duration: cols[2], price: cols[3], notes: cols[4] || '', status: cols[5] || 'Ready' })
                         });
@@ -717,7 +733,6 @@
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
-            const d = new Date(); const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", `ciccu-pricelist.csv`);
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
@@ -750,7 +765,7 @@
                 status: document.getElementById('addPkgStatus').value, notes: document.getElementById('addPkgNotes').value,
             };
             try {
-                const res = await fetch(`${API_URL}/api/pricelist`, {
+                const res = await fetch(`${BASE_URL}/api/pricelist`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload)
                 });
                 await handleResponseStatus(res); expandedApps[appName] = true; closeAddPackageModal(); loadData();
@@ -775,7 +790,7 @@
                 status: document.getElementById('editAppStatus').value, notes: document.getElementById('editAppNotes').value,
             };
             try {
-                const res = await fetch(`${API_URL}/api/pricelist/${currentEditId}`, {
+                const res = await fetch(`${BASE_URL}/api/pricelist/${currentEditId}`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload)
                 });
                 await handleResponseStatus(res); closeEditModal(); loadData();
@@ -792,13 +807,13 @@
         async function deleteApplication(appName, packageIds) {
             if (packageIds.length === 0) {
                 if (!confirm(`Aplikasi "${appName}" kosong. Hapus form?`)) return;
-                try { await fetch(`${API_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} }); loadData(); } catch (e) { } return;
+                try { await fetch(`${BASE_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} }); loadData(); } catch (e) { } return;
             }
             if (!confirm(`Hapus permanen "${appName}" beserta ${packageIds.length} paket?`)) return;
             try {
-                const response = await fetch(`${API_URL}/api/delete/bulk`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ ids: packageIds }) });
+                const response = await fetch(`${BASE_URL}/api/delete/bulk`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ ids: packageIds }) });
                 await handleResponseStatus(response);
-                try { await fetch(`${API_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} }); } catch (formErr) { }
+                try { await fetch(`${BASE_URL}/api/forms/${encodeURIComponent(appName)}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} }); } catch (formErr) { }
                 packageIds.forEach(id => selectedItems.delete(id)); updateBulkUI(); loadData(); 
             } catch (error) { }
         }
@@ -810,14 +825,14 @@
         async function bulkUpdateStatus(status) {
             if(!confirm(`Ubah status ${selectedItems.size} paket menjadi ${status}?`)) return;
             try {
-                const res = await fetch(`${API_URL}/api/status/bulk`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ ids: Array.from(selectedItems), status: status }) });
+                const res = await fetch(`${BASE_URL}/api/status/bulk`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ ids: Array.from(selectedItems), status: status }) });
                 await handleResponseStatus(res); clearSelection(); loadData();
             } catch(e) { }
         }
         async function bulkDelete() {
             if(!confirm(`Hapus permanen ${selectedItems.size} paket terpilih?`)) return;
             try {
-                const res = await fetch(`${API_URL}/api/delete/bulk`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ ids: Array.from(selectedItems) }) });
+                const res = await fetch(`${BASE_URL}/api/delete/bulk`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ ids: Array.from(selectedItems) }) });
                 await handleResponseStatus(res); clearSelection(); loadData();
             } catch(e) { }
         }
@@ -834,7 +849,7 @@
                 status: document.getElementById('appStatus').value, notes: document.getElementById('appNotes').value,
             };
             try {
-                const res = await fetch(`${API_URL}/api/pricelist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) });
+                const res = await fetch(`${BASE_URL}/api/pricelist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) });
                 await handleResponseStatus(res); document.getElementById('addForm').reset(); document.getElementById('adminSearchInput').value = ''; loadData();
             } catch (error) { } finally { btn.innerHTML = "Simpan Data ✨"; btn.disabled = false; }
         }
@@ -845,14 +860,14 @@
             const itemIndex = globalAdminData.findIndex(item => item.id === id);
             if (itemIndex !== -1) globalAdminData[itemIndex].status = newStatus;
             try {
-                const res = await fetch(`${API_URL}/api/status/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ status: newStatus }) });
+                const res = await fetch(`${BASE_URL}/api/status/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ status: newStatus }) });
                 await handleResponseStatus(res);
             } catch (error) { loadData(); }
         }
         async function deleteData(id) {
             if(!confirm("Yakin ingin menghapus paket ini?")) return;
             try {
-                const res = await fetch(`${API_URL}/api/delete/${id}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} });
+                const res = await fetch(`${BASE_URL}/api/delete/${id}`, { method: 'DELETE', headers: {'x-admin-password': sessionPass} });
                 await handleResponseStatus(res); loadData();
             } catch (error) { }
         }
