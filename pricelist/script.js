@@ -3,16 +3,24 @@ const API_URL = "https://ciccu.ygpentinggmail22.workers.dev";
 let allApps = {};
 let orderedAppNames = []; 
 let currentCategory = 'all';
-let globalFormsData = {}; // Menyimpan struktur form dari database
+let appForms = {}; 
 
+let cart = []; 
+let currentOrderApp = '';
+let isSummaryExpanded = false; 
+
+// PETA KATEGORI CICCU
 const appCategoryMap = {
-    'netflix': 'streaming', 'iqiyi': 'streaming', 'vidio': 'streaming', 'viu': 'streaming', 
-    'disney': 'streaming', 'youtube': 'streaming', 'loklok': 'streaming', 'loktv': 'streaming',
-    'prime': 'streaming', 'amazon': 'streaming', 'hbo': 'streaming', 'apple tv': 'streaming',
-    'gagaoolala': 'streaming', 'crunchyroll': 'streaming', 'dramabox': 'streaming',
-    'wetv': 'streaming', 'we tv': 'streaming',
+    'netflix': 'streaming', 'disney': 'streaming', 'youtube': 'streaming', 
+    'viu': 'streaming', 'iqiyi': 'streaming', 'prime': 'streaming', 'amazon': 'streaming',
+    'hbo': 'streaming', 'wetv': 'streaming', 'we tv': 'streaming', 
+    'vidio': 'streaming', 'crunchyroll': 'streaming', 'loklok': 'streaming', 'loktv': 'streaming', 
+    'gagaoolala': 'streaming', 'dramabox': 'streaming', 'apple tv': 'streaming',
+    
     'spotify': 'music', 'apple music': 'music', 'apple': 'music',
+    
     'capcut': 'editing', 'canva': 'editing', 'alight motion': 'editing', 'alight': 'editing',
+    
     'turnitin': 'study', 'cek turnitin': 'study', 'cek ai': 'study', 'chatgpt': 'study', 
     'claude': 'study', 'grok': 'study', 'grokai': 'study', 'ms365': 'study', 'microsoft': 'study'
 };
@@ -49,105 +57,94 @@ function getLogoUrl(appName) {
 }
 
 function extractNumK(priceStr) {
-    if (typeof priceStr !== 'string') priceStr = String(priceStr);
     return parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
 }
 
-function parseFormFields(str) {
-    if (!str) return [];
-    try {
-        if (str.trim().startsWith('[')) {
-            const parsedJson = JSON.parse(str);
-            return parsedJson.map(item => item.name);
-        }
-    } catch(e) {}
-    return str.split(',').map(s => s.trim()).filter(s => s);
-}
-
+// --- AMBIL DATA DARI SERVER ---
 async function loadPricelist() {
     try {
-        // Ambil data pricelist dan form sekaligus
-        const [priceRes, formRes] = await Promise.all([
-            fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`),
-            fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`).catch(() => null)
-        ]);
-
-        if (!priceRes.ok) throw new Error("Gagal mengambil data dari server");
-        
-        let data = await priceRes.json();
-        
-        // Simpan data form ke variabel global
-        globalFormsData = {};
-        if (formRes && formRes.ok) {
-            const formData = await formRes.json();
-            formData.forEach(f => { globalFormsData[f.app_name.toLowerCase().trim()] = f; });
-        }
-        
-        // MENGATUR URUTAN SESUAI ADMIN (Steotype Logic)
-        const appOrders = {};
-        const appFirstIds = {};
-        const groupedData = {};
-
-        data.forEach(item => {
-            if (!groupedData[item.app_name]) groupedData[item.app_name] = [];
-            groupedData[item.app_name].push(item);
-            
-            const appOrder = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
-            if (!appOrders[item.app_name] || appOrder < appOrders[item.app_name]) appOrders[item.app_name] = appOrder;
-            if (!appFirstIds[item.app_name] || item.id < appFirstIds[item.app_name]) appFirstIds[item.app_name] = item.id;
+        const response = await fetch(`${API_URL}/api/pricelist?t=${new Date().getTime()}`, {
+            cache: 'no-store'
         });
-
-        const sortedAppNames = Object.keys(groupedData).sort((a, b) => {
-            return (appOrders[a] - appOrders[b]) || (appFirstIds[a] - appFirstIds[b]);
+        if (!response.ok) throw new Error("Gagal mengambil data");
+        
+        let data = await response.json();
+        
+        data.sort((a, b) => {
+            const aApp = (a.app_sort_order && a.app_sort_order > 0) ? a.app_sort_order : 9999;
+            const bApp = (b.app_sort_order && b.app_sort_order > 0) ? b.app_sort_order : 9999;
+            const aPkg = (a.sort_order && a.sort_order > 0) ? a.sort_order : 9999;
+            const bPkg = (b.sort_order && b.sort_order > 0) ? b.sort_order : 9999;
+            return (aApp - bApp) || (aPkg - bPkg) || (a.id - b.id);
         });
 
         const apps = {};
-        const appOrder = []; 
+        const appMinOrder = {}; 
+        const appFirstId = {};
 
-        sortedAppNames.forEach(appName => {
-            appOrder.push(appName);
-            apps[appName] = { categories: {} };
+        data.forEach(item => {
+            if (item.status !== 'Ready') return; 
+
+            const appName = item.app_name;
+            const category = item.category; 
+            const duration = item.duration; 
+            const price = item.price;    
+            const notes = item.notes || ''; 
+
+            const appOrderVal = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
+
+            if (!apps[appName]) { 
+                apps[appName] = { packages: [] }; 
+                appMinOrder[appName] = appOrderVal; 
+                appFirstId[appName] = item.id;
+            } else {
+                if (appOrderVal < appMinOrder[appName]) appMinOrder[appName] = appOrderVal;
+                if (item.id < appFirstId[appName]) appFirstId[appName] = item.id;
+            }
             
-            // Urutkan paket dalam aplikasi
-            groupedData[appName].sort((a, b) => {
-                const aPkg = (a.sort_order && a.sort_order > 0) ? a.sort_order : 9999;
-                const bPkg = (b.sort_order && b.sort_order > 0) ? b.sort_order : 9999;
-                return (aPkg - bPkg) || (a.id - b.id);
-            });
-
-            groupedData[appName].forEach(item => {
-                const category = item.category; 
-                if (!apps[appName].categories[category]) { apps[appName].categories[category] = []; }
-                apps[appName].categories[category].push({ 
-                    duration: item.duration, 
-                    price: item.price, 
-                    notes: (item.notes && item.notes.toLowerCase() !== 'nan') ? item.notes : '', 
-                    available: item.status ? item.status.toLowerCase() : 'ready' 
-                });
-            });
+            apps[appName].packages.push({ category, duration, price, notes, id: item.id });
         });
 
         allApps = apps;
-        orderedAppNames = appOrder; 
+        orderedAppNames = Object.keys(apps);
+        
+        orderedAppNames.sort((a, b) => (appMinOrder[a] - appMinOrder[b]) || (appFirstId[a] - appFirstId[b]));
+
+        try {
+            const formRes = await fetch(`${API_URL}/api/forms?t=${new Date().getTime()}`, { cache: 'no-store' });
+            if (formRes.ok) {
+                const formsData = await formRes.json();
+                appForms = {};
+                formsData.forEach(f => {
+                    appForms[f.app_name.toLowerCase().trim()] = f.form_fields;
+                });
+            }
+        } catch (err) {
+            console.error("Gagal memuat form:", err);
+        }
         
         applyFilters();
         document.getElementById('statusMessage').style.display = 'none';
-        updateCartUI();
 
     } catch (error) {
-        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">Gagal memuat data dari Server. Cek koneksi ya! 🥺</p>`;
+        document.getElementById('statusMessage').innerHTML = `<p class="text-red-500 text-sm font-bold bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm">Gagal terhubung ke database. Coba muat ulang. 🥺</p>`;
     }
 }
 
+// --- FILTER & RENDER HOMEPAGE ---
 function switchCategory(cat) {
     currentCategory = cat;
     const categories = ['all', 'streaming', 'music', 'editing', 'study'];
+    
     categories.forEach(c => {
         const btn = document.getElementById(`cat-${c}`);
         if (!btn) return;
-        btn.className = (c === cat) ? 
-          "w-full py-2.5 md:py-3 rounded-xl border border-pink-400 bg-pink-400 text-[10px] md:text-xs font-bold text-white shadow-lg shadow-pink-200 transition-all outline-none" :
-          "w-full py-2.5 md:py-3 rounded-xl border border-pink-200 bg-white text-[10px] md:text-xs font-bold text-pink-400 hover:bg-pink-50 transition-all outline-none";
+        
+        if (c === cat) {
+            btn.className = "w-full py-2.5 md:py-3 rounded-xl border border-pink-400 bg-pink-400 text-[10px] md:text-xs font-bold text-white shadow-lg shadow-pink-200 transition-all outline-none";
+        } else {
+            btn.className = "w-full py-2.5 md:py-3 rounded-xl border border-pink-200 bg-white text-[10px] md:text-xs font-bold text-pink-400 hover:bg-pink-50 transition-all outline-none";
+        }
     });
     
     applyFilters();
@@ -157,6 +154,7 @@ function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     const filteredApps = {};
     const filteredOrder = []; 
+    let hasVisibleCards = false;
 
     orderedAppNames.forEach(name => {
         const info = allApps[name];
@@ -167,11 +165,12 @@ function applyFilters() {
         if (matchesSearch && matchesCategory) {
             filteredApps[name] = info;
             filteredOrder.push(name);
+            hasVisibleCards = true;
         }
     });
     
     renderCards(filteredApps, filteredOrder);
-    document.getElementById('noResults').style.display = (filteredOrder.length === 0) ? 'block' : 'none';
+    document.getElementById('noResults').style.display = (!hasVisibleCards) ? 'block' : 'none';
 }
 
 function renderCards(apps, orderedNames) {
@@ -184,15 +183,13 @@ function renderCards(apps, orderedNames) {
     orderedNames.forEach(name => {
         const info = apps[name];
         let minPrice = Infinity;
-        let totalPackages = 0;
+        let totalPackages = info.packages.length; 
 
-        for (const [categoryName, items] of Object.entries(info.categories)) {
-            items.forEach(item => {
-                totalPackages++;
-                const pVal = extractNumK(item.price);
-                if(pVal > 0 && pVal < minPrice) minPrice = pVal;
-            });
-        }
+        info.packages.forEach(item => {
+            const pVal = extractNumK(item.price);
+            if(pVal > 0 && pVal < minPrice) minPrice = pVal;
+        });
+        
         const displayPrice = minPrice !== Infinity ? minPrice + 'K' : '-';
 
         const logoUrl = getLogoUrl(name);
@@ -212,35 +209,32 @@ function renderCards(apps, orderedNames) {
         ` : '';
 
         const card = document.createElement('div');
-        card.className = 'group flex flex-col bg-white/90 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden';
+        card.className = 'group flex flex-col bg-white/90 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden cursor-pointer';
         card.style.animationDelay = `${delay}s`;
+        card.onclick = () => openOrderModal(safeName); 
         
         card.innerHTML = `
             <div class="absolute -top-10 -right-10 w-24 h-24 bg-pink-300/10 rounded-full blur-2xl group-hover:bg-pink-300/20 transition-all"></div>
             ${infoBtnHTML}
-            
             <div class="relative z-10 flex items-start justify-between mb-2 md:mb-4">
                 ${logoHTML}
                 <span class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded border border-pink-100">${categoryBadge}</span>
             </div>
-
-            <div class="relative z-10 mb-3 md:mb-4 flex-1">
-                <h2 class="text-sm md:text-xl font-black text-pink-600 capitalize tracking-tight group-hover:text-pink-500 transition-all truncate pr-4">${name}</h2>
+            <div class="relative z-10 mb-2 md:mb-3 flex-1">
+                <h2 class="text-sm md:text-xl font-black text-pink-600 capitalize tracking-tight group-hover:text-pink-400 transition-all truncate pr-4">${name}</h2>
                 <div class="mt-2 md:mt-4 flex items-end gap-1">
                     <span class="text-[10px] md:text-xs text-gray-500 font-bold pb-0.5 md:pb-1">Mulai</span>
                     <span class="text-lg md:text-2xl font-black text-gray-800 leading-none">${displayPrice}</span>
                 </div>
-                <p class="text-[9px] md:text-[11px] text-gray-400 mt-1 md:mt-2 font-bold flex items-center gap-1">
-                    <svg class="w-3 h-3 md:w-3.5 md:h-3.5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div class="relative z-10 mt-auto pt-2 md:pt-4 border-t border-pink-100 flex items-center justify-between text-gray-400 group-hover:text-pink-500 transition-colors">
+                <p class="text-[9px] md:text-[11px] font-bold flex items-center gap-1">
+                    <svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     ${totalPackages} Paket
                 </p>
-            </div>
-
-            <div class="relative z-10 mt-auto pt-2 md:pt-4 border-t border-pink-100">
-                <button onclick="openOrderModal('${safeName}')" class="w-full flex items-center justify-center gap-1.5 md:gap-2 py-2 md:py-3 bg-pink-50 text-pink-500 text-[10px] md:text-sm font-black rounded-lg md:rounded-xl hover:bg-pink-400 hover:text-white transition-all outline-none border border-pink-200 hover:border-pink-400 shadow-sm">
-                    Pilih 𓏲ּ𝄢
-                    <svg class="w-3 h-3 md:w-4 md:h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </button>
+                <div class="bg-pink-50 p-1 md:p-1.5 rounded-lg border border-pink-100 group-hover:bg-pink-400 group-hover:text-white transition-all shadow-sm">
+                    <svg class="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
             </div>
         `;
         grid.appendChild(card);
@@ -248,126 +242,57 @@ function renderCards(apps, orderedNames) {
     });
 }
 
-// ----- CART & FORM LOGIC (Steotype Workflow) -----
-let cart = []; 
-let currentOrderApp = '';
-let selectedPackage = null;
-let orderQty = 1;
-
+// --- SISTEM ORDER & CART ---
 function openOrderModal(appName) {
     currentOrderApp = appName;
-    selectedPackage = null;
-    orderQty = 1;
-    
     document.getElementById('modalAppNameTitle').innerText = appName;
-    document.getElementById('qtyDisplay').innerText = orderQty;
-    document.getElementById('qtyControl').classList.add('hidden');
     
+    const logoUrl = getLogoUrl(appName);
+    document.getElementById('modalAppLogo').innerHTML = logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover">` : `<span class="text-[10px] font-black text-pink-500">${appName.charAt(0)}</span>`;
+
     const info = allApps[appName];
     const list = document.getElementById('modalPackagesList');
-    list.innerHTML = '';
     
-    let html = '';
-    Object.entries(info.categories).forEach(([cat, items]) => {
-        items.forEach((item, index) => {
-            const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
-            const isSold = item.available === 'sold';
-            
-            let modalNoteHTML = '';
-            if (item.notes) {
-                modalNoteHTML = `<p class="text-[10px] text-pink-400 font-medium italic mt-1 leading-tight flex gap-1.5 items-center"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>`;
-            }
+    let html = `<div class="bg-white rounded-2xl border border-pink-200 overflow-hidden shadow-sm flex flex-col divide-y divide-pink-100">`;
+    
+    info.packages.forEach((item, index) => {
+        const cat = item.category;
+        const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
+        const noteHtml = item.notes && item.notes.toLowerCase() !== 'nan' 
+            ? `<p class="text-[9px] text-pink-400 font-medium italic mt-1 flex items-center gap-1"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>` 
+            : '';
 
-            const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ml-2 border border-red-200">Habis</span>` : '';
+        const cartItem = cart.find(c => c.app === appName && c.cat === cat && c.dur === item.duration);
+        const qty = cartItem ? cartItem.qty : 0;
+        
+        const activeClass = qty > 0 ? 'bg-pink-50' : 'bg-transparent';
+        const activeBorder = qty > 0 ? 'border-l-[4px] border-l-pink-400' : 'border-l-[4px] border-l-transparent';
 
-            const containerClass = isSold 
-                ? `border border-gray-200 bg-gray-50 p-4 rounded-xl flex justify-between items-center opacity-75 select-none` 
-                : `package-option border border-pink-200 bg-white p-4 rounded-xl cursor-pointer hover:border-pink-400 transition-all flex justify-between items-center group shadow-sm`;
-                
-            const onClickAttr = isSold ? '' : `onclick="selectPackage('${pkgId}', '${cat}', '${item.duration}', '${item.price}')"`;
-            const checkIndicatorClass = isSold ? 'border-gray-200 bg-gray-200' : 'border-gray-300 bg-white check-indicator transition-colors';
-
-            html += `
-                <div id="${pkgId}" ${onClickAttr} class="${containerClass}">
-                    <div class="flex-1 pr-3">
-                        <div class="flex items-center">
-                            <p class="text-[11px] text-pink-400 font-bold uppercase tracking-widest mb-1">${cat}</p>
-                            ${soldBadge}
-                        </div>
-                        <p class="text-sm font-bold ${isSold ? 'text-gray-400 line-through' : 'text-gray-600 group-hover:text-gray-800'} transition-colors">${item.duration}</p>
-                        ${modalNoteHTML}
-                    </div>
-                    <div class="flex items-center gap-3 shrink-0">
-                        <p class="font-bold ${isSold ? 'text-gray-400' : 'text-pink-600'} text-lg">${item.price}</p>
-                        <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${checkIndicatorClass}"></div>
+        html += `
+            <div id="row-${pkgId}" class="flex items-center justify-between p-3.5 md:p-4 transition-all duration-300 hover:bg-pink-50/50 ${activeClass} ${activeBorder}">
+                <div class="flex-1 pr-3 min-w-0">
+                    <p class="text-[9px] md:text-[10px] text-pink-500 font-black uppercase tracking-widest mb-0.5 truncate">${cat}</p>
+                    <h4 class="text-xs md:text-sm font-bold text-gray-700 truncate">${item.duration}</h4>
+                    ${noteHtml}
+                </div>
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    <span class="font-black text-pink-600 text-xs md:text-sm">${item.price}</span>
+                    <div id="btn-container-${pkgId}">
+                        ${getQuickAddButtonHTML(appName, cat, item.duration, item.price, pkgId, qty)}
                     </div>
                 </div>
-            `;
-        });
+            </div>
+        `;
     });
-    list.innerHTML = html;
     
-    const btn = document.getElementById('btnProcessOrder');
-    btn.disabled = true;
-    btn.className = "w-full py-3.5 bg-pink-100 text-pink-500 cursor-not-allowed font-bold rounded-xl transition shadow-sm outline-none flex justify-center items-center gap-2";
-    btn.innerHTML = "Pilih Paket Dulu 𓏲ּ𝄢";
+    html += `</div>`;
+    list.innerHTML = html;
 
     const modal = document.getElementById('orderModal');
     const backdrop = document.getElementById('orderModalBackdrop');
     const content = document.getElementById('orderModalContent');
     modal.classList.remove('hidden');
     setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
-}
-
-function selectPackage(pkgId, cat, dur, price) {
-    selectedPackage = { app: currentOrderApp, cat, dur, price };
-    
-    document.querySelectorAll('.package-option').forEach(el => {
-        el.classList.remove('border-pink-400', 'bg-pink-50');
-        el.classList.add('border-pink-200', 'bg-white');
-        const check = el.querySelector('.check-indicator');
-        if (check) {
-            check.innerHTML = '';
-            check.classList.replace('border-pink-500', 'border-gray-300');
-            check.classList.remove('bg-pink-500');
-            check.classList.add('bg-white');
-        }
-    });
-
-    const selectedEl = document.getElementById(pkgId);
-    selectedEl.classList.remove('border-pink-200', 'bg-white');
-    selectedEl.classList.add('border-pink-400', 'bg-pink-50');
-    
-    const check = selectedEl.querySelector('.check-indicator');
-    check.classList.replace('border-gray-300', 'border-pink-500');
-    check.classList.remove('bg-white');
-    check.classList.add('bg-pink-500');
-    check.innerHTML = '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>';
-
-    document.getElementById('qtyControl').classList.remove('hidden');
-    updateAddBtn();
-}
-
-function changeQty(delta) {
-    if(!selectedPackage) return;
-    let newQty = orderQty + delta;
-    if(newQty < 1) newQty = 1;
-    if(newQty > 100) newQty = 100;
-    orderQty = newQty;
-    document.getElementById('qtyDisplay').innerText = orderQty;
-    updateAddBtn();
-}
-
-function updateAddBtn() {
-    const btn = document.getElementById('btnProcessOrder');
-    const total = extractNumK(selectedPackage.price) * orderQty;
-    
-    btn.disabled = false;
-    btn.className = "w-full py-3.5 bg-pink-400 hover:bg-pink-500 text-white font-bold rounded-xl transition shadow-md shadow-pink-200 outline-none flex justify-center items-center gap-2";
-    btn.innerHTML = `
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-        Tambah ke Keranjang (${total}K) 🛍️
-    `;
 }
 
 function closeOrderModal() {
@@ -378,291 +303,430 @@ function closeOrderModal() {
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
 
-function addToCart() {
-    if(!selectedPackage) return;
-    
-    const appKey = selectedPackage.app.toLowerCase().trim();
-    const formObj = globalFormsData[appKey];
-    const formFields = formObj ? parseFormFields(formObj.form_fields) : [];
+function getQuickAddButtonHTML(appName, cat, dur, price, pkgId, qty) {
+    const safeAppName = appName.replace(/'/g, "\\'");
+    if (qty > 0) {
+        return `
+            <button onclick="quickAdd('${safeAppName}', '${cat}', '${dur}', '${price}', '${pkgId}')" class="bg-pink-400 text-white border border-pink-400 text-[10px] md:text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-md shadow-pink-200 outline-none transform active:scale-95">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> 
+                ${qty} pcs
+            </button>
+        `;
+    } else {
+        return `
+            <button onclick="quickAdd('${safeAppName}', '${cat}', '${dur}', '${price}', '${pkgId}')" class="bg-white hover:bg-pink-50 text-pink-400 border border-pink-200 text-[10px] md:text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1 outline-none transform active:scale-95 shadow-sm">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg> 
+                Tambah
+            </button>
+        `;
+    }
+}
 
+function quickAdd(appName, cat, dur, price, pkgId) {
     const existIndex = cart.findIndex(item => 
-        item.app === selectedPackage.app && 
-        item.cat === selectedPackage.cat && 
-        item.dur === selectedPackage.dur
+        item.app === appName && item.cat === cat && item.dur === dur
     );
 
-    if(existIndex !== -1) {
-        cart[existIndex].qty += orderQty;
-        // Tambahkan placeholder data form sesuai qty baru
-        for(let i = 0; i < orderQty; i++) {
-            cart[existIndex].formData.push({});
-        }
+    let newQty = 1;
+    if (existIndex !== -1) {
+        cart[existIndex].qty += 1;
+        newQty = cart[existIndex].qty;
     } else {
-        let initialFormData = [];
-        for(let i = 0; i < orderQty; i++) { initialFormData.push({}); }
         cart.push({ 
-            ...selectedPackage, 
-            qty: orderQty,
-            formFields: formFields,
-            formData: initialFormData
+            app: appName, cat: cat, dur: dur, price: price, qty: 1, 
+            separateForms: false, useFirstItemData: false, formData: [{}]
         });
     }
 
-    updateCartUI();
-    closeOrderModal();
+    const btnContainer = document.getElementById(`btn-container-${pkgId}`);
+    if(btnContainer) {
+        btnContainer.innerHTML = getQuickAddButtonHTML(appName, cat, dur, price, pkgId, newQty);
+    }
+
+    const row = document.getElementById(`row-${pkgId}`);
+    if(row) {
+        row.classList.remove('bg-transparent', 'border-l-transparent');
+        row.classList.add('bg-pink-50', 'border-l-[4px]', 'border-l-pink-400');
+    }
+
+    updateInlineSummaryUI();
     showToast();
+    triggerSummaryBounce();
 }
 
-function updateCartUI() {
-    const count = cart.reduce((sum, item) => sum + item.qty, 0);
-    const fab = document.getElementById('floatingCartBtn');
-    const badgeFloat = document.getElementById('cartBadgeFloating');
-    
-    badgeFloat.innerText = count;
-    
-    if(count > 0) { 
-        fab.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none'); 
-    } else { 
-        fab.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none'); 
+// --- KERANJANG BAWAH (INLINE SUMMARY) ---
+function updateInlineSummaryUI() {
+    let count = 0;
+    let totalK = 0;
+
+    cart.forEach(item => {
+        count += item.qty;
+        totalK += extractNumK(item.price) * item.qty;
+    });
+
+    const panel = document.getElementById('inlineSummaryPanel');
+    const badge = document.getElementById('summaryBadgeCount');
+    const total = document.getElementById('summaryTotalK');
+
+    badge.innerText = count;
+    total.innerText = totalK + 'K';
+
+    if (count > 0) {
+        panel.classList.remove('translate-y-full'); 
+        renderInlineSummaryList();
+    } else {
+        panel.classList.add('translate-y-full'); 
+        isSummaryExpanded = false;
+        document.getElementById('inlineSummaryList').classList.add('hidden');
+        document.getElementById('summaryToggleIcon').innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>`;
+    }
+}
+
+function triggerSummaryBounce() {
+    const iconContainer = document.getElementById('summaryIconContainer');
+    iconContainer.classList.add('scale-125', 'ring-4', 'ring-pink-200');
+    setTimeout(() => {
+        iconContainer.classList.remove('scale-125', 'ring-4', 'ring-pink-200');
+    }, 250);
+}
+
+function toggleSummaryList(e) {
+    if(e && e.target.closest('button')) return; 
+
+    isSummaryExpanded = !isSummaryExpanded;
+    const list = document.getElementById('inlineSummaryList');
+    const icon = document.getElementById('summaryToggleIcon');
+
+    if (isSummaryExpanded) {
+        list.classList.remove('hidden');
+        list.classList.add('flex');
+        icon.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7-7-7-7"></path></svg>`; 
+    } else {
+        list.classList.add('hidden');
+        list.classList.remove('flex');
+        icon.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"></path></svg>`; 
+    }
+}
+
+function renderInlineSummaryList() {
+    const list = document.getElementById('inlineSummaryList');
+    let html = '';
+
+    cart.forEach((item, index) => {
+        const itemTotal = extractNumK(item.price) * item.qty;
+        const logoUrl = getLogoUrl(item.app);
+        const logoRender = logoUrl ? `<img src="${logoUrl}" class="w-6 h-6 object-cover rounded-md border border-pink-100">` : `<span class="text-[10px] font-black text-pink-400">${item.app.charAt(0)}</span>`;
+
+        html += `
+            <div class="flex items-center justify-between bg-white p-2.5 rounded-[12px] border border-pink-100 gap-3 group transition-colors hover:border-pink-300 shadow-sm">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-pink-50 border border-pink-100 flex-shrink-0 flex items-center justify-center p-0.5">
+                        ${logoRender}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-gray-800 font-bold text-xs truncate leading-tight">${item.app}</h4>
+                        <p class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 truncate"><span class="text-pink-500 font-bold uppercase">${item.cat}</span> • ${item.dur}</p>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    <span class="text-pink-600 font-black text-xs md:text-sm">${itemTotal}K</span>
+                    <div class="flex items-center gap-1.5 bg-pink-50 border border-pink-100 rounded p-0.5 shadow-inner">
+                        <button onclick="updateCartItemQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center bg-white rounded hover:bg-gray-100 text-gray-500 font-bold text-[10px] outline-none transition-colors border border-pink-200 shadow-sm">-</button>
+                        <span class="text-pink-600 font-black w-3 text-center text-[10px]">${item.qty}</span>
+                        <button onclick="updateCartItemQty(${index}, 1)" class="w-5 h-5 flex items-center justify-center bg-pink-400 rounded hover:bg-pink-500 text-white font-bold text-[10px] outline-none transition-colors shadow-sm">+</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+function updateCartItemQty(index, delta) {
+    const item = cart[index];
+    let newQty = item.qty + delta;
+
+    if (newQty < 1) {
+        cart.splice(index, 1);
+    } else {
+        cart[index].qty = newQty;
+    }
+
+    updateInlineSummaryUI();
+
+    if (document.getElementById('orderModal').classList.contains('hidden') === false && item.app === currentOrderApp) {
+        openOrderModal(currentOrderApp);
     }
 }
 
 function showToast() {
     const toast = document.getElementById('toastNotif');
     toast.classList.replace('opacity-0', 'opacity-100');
-    toast.classList.replace('translate-y-10', 'translate-y-0');
+    toast.classList.replace('-translate-y-10', 'translate-y-0');
     setTimeout(() => {
         toast.classList.replace('opacity-100', 'opacity-0');
-        toast.classList.replace('translate-y-0', 'translate-y-10');
-    }, 2500);
+        toast.classList.replace('translate-y-0', '-translate-y-10');
+    }, 1500);
 }
 
-function openCartModal() {
-    renderCartList();
-    const modal = document.getElementById('cartModal');
-    const backdrop = document.getElementById('cartModalBackdrop');
-    const content = document.getElementById('cartModalContent');
+// --- CHECKOUT & FORMS ---
+function openCheckoutModal(e) {
+    if(e) e.stopPropagation(); 
+    if(cart.length === 0) return;
+
+    renderCheckoutForms();
+    
+    if(isSummaryExpanded) toggleSummaryList();
+
+    const modal = document.getElementById('checkoutModal');
+    const content = document.getElementById('checkoutModalContent');
     modal.classList.remove('hidden');
-    setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
+    setTimeout(() => {
+        content.classList.remove('translate-x-full');
+        content.classList.add('translate-x-0');
+    }, 10);
 }
 
-function closeCartModal() {
-    const modal = document.getElementById('cartModal');
-    const backdrop = document.getElementById('cartModalBackdrop');
-    const content = document.getElementById('cartModalContent');
-    backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
+function closeCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    const content = document.getElementById('checkoutModalContent');
+    content.classList.remove('translate-x-0');
+    content.classList.add('translate-x-full');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
 
-function renderCartList() {
-    const list = document.getElementById('cartItemsList');
-    const btnCheckout = document.getElementById('btnCheckoutWA');
-    
-    if(cart.length === 0) {
-        list.innerHTML = `<div class="text-center py-10 text-pink-400 text-sm font-medium">Keranjang masih kosong nih kak... 🌸</div>`;
-        document.getElementById('cartGrandTotal').innerText = '0K';
-        btnCheckout.disabled = true;
-        btnCheckout.classList.replace('from-green-400', 'from-gray-300');
-        btnCheckout.classList.replace('to-green-500', 'to-gray-400');
-        btnCheckout.classList.add('opacity-50', 'cursor-not-allowed', 'shadow-none');
-        return;
-    }
+function toggleUseFirstItemData(cartIndex, isChecked) {
+    cart[cartIndex].useFirstItemData = isChecked;
+    renderCheckoutForms(); 
+}
 
-    btnCheckout.disabled = false;
-    btnCheckout.classList.replace('from-gray-300', 'from-green-400');
-    btnCheckout.classList.replace('to-gray-400', 'to-green-500');
-    btnCheckout.classList.remove('opacity-50', 'cursor-not-allowed', 'shadow-none');
+function toggleSeparateFormsItem(cartIndex, isChecked) {
+    cart[cartIndex].separateForms = !isChecked; 
+    renderCheckoutForms(); 
+}
 
-    let html = '';
+function updateItemForm(cartIndex, fIdx, fieldName, val) {
+    if (!cart[cartIndex].formData) cart[cartIndex].formData = [];
+    if (!cart[cartIndex].formData[fIdx]) cart[cartIndex].formData[fIdx] = {};
+    cart[cartIndex].formData[fIdx][fieldName] = val;
+}
+
+function renderCheckoutForms() {
+    const container = document.getElementById('checkoutFormsContainer');
+    let cartGroups = {};
     let grandTotalK = 0;
-
+    
     cart.forEach((item, index) => {
+        const appKey = item.app.toLowerCase().trim();
+        if(!cartGroups[appKey]) cartGroups[appKey] = { appName: item.app, items: [] };
         const itemTotalK = extractNumK(item.price) * item.qty;
         grandTotalK += itemTotalK;
-        
-        const formTag = item.formFields.length > 0 
-            ? `<span class="bg-sky-100 text-sky-500 text-[9px] px-2 py-0.5 rounded border border-sky-200 mt-1 inline-block">Wajib isi Form</span>` 
-            : '';
-
-        html += `
-            <div class="flex justify-between items-center bg-pink-50 p-4 rounded-xl border border-pink-200 mb-3 shadow-sm">
-                <div class="flex-1">
-                    <h4 class="text-gray-800 font-bold text-sm mb-1">${item.app} <span class="text-xs font-normal text-gray-500">(${item.dur})</span></h4>
-                    <p class="text-[10px] text-pink-400 uppercase font-bold tracking-wider mb-2">${item.cat}</p>
-                    <div class="flex items-center gap-4 text-xs font-medium text-gray-500">
-                        <span>Harga: ${item.price}</span>
-                        <span class="text-pink-500 font-bold bg-white px-2 py-0.5 rounded border border-pink-100 shadow-sm">Jumlah: x${item.qty}</span>
-                    </div>
-                    ${formTag}
-                </div>
-                <div class="flex flex-col items-end gap-2 pl-3 border-l border-pink-200">
-                    <button onclick="removeFromCart(${index})" class="text-pink-300 hover:text-red-500 bg-white hover:bg-red-50 p-2 rounded-xl border border-pink-100 transition-colors outline-none shadow-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                    <p class="text-gray-800 font-black">${itemTotalK}K</p>
-                </div>
-            </div>
-        `;
+        cartGroups[appKey].items.push({ ...item, cartIndex: index, itemTotalK });
     });
 
-    list.innerHTML = html;
-    document.getElementById('cartGrandTotal').innerText = grandTotalK + 'K';
-}
-
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    updateCartUI();
-    renderCartList();
-    
-    if(cart.length === 0) {
-        setTimeout(() => { closeCartModal(); }, 500);
-    }
-}
-
-// ----- CHECKOUT INTERCEPTION (Form Workflow) -----
-function checkoutCartWA() {
-    if(cart.length === 0) return;
-
-    // Cek apakah ada item yang butuh form
-    const needsForm = cart.some(item => item.formFields && item.formFields.length > 0);
-    
-    if (needsForm) {
-        closeCartModal();
-        openCheckoutFormModal();
-    } else {
-        generateFinalWA();
-    }
-}
-
-function openCheckoutFormModal() {
-    const container = document.getElementById('checkoutFormContainer');
     let html = '';
 
-    cart.forEach((item, cartIndex) => {
-        if (!item.formFields || item.formFields.length === 0) return;
+    for (const [appKey, group] of Object.entries(cartGroups)) {
+        const fieldsStr = appForms[appKey] || '';
+        let fields = [];
+        try {
+            if (fieldsStr && fieldsStr.trim().startsWith('[')) fields = JSON.parse(fieldsStr).map(f => f.name || f); 
+            else fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : [];
+        } catch(e) { fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : []; }
 
-        html += `
-        <div class="bg-pink-50 rounded-2xl border border-pink-200 p-4 mb-4 shadow-sm">
-            <h4 class="font-black text-pink-500 mb-1 border-b border-pink-200 pb-2 flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                ${item.app} <span class="text-xs text-gray-500 font-bold bg-white px-2 py-0.5 rounded-lg border border-pink-100 shadow-sm">${item.cat} | ${item.dur}</span>
-            </h4>
-            <div class="space-y-4 mt-3">
+        const logoUrl = getLogoUrl(group.appName);
+        
+        let appHTML = `
+            <details class="group bg-white rounded-[1.25rem] border border-pink-200 shadow-md overflow-hidden transition-all" open>
+                <summary class="p-4 flex justify-between items-center cursor-pointer select-none bg-pink-50 border-b border-pink-100 hover:bg-pink-100/50 transition-colors">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-[10px] bg-white border border-pink-200 flex items-center justify-center p-1 shadow-sm">
+                            ${logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover rounded-lg">` : `<span class="text-xs font-black text-pink-400">${group.appName.charAt(0)}</span>`}
+                        </div>
+                        <div>
+                            <h4 class="text-pink-600 font-black text-sm md:text-base tracking-wide">${group.appName}</h4>
+                            <p class="text-[10px] md:text-[11px] text-gray-500 font-medium mt-0.5">${group.items.length} Paket Dipilih</p>
+                        </div>
+                    </div>
+                    <div class="text-pink-400 bg-white p-1.5 rounded-lg border border-pink-200 shadow-sm group-open:rotate-180 transition-transform duration-300">
+                        <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </summary>
+                <div class="p-4 md:p-5 space-y-4">
         `;
 
-        for(let q = 0; q < item.qty; q++) {
-            html += `
-                <div class="bg-white p-3 rounded-xl border border-pink-100 shadow-sm">
-                    <div class="flex justify-between items-center mb-2">
-                        <p class="text-xs font-bold text-gray-700 bg-pink-100 text-pink-600 px-2.5 py-1 rounded-lg">Data #${q + 1}</p>
-                        ${q > 0 ? `<button type="button" onclick="copyFirstData(${cartIndex}, ${q})" class="text-[10px] bg-sky-50 text-sky-500 border border-sky-200 hover:bg-sky-100 font-bold px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Samakan dengan Data #1</button>` : ''}
+        group.items.forEach((gItem, indexInGroup) => {
+            if (indexInGroup === 0 && gItem.useFirstItemData) {
+                cart[gItem.cartIndex].useFirstItemData = false; gItem.useFirstItemData = false;
+            }
+
+            appHTML += `
+                <div class="bg-pink-50 p-4 rounded-xl border border-pink-100 relative shadow-inner">
+                    <div class="flex justify-between items-center border-b border-pink-200 pb-3 mb-3">
+                        <div>
+                            <p class="text-[11px] md:text-xs text-gray-500 font-medium"><span class="text-pink-500 font-black uppercase tracking-wider">${gItem.cat}</span> • ${gItem.dur}</p>
+                            <p class="text-[10px] md:text-[11px] text-gray-400 mt-1 font-bold">Harga: ${gItem.price} <span class="mx-1 text-pink-300">|</span> Qty: ${gItem.qty}</p>
+                        </div>
+                        <p class="text-pink-600 font-black text-sm md:text-base">${gItem.itemTotalK}K</p>
                     </div>
             `;
 
-            item.formFields.forEach((field, fIndex) => {
-                const inputId = `form_input_${cartIndex}_${q}_${fIndex}`;
-                // Pertahankan input jika user menutup modal dan buka lagi
-                const existingVal = (item.formData[q] && item.formData[q][field]) ? item.formData[q][field] : '';
-                
-                html += `
-                    <div class="mb-2 last:mb-0">
-                        <label class="block text-[10px] md:text-xs font-bold text-gray-500 mb-1 pl-1">${field} <span class="text-red-400">*</span></label>
-                        <input type="text" id="${inputId}" value="${existingVal}" required onchange="saveFormData(${cartIndex}, ${q}, '${field}', this.value)" class="w-full bg-pink-50/50 border border-pink-200 text-sm rounded-xl py-2.5 px-3 outline-none focus:border-pink-400 font-bold text-gray-700 placeholder-pink-200" placeholder="Ketik ${field} disini...">
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        }
-        html += `</div></div>`;
-    });
+            if (fields.length > 0) {
+                if (indexInGroup > 0) {
+                    appHTML += `
+                        <label class="flex items-center gap-2.5 cursor-pointer mb-3 bg-white p-3 rounded-lg border border-pink-200 hover:border-pink-300 transition-colors shadow-sm">
+                            <input type="checkbox" ${gItem.useFirstItemData ? 'checked' : ''} onchange="toggleUseFirstItemData(${gItem.cartIndex}, this.checked)" class="w-4 h-4 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500">
+                            <span class="text-[11px] md:text-xs text-gray-600 font-bold leading-tight">Samakan dengan form <b>${group.items[0].cat} ${group.items[0].dur}</b></span>
+                        </label>
+                    `;
+                }
 
-    container.innerHTML = html;
-
-    const modal = document.getElementById('checkoutFormModal');
-    const backdrop = document.getElementById('checkoutFormBackdrop');
-    const content = document.getElementById('checkoutFormContent');
-    modal.classList.remove('hidden');
-    setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
-}
-
-function closeCheckoutFormModal() {
-    const modal = document.getElementById('checkoutFormModal');
-    const backdrop = document.getElementById('checkoutFormBackdrop');
-    const content = document.getElementById('checkoutFormContent');
-    backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
-    setTimeout(() => { modal.classList.add('hidden'); openCartModal(); }, 300);
-}
-
-function saveFormData(cartIndex, qtyIndex, fieldName, value) {
-    if(!cart[cartIndex].formData[qtyIndex]) cart[cartIndex].formData[qtyIndex] = {};
-    cart[cartIndex].formData[qtyIndex][fieldName] = value;
-}
-
-function copyFirstData(cartIndex, targetQtyIndex) {
-    const sourceData = cart[cartIndex].formData[0];
-    if(!sourceData) return;
-    
-    cart[cartIndex].formFields.forEach((field, fIndex) => {
-        const val = sourceData[field] || '';
-        cart[cartIndex].formData[targetQtyIndex][field] = val;
-        // Update DOM Input visually
-        const inputId = `form_input_${cartIndex}_${targetQtyIndex}_${fIndex}`;
-        const inputEl = document.getElementById(inputId);
-        if(inputEl) inputEl.value = val;
-    });
-}
-
-function processFinalCheckout(e) {
-    e.preventDefault(); // Mencegah reload form
-    
-    // Validasi apakah semua field sudah terisi (meski HTML 'required' sudah ada, pencegahan ganda via JS)
-    let isValid = true;
-    cart.forEach(item => {
-        if(item.formFields && item.formFields.length > 0) {
-            for(let q=0; q<item.qty; q++) {
-                item.formFields.forEach(field => {
-                    if(!item.formData[q] || !item.formData[q][field] || item.formData[q][field].trim() === '') {
-                        isValid = false;
+                if (!gItem.useFirstItemData) {
+                    if (gItem.qty > 1) {
+                        appHTML += `
+                            <label class="flex items-center gap-2.5 cursor-pointer mb-4 bg-white p-3 rounded-lg border border-pink-200 hover:border-pink-300 transition-colors shadow-sm">
+                                <input type="checkbox" ${!gItem.separateForms ? 'checked' : ''} onchange="toggleSeparateFormsItem(${gItem.cartIndex}, this.checked)" class="w-4 h-4 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500">
+                                <span class="text-[11px] md:text-xs text-gray-600 font-bold leading-tight">Gunakan data yang sama untuk semua ${gItem.qty} akun pesanan ini</span>
+                            </label>
+                        `;
                     }
-                });
-            }
-        }
-    });
 
-    if(!isValid) {
-        alert("Mohon isi semua data formulir yang diwajibkan 🥺🎀");
-        return;
+                    const loopCount = gItem.separateForms && gItem.qty > 1 ? gItem.qty : 1;
+                    
+                    for (let fIdx = 0; fIdx < loopCount; fIdx++) {
+                        if (gItem.separateForms && gItem.qty > 1) {
+                            appHTML += `<div class="text-[10px] md:text-[11px] text-pink-500 font-black mb-2 mt-4 px-1 bg-pink-100 inline-block py-1 px-2 rounded-lg">↳ DATA AKUN #${fIdx + 1}</div>`;
+                        }
+                        
+                        appHTML += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 ${fIdx > 0 ? 'bg-white p-3.5 rounded-xl border border-pink-200 shadow-sm' : ''}">`;
+                        fields.forEach(field => {
+                            let filledVal = '';
+                            if (gItem.formData && gItem.formData[fIdx] && gItem.formData[fIdx][field]) filledVal = gItem.formData[fIdx][field];
+
+                            appHTML += `
+                                <div>
+                                    <label class="text-[10px] md:text-[11px] text-gray-500 block mb-1.5 font-bold uppercase tracking-wide ml-1">${field}</label>
+                                    <input type="text" 
+                                           placeholder="Ketik ${field}" 
+                                           value="${filledVal}" 
+                                           oninput="updateItemForm(${gItem.cartIndex}, ${fIdx}, '${field}', this.value)" 
+                                           class="w-full bg-white border border-pink-200 focus:border-pink-400 rounded-xl py-2.5 md:py-3 px-3.5 text-xs md:text-sm outline-none text-gray-700 font-bold transition-colors shadow-inner placeholder-pink-200">
+                                </div>
+                            `;
+                        });
+                        appHTML += `</div>`;
+                    }
+                } else {
+                    appHTML += `
+                        <div class="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <p class="text-[10px] md:text-xs text-green-600 font-bold">Data akan disalin otomatis.</p>
+                        </div>
+                    `;
+                }
+            }
+            appHTML += `</div>`; 
+        });
+        appHTML += `</div></details>`; 
+        html += appHTML;
     }
 
-    generateFinalWA();
+    container.innerHTML = html;
+    document.getElementById('checkoutGrandTotal').innerText = grandTotalK + 'K';
 }
 
-function generateFinalWA() {
-    let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎ა  haloo, aku mau jajan ini! ౿ \n\n";
-    let grandTotal = 0;
+function checkoutCartWA() {
+    if(cart.length === 0) return;
 
-    cart.forEach((item) => {
-        const subTotal = extractNumK(item.price) * item.qty;
-        grandTotal += subTotal;
-        
-        textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
-        textWA += `꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
-        textWA += `꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n`;
+    for (let i = 0; i < cart.length; i++) {
+        const item = cart[i];
+        const appKey = item.app.toLowerCase().trim();
+        const fieldsStr = appForms[appKey] || '';
+        let fields = [];
+        try {
+            if (fieldsStr && fieldsStr.trim().startsWith('[')) fields = JSON.parse(fieldsStr).map(f => f.name || f); 
+            else fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : [];
+        } catch(e) { fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : []; }
 
-        // Inject Form Data ke WA
-        if (item.formFields && item.formFields.length > 0) {
-            for(let q = 0; q < item.qty; q++) {
-                textWA += `\n   [ Data #${q + 1} ]\n`;
-                item.formFields.forEach(field => {
-                    const val = (item.formData[q] && item.formData[q][field]) ? item.formData[q][field] : '-';
-                    textWA += `   ↳ ${field}: ${val}\n`;
-                });
+        if(fields.length > 0 && !item.useFirstItemData) {
+            const loopCount = item.separateForms && item.qty > 1 ? item.qty : 1;
+            for (let fIdx = 0; fIdx < loopCount; fIdx++) {
+                for (const field of fields) {
+                    if (!item.formData || !item.formData[fIdx] || !item.formData[fIdx][field] || !item.formData[fIdx][field].trim()) {
+                        let msg = `Mohon lengkapi kolom "${field}" untuk pesanan ${item.app} (${item.cat} ${item.dur})`;
+                        if (item.separateForms && item.qty > 1) msg += ` (Pada Data Akun #${fIdx + 1})`;
+                        alert(msg + ` terlebih dahulu 🥺🎀`);
+                        return; 
+                    }
+                }
             }
         }
-        textWA += `\n`;
+    }
+
+    let cartGroups = {};
+    let grandTotal = 0;
+
+    cart.forEach((item, index) => {
+        const appKey = item.app.toLowerCase().trim();
+        if(!cartGroups[appKey]) cartGroups[appKey] = { appName: item.app, items: [] };
+        const itemTotalK = extractNumK(item.price) * item.qty;
+        grandTotal += itemTotalK;
+        cartGroups[appKey].items.push({ ...item, cartIndex: index, itemTotalK });
     });
 
-    textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
+    let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎ა haloo kak ciccu, aku mau jajan ini! ౿ \n\n";
+
+    let appCounter = 1;
+    for (const [appKey, group] of Object.entries(cartGroups)) {
+        textWA += `𖠗  ⊹  ☆̲  *${appCounter}. ${group.appName.toUpperCase()}*\n`;
+        
+        const fieldsStr = appForms[appKey] || '';
+        let fields = [];
+        try {
+            if (fieldsStr && fieldsStr.trim().startsWith('[')) fields = JSON.parse(fieldsStr).map(f => f.name || f); 
+            else fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : [];
+        } catch(e) { fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : []; }
+
+        group.items.forEach((gItem, indexInGroup) => {
+            textWA += `   ꒰ 𓈒 ♡ —— Paket: ${gItem.cat} • ${gItem.dur} (x${gItem.qty}) - ${gItem.itemTotalK}K\n`;
+
+            if (fields.length > 0) {
+                let dataSourceItem = gItem;
+                let copyNote = "";
+                
+                if (gItem.useFirstItemData && indexInGroup > 0) {
+                    dataSourceItem = group.items[0];
+                    copyNote = ` (Mengikuti form ${dataSourceItem.cat} ${dataSourceItem.dur})`;
+                }
+
+                const isSeparate = dataSourceItem.separateForms;
+                const loopCount = isSeparate && dataSourceItem.qty > 1 ? dataSourceItem.qty : 1;
+
+                if (copyNote) textWA += `   │  *Data Akun:*${copyNote}\n`;
+                else textWA += `   │  *Data Akun:*\n`;
+
+                if (isSeparate && dataSourceItem.qty > 1) {
+                    for(let fIdx = 0; fIdx < loopCount; fIdx++) {
+                        textWA += `   │  [Akun #${fIdx + 1}]\n`;
+                        fields.forEach(field => {
+                            const val = dataSourceItem.formData && dataSourceItem.formData[fIdx] ? dataSourceItem.formData[fIdx][field] : '';
+                            textWA += `   │  - ${field}: ${val}\n`;
+                        });
+                    }
+                } else {
+                     fields.forEach(field => {
+                         const val = dataSourceItem.formData && dataSourceItem.formData[0] ? dataSourceItem.formData[0][field] : '';
+                         textWA += `   │  - ${field}: ${val}\n`;
+                     });
+                }
+            }
+            textWA += `   │\n`; 
+        });
+        textWA += `\n`;
+        appCounter++;
+    }
+
+    textWA += `ఌ︎. 𓈄 Total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
     textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β have a sweet day  𖠗\n\n`;
     textWA += `https://ciccu.biz.id/qris`;
     
@@ -670,43 +734,43 @@ function generateFinalWA() {
     window.open(`https://wa.me/6283877337798?text=${encodedText}`, '_blank');
 }
 
-// ----- OTHER MODALS (Loyalty, T&C, Info) -----
-function openLoyaltyModal() { /* Kode asli tetap sama */
+// ----- OTHER MODALS -----
+function openLoyaltyModal() {
     const modal = document.getElementById('loyaltyModal');
     const backdrop = document.getElementById('loyaltyModalBackdrop');
     const content = document.getElementById('loyaltyModalContent');
     modal.classList.remove('hidden');
     setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
 }
-function closeLoyaltyModal() { /* Kode asli tetap sama */
+function closeLoyaltyModal() {
     const modal = document.getElementById('loyaltyModal');
     const backdrop = document.getElementById('loyaltyModalBackdrop');
     const content = document.getElementById('loyaltyModalContent');
     backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
-function openTermsModal() { /* Kode asli tetap sama */
+function openTermsModal() {
     const modal = document.getElementById('termsModal');
     const backdrop = document.getElementById('termsModalBackdrop');
     const content = document.getElementById('termsModalContent');
     modal.classList.remove('hidden');
     setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
 }
-function closeTermsModal() { /* Kode asli tetap sama */
+function closeTermsModal() {
     const modal = document.getElementById('termsModal');
     const backdrop = document.getElementById('termsModalBackdrop');
     const content = document.getElementById('termsModalContent');
     backdrop.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('opacity-100', 'opacity-0'); content.classList.replace('scale-100', 'scale-95');
     setTimeout(() => { modal.classList.add('hidden'); }, 300);
 }
-function openInfoNetflixModal() { /* Kode asli tetap sama */
+function openInfoNetflixModal() {
     const modal = document.getElementById('infoNetflixModal');
     const backdrop = document.getElementById('infoNetflixBackdrop');
     const content = document.getElementById('infoNetflixContent');
     modal.classList.remove('hidden');
     setTimeout(() => { backdrop.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('opacity-0', 'opacity-100'); content.classList.replace('scale-95', 'scale-100'); }, 10);
 }
-function closeInfoNetflixModal() { /* Kode asli tetap sama */
+function closeInfoNetflixModal() {
     const modal = document.getElementById('infoNetflixModal');
     const backdrop = document.getElementById('infoNetflixBackdrop');
     const content = document.getElementById('infoNetflixContent');
