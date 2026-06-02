@@ -134,64 +134,31 @@
                 </h2>
                 
                 <div id="adminTestimoniList" class="space-y-3">
-                    <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100 space-y-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="text-xs md:text-sm font-black text-gray-800">Salsa <span class="text-[10px] text-gray-400 font-bold ml-1">Hari ini</span></h4>
-                                <p class="text-xs text-gray-600 font-medium mt-1">Aman banget akun Netflixnya, nggak pernah kena screen limit. Makasih kak! ☁️✨</p>
-                            </div>
-                            <button onclick="deleteTestimoniMock(this)" class="text-gray-400 hover:text-red-500 p-1 rounded transition-colors shadow-sm bg-white border border-pink-100">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </div>
-                        <div class="flex justify-end">
-                            <button onclick="openReplyModalMock('Salsa', 'Aman banget akun Netflixnya...')" class="text-[10px] md:text-xs bg-pink-400 hover:bg-pink-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Balas
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100 space-y-3">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="text-xs md:text-sm font-black text-gray-800">Anonim <span class="text-[10px] text-gray-400 font-bold ml-1">Kemarin</span></h4>
-                                <p class="text-xs text-gray-600 font-medium mt-1">Prosesnya cepet banget kak! Adminnya ramah poll 🥺💖</p>
-                            </div>
-                            <button onclick="deleteTestimoniMock(this)" class="text-gray-400 hover:text-red-500 p-1 rounded transition-colors shadow-sm bg-white border border-pink-100">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </div>
-                        <div class="bg-white border border-pink-100 rounded-xl p-3 space-y-1 shadow-inner">
-                            <p class="text-[10px] md:text-[11px] font-black text-sky-500">↳ Balasan Admin:</p>
-                            <p class="text-xs text-gray-600 font-medium">Terima kasih banyak kak buat reviewnya! Ditunggu orderan selanjutnya yaa 🎀☁️</p>
-                            <div class="flex justify-end pt-1">
-                                <button onclick="openReplyModalMock('Anonim', 'Prosesnya cepet banget...', 'Terima kasih banyak kak buat reviewnya!')" class="text-[9px] md:text-[10px] text-pink-400 font-bold hover:underline">Edit Balasan</button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Data Testimoni diinjeksi via JavaScript -->
                 </div>
             </div>
         </div>
     </main>
 
     <div id="replyTestimoniModal" class="fixed inset-0 z-[130] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeReplyModalMock()"></div>
+        <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeAdminReplyModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-md flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
             <div class="p-4 md:p-5 border-b border-pink-100 bg-pink-50 rounded-t-3xl">
                 <h3 class="text-base md:text-lg font-black text-pink-600">Balas Testimoni 🌸</h3>
                 <p class="text-[10px] text-gray-500 font-medium mt-1">Membalas testimoni dari: <span id="replyTargetName" class="font-bold text-gray-700"></span></p>
                 <p class="text-[11px] text-gray-400 italic mt-0.5 truncate" id="replyTargetComment"></p>
             </div>
-            <form id="replyTestimoniForm" class="p-4 md:p-5 space-y-3 bg-white rounded-b-3xl" onsubmit="submitReplyMock(event)">
+            <form id="replyTestimoniForm" class="p-4 md:p-5 space-y-3 bg-white rounded-b-3xl" onsubmit="submitAdminReply(event)">
                 <textarea id="replyText" required rows="3" class="w-full bg-pink-50 border border-pink-200 text-xs md:text-sm rounded-xl p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-inner resize-none" placeholder="Ketik balasan admin di sini... ☁️✨"></textarea>
                 <div class="flex gap-2 pt-1">
-                    <button type="button" onclick="closeReplyModalMock()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 text-sm rounded-xl transition-all">Batal</button>
+                    <button type="button" onclick="closeAdminReplyModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 text-sm rounded-xl transition-all">Batal</button>
                     <button type="submit" class="flex-1 bg-pink-400 hover:bg-pink-500 text-white font-bold py-2.5 text-sm rounded-xl transition-all shadow-md">Kirim Balasan</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Modals untuk CRUD Produk -->
     <div id="reorderModal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeReorderModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[85vh]">
@@ -324,6 +291,7 @@
         let selectedItems = new Set();
         let expandedApps = {}; 
         let currentEditId = null;
+        let currentReplyId = null;
 
         let builderCurrentApp = '';
         let builderFields = [];
@@ -347,62 +315,131 @@
                 sectionTestimoni.classList.remove('hidden');
                 tabProduk.className = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all";
                 tabTestimoni.className = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all";
-                document.getElementById('bulkActionBar').classList.add('translate-y-full'); // Sembunyikan bulk bar jika di tab testi
+                document.getElementById('bulkActionBar').classList.add('translate-y-full');
+                
+                // MENGAMBIL DATA TESTIMONI TERBARU SAAT TAB DIKLIK
+                loadAdminTestimoni();
             }
         }
 
-        // ----- FITUR SIMULASI BALAS TESTIMONI BARU -----
-        let activeReplyTargetElement = null;
-        
-        function openReplyModalMock(nama, komentar, balasanSblmnya = '') {
+        // ----- SISTEM LOAD & KELOLA TESTIMONI -----
+        async function loadAdminTestimoni() {
+            if(!sessionPass) return;
+            const list = document.getElementById('adminTestimoniList');
+            list.innerHTML = `<div class="text-center py-5"><div class="loader mx-auto mb-2"></div><p class="text-xs text-gray-500 font-bold">Memuat testimoni...</p></div>`;
+            
+            try {
+                const res = await fetch(`${BASE_URL}/api/testimoni`);
+                const data = await res.json();
+                
+                if (data.length === 0) {
+                    list.innerHTML = `<div class="text-center py-5 text-gray-500 font-bold text-sm">Belum ada testimoni masuk.</div>`;
+                    return;
+                }
+
+                let html = '';
+                data.forEach(item => {
+                    const hasReply = item.balasan_admin && item.balasan_admin.trim() !== '';
+                    const safeNama = item.nama.replace(/'/g, "\\'");
+                    const safeKomentar = item.komentar.replace(/'/g, "\\'");
+                    const safeBalasan = hasReply ? item.balasan_admin.replace(/'/g, "\\'") : '';
+                    
+                    let replyBlock = '';
+                    if (hasReply) {
+                        replyBlock = `
+                        <div class="bg-white border border-pink-100 rounded-xl p-3 space-y-1 shadow-inner mt-3">
+                            <p class="text-[10px] md:text-[11px] font-black text-sky-500">↳ Balasan Admin:</p>
+                            <p class="text-xs text-gray-600 font-medium">${item.balasan_admin}</p>
+                            <div class="flex justify-end pt-1">
+                                <button onclick="openAdminReplyModal(${item.id}, '${safeNama}', '${safeKomentar}', '${safeBalasan}')" class="text-[9px] md:text-[10px] text-pink-400 font-bold hover:underline">Edit Balasan</button>
+                            </div>
+                        </div>`;
+                    } else {
+                        replyBlock = `
+                        <div class="flex justify-end mt-3">
+                            <button onclick="openAdminReplyModal(${item.id}, '${safeNama}', '${safeKomentar}', '')" class="text-[10px] md:text-xs bg-pink-400 hover:bg-pink-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Balas
+                            </button>
+                        </div>`;
+                    }
+
+                    html += `
+                    <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="text-xs md:text-sm font-black text-gray-800">${item.nama} <span class="text-[10px] text-gray-400 font-bold ml-1">${new Date(item.created_at).toLocaleDateString('id-ID')}</span></h4>
+                                <p class="text-xs text-gray-600 font-medium mt-1">${item.komentar}</p>
+                            </div>
+                            <button onclick="deleteAdminTestimoni(${item.id})" class="text-gray-400 hover:text-red-500 p-1 rounded transition-colors shadow-sm bg-white border border-pink-100 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                        ${replyBlock}
+                    </div>`;
+                });
+                
+                list.innerHTML = html;
+            } catch (error) {
+                list.innerHTML = `<div class="text-center py-5 text-red-500 font-bold text-sm">Gagal memuat testimoni.</div>`;
+            }
+        }
+
+        function openAdminReplyModal(id, nama, komentar, balasanSblmnya) {
+            currentReplyId = id;
             document.getElementById('replyTargetName').innerText = nama;
             document.getElementById('replyTargetComment').innerText = `"${komentar}"`;
             document.getElementById('replyText').value = balasanSblmnya;
-            
-            // Simpan referensi kartu pemicu klik
-            activeReplyTargetElement = event.currentTarget.closest('.bg-pink-50\\/50');
             
             const modal = document.getElementById('replyTestimoniModal');
             modal.classList.remove('hidden');
             setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
         }
 
-        function closeReplyModalMock() {
+        function closeAdminReplyModal() {
             const modal = document.getElementById('replyTestimoniModal');
             modal.lastElementChild.classList.replace('scale-100', 'scale-95');
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        function submitReplyMock(e) {
+        async function submitAdminReply(e) {
             e.preventDefault();
-            const replyText = document.getElementById('replyText').value.trim();
-            if(!replyText || !activeReplyTargetElement) return;
+            if(!currentReplyId) return;
             
-            let replyBox = activeReplyTargetElement.querySelector('.bg-white.border');
-            let actionContainer = activeReplyTargetElement.querySelector('.flex.justify-end');
-            
-            if (replyBox) {
-                replyBox.querySelector('.text-gray-600').innerText = replyText;
-            } else {
-                if(actionContainer) actionContainer.remove();
+            const replyText = document.getElementById('replyText').value;
+            const btn = e.target.querySelector('button[type="submit"]');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = "Menyimpan...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${BASE_URL}/api/testimoni/${currentReplyId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
+                    body: JSON.stringify({ balasan_admin: replyText })
+                });
                 
-                const newReplyBox = document.createElement('div');
-                newReplyBox.className = "bg-white border border-pink-100 rounded-xl p-3 space-y-1 shadow-inner";
-                newReplyBox.innerHTML = `
-                    <p class="text-[10px] md:text-[11px] font-black text-sky-500">↳ Balasan Admin:</p>
-                    <p class="text-xs text-gray-600 font-medium">${replyText}</p>
-                    <div class="flex justify-end pt-1">
-                        <button onclick="openReplyModalMock('${document.getElementById('replyTargetName').innerText}', '${activeReplyTargetElement.querySelector('.text-gray-600').innerText.replace(/'/g, "\\'")}', '${replyText.replace(/'/g, "\\'")}')" class="text-[9px] md:text-[10px] text-pink-400 font-bold hover:underline">Edit Balasan</button>
-                    </div>
-                `;
-                activeReplyTargetElement.appendChild(newReplyBox);
+                await handleResponseStatus(res);
+                closeAdminReplyModal();
+                loadAdminTestimoni(); 
+            } catch (error) {
+                alert("Gagal menyimpan balasan.");
+            } finally {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
             }
-            closeReplyModalMock();
         }
 
-        function deleteTestimoniMock(btn) {
-            if(confirm("Hapus permanen testimoni ini?")) {
-                btn.closest('.bg-pink-50\\/50').remove();
+        async function deleteAdminTestimoni(id) {
+            if(!confirm("Yakin ingin menghapus testimoni ini secara permanen?")) return;
+            try {
+                const res = await fetch(`${BASE_URL}/api/testimoni/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': sessionPass }
+                });
+                await handleResponseStatus(res);
+                loadAdminTestimoni(); 
+            } catch (error) {
+                alert("Gagal menghapus testimoni.");
             }
         }
 
@@ -721,7 +758,7 @@
             try { const res = await fetch(`${BASE_URL}/api/pricelist/${currentEditId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) }); await handleResponseStatus(res); closeEditModal(); loadData(); } catch (error) { } finally { btn.innerHTML = "Simpan"; btn.disabled = false; }
         }
 
-        // ----- BULK ACTIONS & TOGGLE ASLI (Dengan Pengaman Tab) -----
+        // ----- BULK ACTIONS & TOGGLE ASLI -----
         function toggleSelect(id, isChecked) { if(isChecked) selectedItems.add(id); else selectedItems.delete(id); updateBulkUI(); filterAdminList(); }
         function toggleSelectApp(appName, isChecked, packageIds) { packageIds.forEach(id => { if (isChecked) selectedItems.add(id); else selectedItems.delete(id); }); updateBulkUI(); filterAdminList(); }
         async function deleteApplication(appName, packageIds) {
