@@ -56,7 +56,6 @@
 </head>
 <body class="text-gray-800 min-h-screen relative overflow-x-hidden">
     
-    <!-- Floating Animation (Konsisten dengan halaman lain) -->
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
       <div class="absolute top-10 left-10 text-4xl opacity-30 animate-bounce">❤︎</div>
       <div class="absolute top-40 right-20 text-3xl opacity-30 animate-pulse">🌸</div>
@@ -66,7 +65,6 @@
 
     <main class="px-5 w-full max-w-md md:max-w-4xl lg:max-w-6xl mx-auto pb-36 relative z-10 pt-8 md:pt-12"> 
         
-        <!-- Header -->
         <div class="flex flex-col items-center justify-center text-center mb-8 fade-in-down">
             <h1 class="font-logo text-3xl sm:text-5xl md:text-6xl text-pink-500 drop-shadow-sm pb-1 whitespace-nowrap">❤︎ Suara<span class="text-sky-400">Ciccu</span> ❤︎</h1>
             <p class="text-[9px] min-[360px]:text-[10px] md:text-xs text-pink-600 font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] mt-3 bg-white/80 px-4 py-1.5 rounded-full shadow-sm backdrop-blur-md border border-pink-200 inline-block">
@@ -74,7 +72,6 @@
             </p>
         </div>
 
-        <!-- Form Input Testimoni -->
         <div class="fade-in-down mb-10 max-w-2xl mx-auto relative overflow-hidden bg-white/90 backdrop-blur-sm border border-pink-200 rounded-[2rem] shadow-xl shadow-pink-100/50 p-6 md:p-8">
             <div class="absolute -top-16 -right-16 w-32 h-32 bg-pink-300/30 blur-3xl rounded-full pointer-events-none"></div>
             <h2 class="font-bold text-lg md:text-xl text-pink-500 mb-4 text-center">Tinggalkan Jejak & Pesan! 🎀</h2>
@@ -92,117 +89,110 @@
             </form>
         </div>
 
-        <!-- Grid Card Testimoni ala Padlet -->
         <div class="masonry-grid fade-in-down" id="testimoniGrid">
-            <!-- Contoh Kartu Testimoni 1 -->
-            <div class="bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-pink-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-500 font-black text-xs md:text-sm">A</div>
-                    <div>
-                        <h3 class="text-xs md:text-sm font-black text-pink-600 capitalize">Anonim</h3>
-                        <p class="text-[9px] md:text-[10px] text-gray-400 font-bold mt-0.5">Baru saja</p>
-                    </div>
-                </div>
-                <p class="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed">
-                    Prosesnya cepet banget kak! Adminnya ramah poll 🥺💖 Next time bakal order lagi disini! Jangan ragu jajan di Ciccu Store.
-                </p>
             </div>
-
-            <!-- Contoh Kartu Testimoni 2 -->
-            <div class="bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-sky-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center text-sky-500 font-black text-xs md:text-sm">S</div>
-                    <div>
-                        <h3 class="text-xs md:text-sm font-black text-sky-500 capitalize">Salsa</h3>
-                        <p class="text-[9px] md:text-[10px] text-gray-400 font-bold mt-0.5">Hari ini</p>
-                    </div>
-                </div>
-                <p class="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed">
-                    Aman banget akun Netflixnya, nggak pernah kena *screen limit*. Makasih kak! ☁️✨
-                </p>
-            </div>
-
-            <!-- Contoh Kartu Testimoni 3 -->
-            <div class="bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-pink-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-500 font-black text-xs md:text-sm">R</div>
-                    <div>
-                        <h3 class="text-xs md:text-sm font-black text-purple-500 capitalize">Rizky</h3>
-                        <p class="text-[9px] md:text-[10px] text-gray-400 font-bold mt-0.5">Kemarin</p>
-                    </div>
-                </div>
-                <p class="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed">
-                    Mantap Canva pro nya bisa dipake buat tugas kampus tanpa kendala.
-                </p>
-            </div>
-            
-            <!-- Contoh Kartu Testimoni 4 -->
-            <div class="bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-pink-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group">
-                <div class="flex items-center gap-2.5 mb-3">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-pink-500 font-black text-xs md:text-sm">A</div>
-                    <div>
-                        <h3 class="text-xs md:text-sm font-black text-pink-600 capitalize">Anonim</h3>
-                        <p class="text-[9px] md:text-[10px] text-gray-400 font-bold mt-0.5">Kemarin</p>
-                    </div>
-                </div>
-                <p class="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed">
-                    Trusted banget! Dikasih tau juga cara loginnya detail. Top deh 🫶
-                </p>
-            </div>
-        </div>
 
         <div class="text-center mt-12 md:mt-20 pt-6 border-t border-pink-200 text-pink-400 text-[11px] font-bold tracking-widest uppercase">
             © 2026 Ciccu Store. All Rights Reserved.
         </div>
     </main>
 
-    <!-- Script sementara untuk simulasi penambahan testimoni -->
     <script>
-        document.getElementById('testimoniForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Ambil nilai input
-            let nama = document.getElementById('inputNama').value.trim();
-            const komentar = document.getElementById('inputKomentar').value.trim();
-            
-            // Jika nama kosong, set menjadi Anonim
-            if (nama === '') {
-                nama = 'Anonim';
-            }
-            
-            const inisial = nama.charAt(0).toUpperCase();
-            
-            // Buat elemen kartu baru
+        const API_URL = "https://ciccu.ygpentinggmail22.workers.dev";
+        const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+
+        // Fungsi format tanggal sederhana
+        function formatDate(dateString) {
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('id-ID', options);
+        }
+
+        // Fungsi untuk menarik data dari database
+        async function loadTestimoni() {
             const grid = document.getElementById('testimoniGrid');
-            const newCard = document.createElement('div');
+            grid.innerHTML = '<p class="col-span-full text-center text-pink-500 font-bold text-sm">Memuat testimoni... ☁️</p>';
             
-            // Gaya warna random sederhana untuk inisial
-            const colorClasses = ['text-pink-500 bg-pink-100 border-pink-200', 'text-sky-500 bg-sky-100 border-sky-200', 'text-purple-500 bg-purple-100 border-purple-200'];
-            const randomColor = colorClasses[Math.floor(Math.random() * colorClasses.length)];
-            const textNameColor = randomColor.split(' ')[0]; // Ambil warna teks untuk nama
-            
-            newCard.className = 'bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-pink-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group fade-in-down';
-            
-            newCard.innerHTML = `
-                <div class="flex items-center gap-2.5 mb-3">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full ${randomColor} border flex items-center justify-center font-black text-xs md:text-sm">${inisial}</div>
-                    <div>
-                        <h3 class="text-xs md:text-sm font-black ${textNameColor} capitalize">${nama}</h3>
-                        <p class="text-[9px] md:text-[10px] text-gray-400 font-bold mt-0.5">Baru saja</p>
-                    </div>
-                </div>
-                <p class="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed">
-                    ${komentar}
-                </p>
-            `;
-            
-            // Masukkan kartu ke urutan paling atas
-            grid.prepend(newCard);
-            
-            // Reset form
-            this.reset();
+            try {
+                const res = await fetch(`${BASE_URL}/api/testimoni`);
+                const data = await res.json();
+                
+                grid.innerHTML = ''; // Bersihkan tulisan loading
+                
+                if(data.length === 0) {
+                    grid.innerHTML = '<p class="col-span-full text-center text-gray-500 font-bold text-sm">Belum ada testimoni. Jadilah yang pertama! 🎀</p>';
+                    return;
+                }
+
+                const colorClasses = ['text-pink-500 bg-pink-100 border-pink-200', 'text-sky-500 bg-sky-100 border-sky-200', 'text-purple-500 bg-purple-100 border-purple-200'];
+
+                data.forEach(item => {
+                    const randomColor = colorClasses[Math.floor(Math.random() * colorClasses.length)];
+                    const textNameColor = randomColor.split(' ')[0];
+                    const inisial = item.nama.charAt(0).toUpperCase();
+                    
+                    // --- BLOK UI UNTUK BALASAN ADMIN ---
+                    const balasanHtml = (item.balasan_admin && item.balasan_admin.trim() !== '') ? `
+                        <div class="mt-3 bg-white border border-pink-100 rounded-xl p-3 shadow-inner">
+                            <p class="text-[9px] md:text-[10px] font-black text-sky-500 mb-0.5">↳ Balasan Admin:</p>
+                            <p class="text-[10px] md:text-xs text-gray-600 font-medium leading-relaxed">${item.balasan_admin}</p>
+                        </div>
+                    ` : '';
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-pink-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group fade-in-down';
+                    card.innerHTML = `
+                        <div class="flex items-center gap-2.5 mb-3">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full ${randomColor} border flex items-center justify-center font-black text-xs md:text-sm shrink-0">${inisial}</div>
+                            <div>
+                                <h3 class="text-xs md:text-sm font-black ${textNameColor} capitalize">${item.nama}</h3>
+                                <p class="text-[9px] md:text-[10px] text-gray-400 font-bold mt-0.5">${formatDate(item.created_at)}</p>
+                            </div>
+                        </div>
+                        <p class="text-[11px] md:text-xs text-gray-600 font-medium leading-relaxed">
+                            ${item.komentar}
+                        </p>
+                        ${balasanHtml} 
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                grid.innerHTML = '<p class="col-span-full text-center text-red-500 font-bold text-sm">Gagal memuat data. 🥺</p>';
+            }
+        }
+
+        // Fungsi Submit Testimoni Baru ke Database
+        document.getElementById('testimoniForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = this.querySelector('button[type="submit"]');
+            btn.innerHTML = 'Mengirim... ☁️';
+            btn.disabled = true;
+
+            const nama = document.getElementById('inputNama').value.trim();
+            const komentar = document.getElementById('inputKomentar').value.trim();
+
+            try {
+                const res = await fetch(`${BASE_URL}/api/testimoni`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nama, komentar })
+                });
+                
+                if(res.ok) {
+                    this.reset(); // Kosongkan form
+                    loadTestimoni(); // Refresh grid testimoni
+                } else {
+                    alert("Gagal mengirim testimoni. Coba lagi ya!");
+                }
+            } catch (error) {
+                alert("Terjadi kesalahan jaringan.");
+            } finally {
+                btn.innerHTML = 'Kirim Testimoni <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>';
+                btn.disabled = false;
+            }
         });
+
+        // Jalankan penarikan data saat halaman pertama kali dibuka
+        loadTestimoni();
     </script>
 </body>
 </html>
-
