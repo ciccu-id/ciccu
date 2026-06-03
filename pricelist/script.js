@@ -224,7 +224,6 @@ function renderCards(apps, orderedNames) {
         card.onclick = () => openOrderModal(safeName); 
         
         card.innerHTML = `
-            <div class="absolute -top-10 -right-10 w-24 h-24 bg-pink-100 rounded-full group-hover:bg-pink-200/50 transition-all"></div>
             ${infoBtnHTML}
             <div class="relative z-10 flex items-start justify-between mb-2 md:mb-4">
                 ${logoHTML}
