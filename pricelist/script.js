@@ -131,6 +131,16 @@ async function loadPricelist() {
     }
 }
 
+// --- FITUR DEBOUNCE UNTUK PENCARIAN (Mencegah Lag) ---
+let searchTimeout;
+
+function debouncedSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        applyFilters();
+    }, 300);
+}
+
 // --- FILTER & RENDER HOMEPAGE ---
 function switchCategory(cat) {
     currentCategory = cat;
@@ -209,12 +219,12 @@ function renderCards(apps, orderedNames) {
         ` : '';
 
         const card = document.createElement('div');
-        card.className = 'group flex flex-col bg-white/90 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden cursor-pointer';
+        card.className = 'group flex flex-col bg-white border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden cursor-pointer';
         card.style.animationDelay = `${delay}s`;
         card.onclick = () => openOrderModal(safeName); 
         
         card.innerHTML = `
-            <div class="absolute -top-10 -right-10 w-24 h-24 bg-pink-300/10 rounded-full blur-2xl group-hover:bg-pink-300/20 transition-all"></div>
+            <div class="absolute -top-10 -right-10 w-24 h-24 bg-pink-100 rounded-full group-hover:bg-pink-200/50 transition-all"></div>
             ${infoBtnHTML}
             <div class="relative z-10 flex items-start justify-between mb-2 md:mb-4">
                 ${logoHTML}
