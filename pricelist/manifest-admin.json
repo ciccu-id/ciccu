@@ -1,6 +1,6 @@
 {
   "name": "CiAdmin",
-  "short_name": "CiccuAdmin",
+  "short_name": "CiAdmin",
   "description": "Admin Panel untuk Kelola Ciccu Store",
   "start_url": "./admin.html",
   "display": "standalone",
