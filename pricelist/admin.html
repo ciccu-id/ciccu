@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Panel - Ciccu Store</title>
     
+    <!-- PWA Ciccu Admin -->
+    <link rel="manifest" href="manifest-admin.json">
     <meta name="theme-color" content="#fce7f3">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Admin Ciccu">
-    <link rel="icon" type="image/jpeg" sizes="192x192" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg">
+    <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -279,6 +276,15 @@
             </div>
         </div>
     </div>
+
+    <!-- Registrasi Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
 
     <script>
         const API_URL = "https://ciccu.ygpentinggmail22.workers.dev"; 
