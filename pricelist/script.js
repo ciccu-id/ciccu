@@ -203,7 +203,7 @@ function renderCards(apps, orderedNames) {
         const displayPrice = minPrice !== Infinity ? minPrice + 'K' : '-';
 
         const logoUrl = getLogoUrl(name);
-        let logoHTML = logoUrl ? `<img src="${logoUrl}" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover bg-white p-0.5 border border-pink-200 shadow-sm" alt="${name}">` : `
+                let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover bg-white p-0.5 border border-pink-200 shadow-sm" alt="${name}">` : `
                 <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 </div>`;
@@ -219,7 +219,7 @@ function renderCards(apps, orderedNames) {
         ` : '';
 
         const card = document.createElement('div');
-        card.className = 'group flex flex-col bg-white border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-lg shadow-pink-100/50 transition-all duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-xl hover:shadow-pink-200/50 fade-in-down relative overflow-hidden cursor-pointer';
+        card.className = 'group flex flex-col bg-white border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-sm transition-transform duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-md fade-in-down relative overflow-hidden cursor-pointer';
         card.style.animationDelay = `${delay}s`;
         card.onclick = () => openOrderModal(safeName); 
         
