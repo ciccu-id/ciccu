@@ -56,6 +56,11 @@
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
     </style>
+
+    <!-- PWA Ciccu Store -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f472b6">
+    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body class="text-gray-800 min-h-screen relative overflow-x-hidden">
     <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -276,6 +281,15 @@
             <p class="text-[10px] text-gray-500 font-medium">Cek di keranjang bawah ya.</p>
         </div>
     </div>
+
+    <!-- Registrasi Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
 
     <script src="script.js"></script>
 </body>
