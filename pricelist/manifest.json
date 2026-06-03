@@ -1,6 +1,7 @@
 {
   "name": "Ciccu Store - Premium Apps",
   "short_name": "CiccuStore",
+  "id": "ciccu-publik",
   "description": "Your 100% Trusted Seller for Premium Apps",
   "start_url": "./index.html",
   "display": "standalone",
