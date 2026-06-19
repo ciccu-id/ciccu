@@ -12,31 +12,89 @@ let isSummaryExpanded = false;
 
 // PETA KATEGORI CICCU
 const appCategoryMap = {
-    'netflix': 'streaming', 'disney': 'streaming', 'youtube': 'streaming', 
-    'viu': 'streaming', 'iqiyi': 'streaming', 'prime': 'streaming', 'amazon': 'streaming',
-    'hbo': 'streaming', 'wetv': 'streaming', 'we tv': 'streaming', 
-    'vidio': 'streaming', 'crunchyroll': 'streaming', 'loklok': 'streaming', 'loktv': 'streaming', 
-    'gagaoolala': 'streaming', 'dramabox': 'streaming', 'apple tv': 'streaming',
-    
-    'spotify': 'music', 'apple music': 'music', 'apple': 'music',
-    
-    'capcut': 'editing', 'canva': 'editing', 'alight motion': 'editing', 'alight': 'editing',
-    
-    'turnitin': 'study', 'cek turnitin': 'study', 'cek ai': 'study', 'chatgpt': 'study', 
-    'claude': 'study', 'grok': 'study', 'grokai': 'study', 'ms365': 'study', 'microsoft': 'study'
+    'netflix': 'streaming',
+    'disney': 'streaming',
+    'youtube': 'streaming',
+    'viu': 'streaming',
+    'iqiyi': 'streaming',
+    'prime': 'streaming',
+    'amazon': 'streaming',
+    'hbo': 'streaming',
+    'wetv': 'streaming',
+    'we tv': 'streaming',
+    'vidio': 'streaming',
+    'crunchyroll': 'streaming',
+    'loklok': 'streaming',
+    'loktv': 'streaming',
+    'gagaoolala': 'streaming',
+    'dramabox': 'streaming',
+    'apple tv': 'streaming',
+    'bstation': 'streaming',
+    'viki plus': 'streaming',
+    'drakor id': 'streaming',
+    'mango tv': 'streaming',
+
+    'spotify': 'music',
+    'apple music': 'music',
+    'apple': 'music',
+
+    'capcut': 'editing',
+    'canva': 'editing',
+    'alight motion': 'editing',
+    'alight': 'editing',
+
+    'turnitin': 'study',
+    'cek turnitin': 'study',
+    'cek ai': 'study',
+    'chatgpt': 'study',
+    'claude': 'study',
+    'grok': 'study',
+    'grokai': 'study',
+    'ms365': 'study',
+    'microsoft': 'study'
 };
 
 const logoMap = {
-    'netflix': 'netflix.com', 'disney': 'disneyplus.com', 'youtube': 'youtube.com', 
-    'viu': 'viu.com', 'iqiyi': 'iq.com', 'amazon': 'primevideo.com', 'prime': 'primevideo.com',
-    'hbo': 'hbogoasia.id', 'wetv': 'wetv.vip', 'we tv': 'wetv.vip',
-    'vidio': 'vidio.com', 'crunchyroll': 'crunchyroll.com', 'loklok': 'loklok.com', 'loktv': 'loklok.com',
-    'gagaoolala': 'gagaoolala.com', 'dramabox': 'dramaboxapp.com', 'apple tv': 'tv.apple.com',
-    'spotify': 'open.spotify.com', 'apple music': 'music.apple.com', 'apple': 'music.apple.com',
-    'canva': 'canva.com', 'capcut': 'capcut.com', 'alight motion': 'alightcreative.com', 'alight': 'alightcreative.com',
-    'chatgpt': 'openai.com', 'claude': 'anthropic.com', 'grok': 'x.ai', 'grokai': 'x.ai', 
-    'ms365': 'office.com', 'microsoft': 'microsoft.com', 'turnitin': 'turnitin.com', 
-    'cek turnitin': 'turnitin.com', 'cek ai': 'zerogpt.com'
+    'netflix': 'netflix.com',
+    'disney': 'disneyplus.com',
+    'youtube': 'youtube.com',
+    'viu': 'viu.com',
+    'iqiyi': 'iq.com',
+    'amazon': 'primevideo.com',
+    'prime': 'primevideo.com',
+    'hbo': 'hbogoasia.id',
+    'wetv': 'wetv.vip',
+    'we tv': 'wetv.vip',
+    'vidio': 'vidio.com',
+    'crunchyroll': 'crunchyroll.com',
+    'loklok': 'loklok.com',
+    'loktv': 'loklok.com',
+    'gagaoolala': 'gagaoolala.com',
+    'dramabox': 'dramaboxapp.com',
+    'apple tv': 'tv.apple.com',
+    'bstation': 'bstation.com',
+    'viki plus': 'viki.com',
+    'drakor id': 'drakor.id',
+    'mango tv': 'mgtv.com',
+
+    'spotify': 'open.spotify.com',
+    'apple music': 'music.apple.com',
+    'apple': 'music.apple.com',
+
+    'canva': 'canva.com',
+    'capcut': 'capcut.com',
+    'alight motion': 'alightcreative.com',
+    'alight': 'alightcreative.com',
+
+    'chatgpt': 'openai.com',
+    'claude': 'anthropic.com',
+    'grok': 'x.ai',
+    'grokai': 'x.ai',
+    'ms365': 'office.com',
+    'microsoft': 'microsoft.com',
+    'turnitin': 'turnitin.com',
+    'cek turnitin': 'turnitin.com',
+    'cek ai': 'zerogpt.com'
 };
 
 function getAppCategory(appName) {
