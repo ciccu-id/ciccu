@@ -72,9 +72,9 @@ const logoMap = {
     'gagaoolala': 'gagaoolala.com',
     'dramabox': 'dramaboxapp.com',
     'apple tv': 'tv.apple.com',
-    'bstation': 'bstation.com',
+    'bstation': 'bilibili.tv',
     'viki plus': 'viki.com',
-    'drakor id': 'drakor.id',
+    'drakor id': 'drakorid.co',
     'mango tv': 'mgtv.com',
 
     'spotify': 'open.spotify.com',
