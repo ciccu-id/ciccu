@@ -139,8 +139,11 @@
                 }
 
                 const colorClasses = ['text-pink-500 bg-pink-100 border-pink-200', 'text-sky-500 bg-sky-100 border-sky-200', 'text-purple-500 bg-purple-100 border-purple-200'];
+                
+                // 1. GUNAKAN FRAGMENT: Menampung elemen di memori agar tidak merender berulang kali
+                const fragment = document.createDocumentFragment();
 
-                data.forEach(item => {
+                data.forEach((item, index) => {
                     const randomColor = colorClasses[Math.floor(Math.random() * colorClasses.length)];
                     const textNameColor = randomColor.split(' ')[0];
                     const inisial = (item.nama || 'A').charAt(0).toUpperCase();
@@ -158,7 +161,13 @@
                     ` : '';
 
                     const card = document.createElement('div');
-                    card.className = 'bg-white/95 backdrop-blur-sm border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-lg shadow-pink-100/50 hover:-translate-y-1 transition-transform relative overflow-hidden group fade-in-down';
+                    
+                    // 2. OPTIMASI CSS: Hapus backdrop-blur, turunkan shadow, ganti bg transparan jadi solid
+                    card.className = 'bg-white border border-pink-200 rounded-2xl md:rounded-3xl p-4 md:p-5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all relative overflow-hidden group fade-in-down';
+                    
+                    // 3. OPTIMASI ANIMASI: Beri jeda kecil antar kartu agar tidak muncul bersamaan
+                    card.style.animationDelay = `${index * 0.05}s`;
+                    
                     card.innerHTML = `
                         <div class="flex items-center gap-2.5 mb-3">
                             <div class="w-8 h-8 md:w-10 md:h-10 rounded-full ${randomColor} border flex items-center justify-center font-black text-xs md:text-sm shrink-0">${inisial}</div>
@@ -172,8 +181,14 @@
                         </p>
                         ${balasanHtml} 
                     `;
-                    grid.appendChild(card);
+                    
+                    // Masukkan ke memori sementara (bukan langsung ke layar)
+                    fragment.appendChild(card);
                 });
+                
+                // 4. RENDER SEKALI SAJA: Masukkan semua kartu yang sudah disusun ke layar secara serentak
+                grid.appendChild(fragment);
+                
             } catch (error) {
                 grid.innerHTML = '<p class="col-span-full text-center text-red-500 font-bold text-sm">Gagal memuat data. 🥺</p>';
             }
