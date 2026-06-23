@@ -1,4 +1,3 @@
-// Ganti dengan domain asli Anda untuk pengetatan CORS
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://ciccu.biz.id', 
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -12,7 +11,6 @@ function escapeHTML(str) {
   })[match]);
 }
 
-// FUNGSI BARU: Verifikasi Turnstile ke server Cloudflare
 async function verifyTurnstile(token, secret) {
   if (!token) return false;
   const formData = new FormData();
@@ -46,7 +44,6 @@ export async function onRequest(context) {
   try {
     const body = method !== 'GET' && method !== 'DELETE' ? await request.json().catch(() => ({})) : null;
 
-    // RUTE BARU: Verifikasi Login Admin dengan Turnstile
     if (path === '/api/login' && method === 'POST') {
       const isValid = await verifyTurnstile(body.turnstileResponse, env.TURNSTILE_SECRET);
       if (!isValid) return errorResp("Captcha tidak valid", 400);
@@ -58,28 +55,22 @@ export async function onRequest(context) {
       const { results } = await env.DB.prepare("SELECT * FROM pricelist").all();
       return jsonResp(results);
     }
-    
-    // MENGAMBIL DATA DARI TABEL app_forms (SUDAH DIPERBAIKI)
     if (path === '/api/forms' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM app_forms").all();
       return jsonResp(results);
     }
-    
     if (path === '/api/testimoni' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM testimonials ORDER BY created_at DESC").all();
       return jsonResp(results);
     }
 
-    // SIMPAN TESTIMONI (DENGAN TURNSTILE & PEMBATASAN KARAKTER)
     if (path === '/api/testimoni' && method === 'POST') {
-      // Verifikasi Captcha
       const isValid = await verifyTurnstile(body.turnstileResponse, env.TURNSTILE_SECRET);
       if (!isValid) return errorResp("Mohon selesaikan verifikasi keamanan", 400);
 
       const nama = escapeHTML(body.nama || 'Anonim');
       const komentar = escapeHTML(body.komentar || '');
       
-      // Pembatasan karakter
       if (!komentar) return errorResp("Komentar tidak boleh kosong", 400);
       if (nama.length > 50) return errorResp("Nama terlalu panjang", 400);
       if (komentar.length > 500) return errorResp("Komentar terlalu panjang", 400);
@@ -88,7 +79,6 @@ export async function onRequest(context) {
       return jsonResp({ success: true }, 201);
     }
 
-    // --- RUTE ADMIN DI BAWAH INI SAMA SEPERTI SEBELUMNYA ---
     try {
       if (method !== 'GET' && path !== '/api/testimoni' && path !== '/api/login' || (path === '/api/testimoni' && method !== 'POST' && method !== 'GET')) {
           checkAuth();
@@ -105,42 +95,50 @@ export async function onRequest(context) {
           .bind(body.app_name, body.category, body.duration, body.price, body.status, body.notes || '', id).run();
         return jsonResp({ success: true });
       }
+      
+      // KEAMANAN BARU: Validasi format Array untuk Bulk Actions
       if (path.startsWith('/api/delete/bulk') && method === 'DELETE') {
         const ids = body.ids; 
-        if (!ids || ids.length === 0) return errorResp("Tidak ada ID", 400);
+        if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
         const placeholders = ids.map(() => '?').join(',');
         await env.DB.prepare(`DELETE FROM pricelist WHERE id IN (${placeholders})`).bind(...ids).run();
         return jsonResp({ success: true });
       }
+      
       if (path.startsWith('/api/delete/') && method === 'DELETE') {
         const id = path.split('/').pop();
         await env.DB.prepare("DELETE FROM pricelist WHERE id=?").bind(id).run();
         return jsonResp({ success: true });
       }
+      
       if (path.startsWith('/api/status/bulk') && method === 'PUT') {
         const ids = body.ids;
-        if (!ids || ids.length === 0) return errorResp("Tidak ada ID", 400);
+        if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
         const placeholders = ids.map(() => '?').join(',');
         await env.DB.prepare(`UPDATE pricelist SET status=? WHERE id IN (${placeholders})`).bind(body.status, ...ids).run();
         return jsonResp({ success: true });
       }
+      
       if (path.startsWith('/api/status/') && method === 'PUT') {
         const id = path.split('/').pop();
         await env.DB.prepare("UPDATE pricelist SET status=? WHERE id=?").bind(body.status, id).run();
         return jsonResp({ success: true });
       }
+      
       if (path === '/api/pricelist/reorder' && method === 'PUT') {
+        if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
         const statements = body.order.map(item => env.DB.prepare("UPDATE pricelist SET sort_order=? WHERE id=?").bind(item.sort_order, item.id));
         await env.DB.batch(statements);
         return jsonResp({ success: true });
       }
+      
       if (path === '/api/reorder-apps' && method === 'PUT') {
+        if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
         const statements = body.order.map(item => env.DB.prepare("UPDATE pricelist SET app_sort_order=? WHERE app_name=?").bind(item.app_sort_order, item.app_name));
         await env.DB.batch(statements);
         return jsonResp({ success: true });
       }
       
-      // SIMPAN FORM KE app_forms (SUDAH DIPERBAIKI)
       if (path === '/api/forms' && method === 'POST') {
         await env.DB.prepare("INSERT INTO app_forms (app_name, form_fields) VALUES (?, ?) ON CONFLICT(app_name) DO UPDATE SET form_fields=excluded.form_fields")
           .bind(body.app_name, body.form_fields).run();
@@ -151,7 +149,6 @@ export async function onRequest(context) {
         await env.DB.prepare("DELETE FROM app_forms WHERE app_name=?").bind(appName).run();
         return jsonResp({ success: true });
       }
-      
       if (path.startsWith('/api/testimoni/') && method === 'PUT') {
         const id = path.split('/').pop();
         const balasan = escapeHTML(body.balasan_admin || '');
