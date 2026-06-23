@@ -1,5 +1,3 @@
-// Lokasi File: /functions/api/[[route]].js
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*', 
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -48,18 +46,20 @@ export async function onRequest(context) {
       const { results } = await env.DB.prepare("SELECT * FROM forms").all();
       return jsonResp(results);
     }
+    
+    // MENGAMBIL DATA DARI TABEL testimonials
     if (path === '/api/testimoni' && method === 'GET') {
-      const { results } = await env.DB.prepare("SELECT * FROM testimoni ORDER BY created_at DESC").all();
+      const { results } = await env.DB.prepare("SELECT * FROM testimonials ORDER BY created_at DESC").all();
       return jsonResp(results);
     }
 
-    // SIMPAN TESTIMONI (DENGAN FILTER KEAMANAN)
+    // SIMPAN TESTIMONI KE TABEL testimonials (DENGAN FILTER KEAMANAN)
     if (path === '/api/testimoni' && method === 'POST') {
       const nama = escapeHTML(body.nama || 'Anonim');
       const komentar = escapeHTML(body.komentar || '');
       if (!komentar) return errorResp("Komentar tidak boleh kosong", 400);
 
-      await env.DB.prepare("INSERT INTO testimoni (nama, komentar) VALUES (?, ?)").bind(nama, komentar).run();
+      await env.DB.prepare("INSERT INTO testimonials (nama, komentar) VALUES (?, ?)").bind(nama, komentar).run();
       return jsonResp({ success: true }, 201);
     }
 
@@ -132,16 +132,16 @@ export async function onRequest(context) {
         return jsonResp({ success: true });
       }
 
-      // --- KELOLA TESTIMONI ADMIN ---
+      // --- KELOLA TESTIMONI ADMIN KE TABEL testimonials ---
       if (path.startsWith('/api/testimoni/') && method === 'PUT') {
         const id = path.split('/').pop();
         const balasan = escapeHTML(body.balasan_admin || '');
-        await env.DB.prepare("UPDATE testimoni SET balasan_admin=? WHERE id=?").bind(balasan, id).run();
+        await env.DB.prepare("UPDATE testimonials SET balasan_admin=? WHERE id=?").bind(balasan, id).run();
         return jsonResp({ success: true });
       }
       if (path.startsWith('/api/testimoni/') && method === 'DELETE') {
         const id = path.split('/').pop();
-        await env.DB.prepare("DELETE FROM testimoni WHERE id=?").bind(id).run();
+        await env.DB.prepare("DELETE FROM testimonials WHERE id=?").bind(id).run();
         return jsonResp({ success: true });
       }
 
