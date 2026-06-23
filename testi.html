@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Script Turnstile Cloudflare -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     
     <style>
@@ -42,18 +41,25 @@
         .fade-in-down { animation: fadeInDown 0.5s ease-out forwards; opacity: 0; transform: translateY(-15px); }
         @keyframes fadeInDown { to { opacity: 1; transform: translateY(0); } }
 
-        /* Masonry-like style for Padlet look */
+        /* Tata Letak Masonry Fleksibel Ala Pinterest / Padlet */
         .masonry-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* 1 Baris 2 Testi di Mobile */
-            gap: 0.75rem;
-            align-items: start;
+            column-count: 2; /* Tetap 2 ruang kolom menyamping (Kiri & Kanan) di HP */
+            column-gap: 0.75rem;
+        }
+        .masonry-grid > div {
+            break-inside: avoid;
+            page-break-inside: avoid;
+            -webkit-column-break-inside: avoid;
+            margin-bottom: 0.75rem;
+            display: inline-block;
+            width: 100%;
         }
         @media (min-width: 768px) {
-            .masonry-grid { grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+            .masonry-grid { column-count: 3; column-gap: 1.25rem; }
+            .masonry-grid > div { margin-bottom: 1.25rem; }
         }
         @media (min-width: 1024px) {
-            .masonry-grid { grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+            .masonry-grid { column-count: 4; }
         }
     </style>
 </head>
@@ -87,7 +93,6 @@
                     <textarea id="inputKomentar" rows="3" placeholder="Ketik komentarmu di sini yaa... ☁️✨" required class="w-full bg-pink-50 border border-pink-200 text-xs md:text-sm rounded-xl p-3 md:p-4 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-inner resize-none"></textarea>
                 </div>
                 
-                <!-- WIDGET TURNSTILE CLOUDFLARE -->
                 <div class="cf-turnstile mt-2 mb-2 flex justify-center" data-sitekey="0x4AAAAAADpiSjv84N_2_kvG"></div>
 
                 <button type="submit" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 md:py-3.5 rounded-xl transition-all shadow-md shadow-pink-200 outline-none transform active:scale-95 flex items-center justify-center gap-2">
