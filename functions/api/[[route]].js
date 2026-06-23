@@ -58,10 +58,13 @@ export async function onRequest(context) {
       const { results } = await env.DB.prepare("SELECT * FROM pricelist").all();
       return jsonResp(results);
     }
+    
+    // MENGAMBIL DATA DARI TABEL app_forms (SUDAH DIPERBAIKI)
     if (path === '/api/forms' && method === 'GET') {
-      const { results } = await env.DB.prepare("SELECT * FROM forms").all();
+      const { results } = await env.DB.prepare("SELECT * FROM app_forms").all();
       return jsonResp(results);
     }
+    
     if (path === '/api/testimoni' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM testimonials ORDER BY created_at DESC").all();
       return jsonResp(results);
@@ -136,16 +139,19 @@ export async function onRequest(context) {
         await env.DB.batch(statements);
         return jsonResp({ success: true });
       }
+      
+      // SIMPAN FORM KE app_forms (SUDAH DIPERBAIKI)
       if (path === '/api/forms' && method === 'POST') {
-        await env.DB.prepare("INSERT INTO forms (app_name, form_fields) VALUES (?, ?) ON CONFLICT(app_name) DO UPDATE SET form_fields=excluded.form_fields")
+        await env.DB.prepare("INSERT INTO app_forms (app_name, form_fields) VALUES (?, ?) ON CONFLICT(app_name) DO UPDATE SET form_fields=excluded.form_fields")
           .bind(body.app_name, body.form_fields).run();
         return jsonResp({ success: true });
       }
       if (path.startsWith('/api/forms/') && method === 'DELETE') {
         const appName = decodeURIComponent(path.split('/').pop());
-        await env.DB.prepare("DELETE FROM forms WHERE app_name=?").bind(appName).run();
+        await env.DB.prepare("DELETE FROM app_forms WHERE app_name=?").bind(appName).run();
         return jsonResp({ success: true });
       }
+      
       if (path.startsWith('/api/testimoni/') && method === 'PUT') {
         const id = path.split('/').pop();
         const balasan = escapeHTML(body.balasan_admin || '');
