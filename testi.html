@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Script Turnstile Cloudflare -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    
     <style>
         body { 
             font-family: 'Quicksand', sans-serif; 
@@ -83,6 +86,10 @@
                 <div>
                     <textarea id="inputKomentar" rows="3" placeholder="Ketik komentarmu di sini yaa... ☁️✨" required class="w-full bg-pink-50 border border-pink-200 text-xs md:text-sm rounded-xl p-3 md:p-4 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-inner resize-none"></textarea>
                 </div>
+                
+                <!-- WIDGET TURNSTILE CLOUDFLARE -->
+                <div class="cf-turnstile mt-2 mb-2 flex justify-center" data-sitekey="0x4AAAAAADpiSjv84N_2_kvG"></div>
+
                 <button type="submit" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 md:py-3.5 rounded-xl transition-all shadow-md shadow-pink-200 outline-none transform active:scale-95 flex items-center justify-center gap-2">
                     Kirim Testimoni <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                 </button>
@@ -175,7 +182,15 @@
         // Fungsi Submit Testimoni Baru ke Database
         document.getElementById('testimoniForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // AMBIL TOKEN TURNSTILE
+            const turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
+            if (!turnstileToken) {
+                return alert("Mohon tunggu dan selesaikan verifikasi keamanan Captcha terlebih dahulu ya! 🎀");
+            }
+
             const btn = this.querySelector('button[type="submit"]');
+            const oldText = btn.innerHTML;
             btn.innerHTML = 'Mengirim... ☁️';
             btn.disabled = true;
 
@@ -186,19 +201,23 @@
                 const res = await fetch(`${BASE_URL}/api/testimoni`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nama, komentar })
+                    body: JSON.stringify({ nama, komentar, turnstileResponse: turnstileToken })
                 });
                 
                 if(res.ok) {
                     this.reset(); // Kosongkan form
+                    if (typeof turnstile !== 'undefined') turnstile.reset(); // Reset captcha
                     loadTestimoni(); // Refresh grid testimoni
                 } else {
-                    alert("Gagal mengirim testimoni. Coba lagi ya!");
+                    const errData = await res.json();
+                    alert(errData.error || "Gagal mengirim testimoni. Coba lagi ya!");
+                    if (typeof turnstile !== 'undefined') turnstile.reset(); // Reset captcha jika gagal
                 }
             } catch (error) {
                 alert("Terjadi kesalahan jaringan.");
+                if (typeof turnstile !== 'undefined') turnstile.reset();
             } finally {
-                btn.innerHTML = 'Kirim Testimoni <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>';
+                btn.innerHTML = oldText;
                 btn.disabled = false;
             }
         });
