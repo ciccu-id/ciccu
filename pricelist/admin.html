@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Admin Panel - Ciccu Store</title>
     
-    <!-- PWA Ciccu Admin -->
     <link rel="manifest" href="manifest-admin.json">
     <meta name="theme-color" content="#fce7f3">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -94,7 +93,7 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> Buka
                     </button>
                     <button onclick="collapseAll()" class="text-[10px] md:text-xs bg-pink-50 text-pink-600 px-3 py-1.5 md:px-4 md:py-2 rounded-lg border border-pink-200 hover:bg-pink-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7m-7 17v-6m0 0h6m-6 0l7 7M10 4v6m0 0H4m6 0L3 3"></path></style> Tutup
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7m-7 17v-6m0 0h6m-6 0l7 7M10 4v6m0 0H4m6 0L3 3"></style> Tutup
                     </button>
                     
                     <button onclick="openReorderModal()" class="text-[10px] md:text-xs bg-sky-50 text-sky-500 px-3 py-1.5 md:px-4 md:py-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5 ml-1">
@@ -131,8 +130,7 @@
                 </h2>
                 
                 <div id="adminTestimoniList" class="space-y-3">
-                    <!-- Data Testimoni diinjeksi via JavaScript -->
-                </div>
+                    </div>
             </div>
         </div>
     </main>
@@ -155,7 +153,6 @@
         </div>
     </div>
 
-    <!-- Modals untuk CRUD Produk -->
     <div id="reorderModal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeReorderModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[85vh]">
@@ -277,7 +274,6 @@
         </div>
     </div>
 
-    <!-- Registrasi Service Worker -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -289,6 +285,14 @@
     <script>
         const API_URL = ""; 
         const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+
+        // FUNGSI PENGAMAN HTML (XSS FILTER)
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g, match => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            })[match]);
+        }
         
         let globalAdminData = [];
         let globalFormsData = {};
@@ -346,16 +350,23 @@
                 let html = '';
                 data.forEach(item => {
                     const hasReply = item.balasan_admin && item.balasan_admin.trim() !== '';
-                    const safeNama = item.nama.replace(/'/g, "\\'");
-                    const safeKomentar = item.komentar.replace(/'/g, "\\'");
-                    const safeBalasan = hasReply ? item.balasan_admin.replace(/'/g, "\\'") : '';
+                    
+                    // PENERAPAN ESCAPE HTML
+                    const safeNamaDisplay = escapeHTML(item.nama);
+                    const safeKomentarDisplay = escapeHTML(item.komentar);
+                    const safeBalasanDisplay = hasReply ? escapeHTML(item.balasan_admin) : '';
+
+                    // ESCAPE UNTUK ONCLICK JAVASCRIPT
+                    const safeNama = safeNamaDisplay.replace(/'/g, "\\'");
+                    const safeKomentar = safeKomentarDisplay.replace(/'/g, "\\'");
+                    const safeBalasan = safeBalasanDisplay.replace(/'/g, "\\'");
                     
                     let replyBlock = '';
                     if (hasReply) {
                         replyBlock = `
                         <div class="bg-white border border-pink-100 rounded-xl p-3 space-y-1 shadow-inner mt-3">
                             <p class="text-[10px] md:text-[11px] font-black text-sky-500">↳ Balasan Admin:</p>
-                            <p class="text-xs text-gray-600 font-medium">${item.balasan_admin}</p>
+                            <p class="text-xs text-gray-600 font-medium">${safeBalasanDisplay}</p>
                             <div class="flex justify-end pt-1">
                                 <button onclick="openAdminReplyModal(${item.id}, '${safeNama}', '${safeKomentar}', '${safeBalasan}')" class="text-[9px] md:text-[10px] text-pink-400 font-bold hover:underline">Edit Balasan</button>
                             </div>
@@ -373,8 +384,8 @@
                     <div class="bg-pink-50/50 p-4 rounded-xl border border-pink-100">
                         <div class="flex justify-between items-start">
                             <div>
-                                <h4 class="text-xs md:text-sm font-black text-gray-800">${item.nama} <span class="text-[10px] text-gray-400 font-bold ml-1">${new Date(item.created_at).toLocaleDateString('id-ID')}</span></h4>
-                                <p class="text-xs text-gray-600 font-medium mt-1">${item.komentar}</p>
+                                <h4 class="text-xs md:text-sm font-black text-gray-800">${safeNamaDisplay} <span class="text-[10px] text-gray-400 font-bold ml-1">${new Date(item.created_at).toLocaleDateString('id-ID')}</span></h4>
+                                <p class="text-xs text-gray-600 font-medium mt-1">${safeKomentarDisplay}</p>
                             </div>
                             <button onclick="deleteAdminTestimoni(${item.id})" class="text-gray-400 hover:text-red-500 p-1 rounded transition-colors shadow-sm bg-white border border-pink-100 shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
