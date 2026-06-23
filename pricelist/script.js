@@ -1,4 +1,4 @@
-const API_URL = "https://ciccu.ygpentinggmail22.workers.dev";
+const API_URL = "";
 const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
 
 let allApps = {};
