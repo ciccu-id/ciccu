@@ -96,7 +96,7 @@ const logoMap = {
     'turnitin': 'turnitin.com',
     'cek turnitin': 'turnitin.com',
     'cek ai': 'zerogpt.com',
-    'duolingo': 'duolingo.com',
+    'duolingo': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Duolingo_logo.svg',
 };
 
 function getAppCategory(appName) {
@@ -111,6 +111,11 @@ function getLogoUrl(appName) {
     const nameLow = appName.toLowerCase();
     for (const [key, domain] of Object.entries(logoMap)) {
         if (nameLow.includes(key)) {
+            // Jika domain diawali 'http', gunakan link gambar langsung
+            if (domain.startsWith('http')) {
+                return domain;
+            }
+            // Jika tidak, gunakan sistem otomatis Google
             return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
         }
     }
