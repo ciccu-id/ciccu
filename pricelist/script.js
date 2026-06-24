@@ -51,8 +51,8 @@ const appCategoryMap = {
     'grok': 'study',
     'grokai': 'study',
     'ms365': 'study',
-    'microsoft': 'study'
-    'duolingo': 'study'
+    'microsoft': 'study',
+    'duolingo': 'study',
 };
 
 const logoMap = {
