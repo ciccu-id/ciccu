@@ -95,8 +95,8 @@ const logoMap = {
     'microsoft': 'microsoft.com',
     'turnitin': 'turnitin.com',
     'cek turnitin': 'turnitin.com',
-    'cek ai': 'zerogpt.com'
-    'duolingo': 'duolingo.com'
+    'cek ai': 'zerogpt.com',
+    'duolingo': 'duolingo.com',
 };
 
 function getAppCategory(appName) {
