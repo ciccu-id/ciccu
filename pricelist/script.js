@@ -52,6 +52,7 @@ const appCategoryMap = {
     'grokai': 'study',
     'ms365': 'study',
     'microsoft': 'study'
+    'duolingo': 'study'
 };
 
 const logoMap = {
@@ -95,6 +96,7 @@ const logoMap = {
     'turnitin': 'turnitin.com',
     'cek turnitin': 'turnitin.com',
     'cek ai': 'zerogpt.com'
+    'duolingo': 'duolingo.com'
 };
 
 function getAppCategory(appName) {
