@@ -73,7 +73,7 @@ const logoMap = {
     'gagaoolala': 'gagaoolala.com',
     'dramabox': 'dramaboxapp.com',
     'apple tv': 'tv.apple.com',
-    'bstation': 'bilibili.tv',
+    'bstation': 'https://img.icons8.com/color/144/bilibili.png',
     'viki plus': 'viki.com',
     'drakor id': 'drakorid.co',
     'mango tv': 'mgtv.com',
@@ -96,7 +96,8 @@ const logoMap = {
     'turnitin': 'turnitin.com',
     'cek turnitin': 'turnitin.com',
     'cek ai': 'zerogpt.com',
-    'duolingo': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Duolingo_logo.svg',
+    'duolingo': 'https://img.icons8.com/color/144/duolingo-logo.png',
+    
 };
 
 function getAppCategory(appName) {
@@ -268,7 +269,7 @@ function renderCards(apps, orderedNames) {
         const displayPrice = minPrice !== Infinity ? minPrice + 'K' : '-';
 
         const logoUrl = getLogoUrl(name);
-                let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-cover bg-white p-0.5 border border-pink-200 shadow-sm" alt="${name}">` : `
+                let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-contain bg-white p-1 border border-pink-200 shadow-sm" alt="${name}">` : `
                 <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                 </div>`;
