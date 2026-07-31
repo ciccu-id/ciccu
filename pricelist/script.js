@@ -33,6 +33,7 @@ const appCategoryMap = {
     'viki plus': 'streaming',
     'drakor id': 'streaming',
     'mango tv': 'streaming',
+    'mangotv': 'streaming',
 
     'spotify': 'music',
     'apple music': 'music',
@@ -53,10 +54,11 @@ const appCategoryMap = {
     'ms365': 'study',
     'microsoft': 'study',
     'duolingo': 'study',
+
+    // Tambahan Baru
     'picsart': 'editing',
-    'mangotv': 'streaming', 
     'remini': 'editing',
-    'wattpad': 'study', 
+    'wattpad': 'study',
     'pollar': 'editing',
     'ibis paint': 'editing',
     'quillbot': 'study',
@@ -97,6 +99,7 @@ const logoMap = {
     'viki plus': 'viki.com',
     'drakor id': 'drakorid.co',
     'mango tv': 'mgtv.com',
+    'mangotv': 'mgtv.com',
 
     'spotify': 'open.spotify.com',
     'apple music': 'music.apple.com',
@@ -117,11 +120,12 @@ const logoMap = {
     'cek turnitin': 'turnitin.com',
     'cek ai': 'zerogpt.com',
     'duolingo': 'https://img.icons8.com/color/144/duolingo-logo.png',
+
+    // Tambahan Baru
     'picsart': 'picsart.com',
-    'mangotv': 'mgtv.com',
     'remini': 'remini.ai',
     'wattpad': 'wattpad.com',
-    'pollar': 'polarr.com', 
+    'pollar': 'polarr.com',
     'ibis paint': 'ibispaint.com',
     'quillbot': 'quillbot.com',
     'meitu': 'meitu.com',
@@ -135,9 +139,8 @@ const logoMap = {
     'ilovepdf': 'ilovepdf.com',
     'wps office': 'wps.com',
     'robux': 'roblox.com',
-    'youku': 'youku.tv', 
+    'youku': 'youku.tv',
     'sushiroll': 'sushiroll.co.id',
-    
 };
 
 function getAppCategory(appName) {
@@ -164,7 +167,24 @@ function getLogoUrl(appName) {
 }
 
 function extractNumK(priceStr) {
-    return parseInt(priceStr.replace(/[^0-9]/g, '')) || 0;
+    if (!priceStr) return 0;
+    let str = String(priceStr).toUpperCase();
+    let num = parseInt(str.replace(/[^0-9]/g, '')) || 0;
+    
+    // Jika ada unsur 'K', berarti nilainya adalah dikali 1.000
+    if (str.includes('K')) {
+        return num * 1000; 
+    }
+    // Jika tidak ada 'K' (contoh: 8,250), baca nilai aslinya
+    return num;
+}
+
+// Fungsi baru untuk merapikan tampilan harga secara cerdas
+function formatSmartPrice(val) {
+    if (val >= 1000 && val % 1000 === 0) {
+        return (val / 1000) + 'K';
+    }
+    return val.toLocaleString('id-ID'); // Format ke ribuan Indonesia (contoh: 8.250)
 }
 
 // --- AMBIL DATA DARI SERVER ---
@@ -298,15 +318,27 @@ function renderCards(apps, orderedNames) {
     let delay = 0;
     orderedNames.forEach(name => {
         const info = apps[name];
-        let minPrice = Infinity;
         let totalPackages = info.packages.length; 
+        let minRealPrice = Infinity;
+        let displayPrice = '-';
 
         info.packages.forEach(item => {
-            const pVal = extractNumK(item.price);
-            if(pVal > 0 && pVal < minPrice) minPrice = pVal;
+            let str = item.price.toUpperCase();
+            // Ambil angka aslinya
+            let pVal = parseInt(str.replace(/[^0-9]/g, '')) || 0;
+            
+            // Jika admin pakai format 'K' (misal: 77K), nilai aslinya adalah 77000
+            if (str.includes('K')) {
+                pVal = pVal * 1000;
+            }
+
+            // Cari nilai paling kecil (termurah)
+            if (pVal > 0 && pVal < minRealPrice) {
+                minRealPrice = pVal;
+                // Jangan paksa pakai 'K', tapi gunakan teks asli buatan admin!
+                displayPrice = item.price; 
+            }
         });
-        
-        const displayPrice = minPrice !== Infinity ? minPrice + 'K' : '-';
 
         const logoUrl = getLogoUrl(name);
                 let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-contain bg-white p-1 border border-pink-200 shadow-sm" alt="${name}">` : `
@@ -494,11 +526,11 @@ function quickAdd(appName, cat, dur, price, pkgId) {
 // --- KERANJANG BAWAH (INLINE SUMMARY) ---
 function updateInlineSummaryUI() {
     let count = 0;
-    let totalK = 0;
+    let totalReal = 0;
 
     cart.forEach(item => {
         count += item.qty;
-        totalK += extractNumK(item.price) * item.qty;
+        totalReal += extractNumK(item.price) * item.qty;
     });
 
     const panel = document.getElementById('inlineSummaryPanel');
@@ -506,7 +538,7 @@ function updateInlineSummaryUI() {
     const total = document.getElementById('summaryTotalK');
 
     badge.innerText = count;
-    total.innerText = totalK + 'K';
+    total.innerText = formatSmartPrice(totalReal);
 
     if (count > 0) {
         panel.classList.remove('translate-y-full'); 
@@ -566,7 +598,7 @@ function renderInlineSummaryList() {
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
-                    <span class="text-pink-600 font-black text-xs md:text-sm">${itemTotal}K</span>
+                    <span class="text-pink-600 font-black text-xs md:text-sm">${formatSmartPrice(itemTotal)}</span>
                     <div class="flex items-center gap-1.5 bg-pink-50 border border-pink-100 rounded p-0.5 shadow-inner">
                         <button onclick="updateCartItemQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center bg-white rounded hover:bg-gray-100 text-gray-500 font-bold text-[10px] outline-none transition-colors border border-pink-200 shadow-sm">-</button>
                         <span class="text-pink-600 font-black w-3 text-center text-[10px]">${item.qty}</span>
@@ -651,14 +683,16 @@ function updateItemForm(cartIndex, fIdx, fieldName, val) {
 function renderCheckoutForms() {
     const container = document.getElementById('checkoutFormsContainer');
     let cartGroups = {};
-    let grandTotalK = 0;
+    let grandTotalReal = 0;
     
     cart.forEach((item, index) => {
         const appKey = item.app.toLowerCase().trim();
         if(!cartGroups[appKey]) cartGroups[appKey] = { appName: item.app, items: [] };
-        const itemTotalK = extractNumK(item.price) * item.qty;
-        grandTotalK += itemTotalK;
-        cartGroups[appKey].items.push({ ...item, cartIndex: index, itemTotalK });
+        
+        const itemTotalReal = extractNumK(item.price) * item.qty;
+        grandTotalReal += itemTotalReal;
+        
+        cartGroups[appKey].items.push({ ...item, cartIndex: index, itemTotalFormatted: formatSmartPrice(itemTotalReal) });
     });
 
     let html = '';
@@ -704,7 +738,7 @@ function renderCheckoutForms() {
                             <p class="text-[11px] md:text-xs text-gray-500 font-medium"><span class="text-pink-500 font-black uppercase tracking-wider">${gItem.cat}</span> • ${gItem.dur}</p>
                             <p class="text-[10px] md:text-[11px] text-gray-400 mt-1 font-bold">Harga: ${gItem.price} <span class="mx-1 text-pink-300">|</span> Qty: ${gItem.qty}</p>
                         </div>
-                        <p class="text-pink-600 font-black text-sm md:text-base">${gItem.itemTotalK}K</p>
+                        <p class="text-pink-600 font-black text-sm md:text-base">${gItem.itemTotalFormatted}</p>
                     </div>
             `;
 
@@ -769,7 +803,7 @@ function renderCheckoutForms() {
     }
 
     container.innerHTML = html;
-    document.getElementById('checkoutGrandTotal').innerText = grandTotalK + 'K';
+    document.getElementById('checkoutGrandTotal').innerText = formatSmartPrice(grandTotalReal);
 }
 
 function checkoutCartWA() {
@@ -801,12 +835,12 @@ function checkoutCartWA() {
         }
     }
 
-    let grandTotal = 0;
+    let grandTotalReal = 0;
     let textWA = "୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎აhaloo, aku mau jajan ini! ౿ \n\n";
 
     cart.forEach((item) => {
-        const itemTotalK = extractNumK(item.price) * item.qty;
-        grandTotal += itemTotalK;
+        const itemTotalReal = extractNumK(item.price) * item.qty;
+        grandTotalReal += itemTotalReal;
 
         const appKey = item.app.toLowerCase().trim();
         const fieldsStr = appForms[appKey] || '';
@@ -860,7 +894,7 @@ function checkoutCartWA() {
     // Menghapus spasi newline (baris kosong) yang berlebihan di akhir daftar pesanan
     textWA = textWA.trimEnd() + `\n\n`;
 
-    textWA += `ఌ︎. 𓈄 total order : IDR ${grandTotal}K ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
+    textWA += `ఌ︎. 𓈄 total order : IDR ${formatSmartPrice(grandTotalReal)} ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
     textWA += ` ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β \nhave a sweet day  𖠗\n\n`;
     textWA += `https://ciccu.biz.id/qris`;
     
