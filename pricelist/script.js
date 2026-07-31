@@ -66,9 +66,13 @@ const appCategoryMap = {
     'viki rakuten': 'streaming',
     'wink': 'editing',
     'aio drama': 'streaming',
+    'aiodrama': 'streaming',
+    'aio': 'streaming',
     'ilovepdf': 'study',
     'wps office': 'study',
     'robux': 'game',
+    'youku': 'streaming',
+    'sushiroll': 'streaming',
 };
 
 const logoMap = {
@@ -126,9 +130,13 @@ const logoMap = {
     'viki rakuten': 'viki.com',
     'wink': 'wink.meitu.com',
     'aio drama': 'aiodrama.com',
+    'aiodrama': 'aiodrama.com',
+    'aio': 'aiodrama.com',
     'ilovepdf': 'ilovepdf.com',
     'wps office': 'wps.com',
     'robux': 'roblox.com',
+    'youku': 'youku.tv', 
+    'sushiroll': 'sushiroll.co.id',
     
 };
 
