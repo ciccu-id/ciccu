@@ -250,7 +250,7 @@ function debouncedSearch() {
 // --- FILTER & RENDER HOMEPAGE ---
 function switchCategory(cat) {
     currentCategory = cat;
-    const categories = ['all', 'streaming', 'music', 'editing', 'study'];
+    const categories = ['all', 'streaming', 'music', 'editing', 'study', 'game'];
     
     categories.forEach(c => {
         const btn = document.getElementById(`cat-${c}`);
