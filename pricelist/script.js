@@ -853,6 +853,7 @@ function checkoutCartWA() {
         textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
         textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
         textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n`;
+        textWA += `⊹ ꒰ 𓈒 ♡ ——— harga   :  IDR ${formatSmartPrice(itemTotalReal)}\n`;
 
         if (fields.length > 0) {
             textWA += `\n*DATA USER*\n`;
