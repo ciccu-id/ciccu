@@ -42,7 +42,7 @@ export async function onRequest(context) {
   };
 
   try {
-    const body = method !== 'GET' && method !== 'DELETE' ? await request.json().catch(() => ({})) : null;
+    const body = method !== 'GET' ? await request.json().catch(() => ({})) : null;
 
     if (path === '/api/login' && method === 'POST') {
       const isValid = await verifyTurnstile(body.turnstileResponse, env.TURNSTILE_SECRET);
