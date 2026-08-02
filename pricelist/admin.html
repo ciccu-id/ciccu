@@ -110,17 +110,17 @@
                     </div>
 
                     <!-- Jam Operasional -->
-                    <div class="grid grid-cols-2 gap-3 md:gap-4">
-                        <div>
-                            <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Buka (WIB)</label>
-                            <input type="time" id="openTimeInput" class="w-full bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all" required>
-                        </div>
-                        <div>
-                            <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Tutup (WIB)</label>
-                            <input type="time" id="closeTimeInput" class="w-full bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all" required>
-                        </div>
-                    </div>
-
+<div class="grid grid-cols-2 gap-3 md:gap-4 relative">
+    <div>
+        <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Buka (WIB)</label>
+        <input type="time" id="openTimeInput" class="w-full appearance-none min-h-[44px] bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all block" required>
+    </div>
+    <div>
+        <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Tutup (WIB)</label>
+        <input type="time" id="closeTimeInput" class="w-full appearance-none min-h-[44px] bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all block" required>
+    </div>
+</div>
+                    
                     <!-- Pesan Notifikasi -->
                     <div>
                         <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Pesan Pop-up Saat Tutup</label>
