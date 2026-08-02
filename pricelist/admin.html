@@ -66,11 +66,77 @@
             </div>
         </div>
 
-        <div class="flex gap-4 mb-5 border-b border-pink-100 pb-1">
-            <button onclick="switchTab('produk')" id="tab-produk" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all">Kelola Produk 📦</button>
-            <button onclick="switchTab('testimoni')" id="tab-testimoni" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all">Kelola Testimoni 💬</button>
+        <!-- TAB NAVIGASI -->
+        <div class="flex gap-4 mb-5 border-b border-pink-100 pb-1 overflow-x-auto hide-scrollbar">
+            <button onclick="switchTab('produk')" id="tab-produk" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all whitespace-nowrap">Kelola Produk 📦</button>
+            <button onclick="switchTab('testimoni')" id="tab-testimoni" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all whitespace-nowrap">Kelola Testimoni 💬</button>
+            <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all whitespace-nowrap">Pengaturan Toko ⚙️</button>
         </div>
 
+        <!-- TAB PENGATURAN TOKO -->
+        <div id="section-pengaturan" class="hidden space-y-4">
+            <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50">
+                <h2 class="text-xs md:text-sm font-bold text-pink-500 mb-4 uppercase tracking-wider flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Pengaturan Buka/Tutup Toko
+                </h2>
+                
+                <form id="settingsForm" class="space-y-4" onsubmit="saveStoreSettings(event)">
+                    
+                    <!-- Toggle Tutup Manual -->
+                    <div class="flex items-center justify-between p-3 md:p-4 bg-pink-50 rounded-xl border border-pink-100">
+                        <div>
+                            <p class="font-bold text-gray-800 text-xs md:text-sm">Tutup Toko Manual</p>
+                            <p class="text-[10px] md:text-xs text-gray-500 font-medium mt-0.5">Aktifkan untuk menutup toko secara manual sekarang juga.</p>
+                        </div>
+                        <div class="relative inline-block w-10 h-5 md:w-12 md:h-6 align-middle select-none shrink-0">
+                            <input type="checkbox" id="storeClosedToggle" class="toggle-checkbox absolute block w-5 h-5 md:w-6 md:h-6 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0"/>
+                            <label for="storeClosedToggle" class="toggle-label block overflow-hidden h-5 md:h-6 rounded-full bg-gray-200 cursor-pointer"></label>
+                            <div class="toggle-circle absolute top-0.5 left-0.5 pointer-events-none shadow-sm w-4 h-4 md:w-5 md:h-5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Toggle Jadwal Otomatis -->
+                    <div class="flex items-center justify-between p-3 md:p-4 bg-sky-50 rounded-xl border border-sky-100">
+                        <div>
+                            <p class="font-bold text-gray-800 text-xs md:text-sm">Jadwal Otomatis</p>
+                            <p class="text-[10px] md:text-xs text-gray-500 font-medium mt-0.5">Toko akan buka & tutup otomatis mengikuti jam operasional (WIB).</p>
+                        </div>
+                        <div class="relative inline-block w-10 h-5 md:w-12 md:h-6 align-middle select-none shrink-0">
+                            <input type="checkbox" id="autoScheduleToggle" onchange="toggleAutoScheduleUI(this.checked)" class="toggle-checkbox absolute block w-5 h-5 md:w-6 md:h-6 rounded-full bg-white border-4 appearance-none cursor-pointer opacity-0"/>
+                            <label for="autoScheduleToggle" class="toggle-label block overflow-hidden h-5 md:h-6 rounded-full bg-gray-200 cursor-pointer"></label>
+                            <div class="toggle-circle absolute top-0.5 left-0.5 pointer-events-none shadow-sm w-4 h-4 md:w-5 md:h-5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Jam Operasional -->
+                    <div class="grid grid-cols-2 gap-3 md:gap-4">
+                        <div>
+                            <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Buka (WIB)</label>
+                            <input type="time" id="openTimeInput" class="w-full bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Tutup (WIB)</label>
+                            <input type="time" id="closeTimeInput" class="w-full bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all" required>
+                        </div>
+                    </div>
+
+                    <!-- Pesan Notifikasi -->
+                    <div>
+                        <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Pesan Pop-up Saat Tutup</label>
+                        <textarea id="closeMessageInput" rows="3" required class="w-full bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm resize-none"></textarea>
+                    </div>
+
+                    <!-- Tombol Simpan -->
+                    <button type="submit" id="btnSaveSettings" class="w-full bg-pink-400 hover:bg-pink-500 text-white text-xs md:text-sm font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2 mt-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        Simpan Pengaturan ✨
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TAB KELOLA PRODUK (ASLI) -->
         <div id="section-produk" class="space-y-4">
             <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50 mb-5">
                 <h2 class="text-xs md:text-sm font-bold text-pink-500 mb-3 md:mb-4 uppercase tracking-wider flex items-center gap-1.5">
@@ -127,6 +193,7 @@
             </div>
         </div>
 
+        <!-- TAB KELOLA TESTIMONI (ASLI) -->
         <div id="section-testimoni" class="hidden space-y-3">
             <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50">
                 <h2 class="text-xs md:text-sm font-bold text-pink-500 mb-4 uppercase tracking-wider flex items-center gap-1.5">
@@ -289,6 +356,6 @@
       }
     </script>
 
-    <script src="admin-script.js?v=3"></script>
+    <script src="admin-script.js?v=4"></script>
 </body>
 </html>
