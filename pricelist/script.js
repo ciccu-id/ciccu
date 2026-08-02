@@ -10,6 +10,18 @@ let cart = [];
 let currentOrderApp = '';
 let isSummaryExpanded = false; 
 
+// --- VARIABEL STATUS TOKO ---
+let isStoreClosed = false;
+let storeClosedMessage = "Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!";
+
+// FUNGSI PENGAMAN HTML (XSS FILTER)
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, match => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[match]);
+}
+
 // PETA KATEGORI CICCU
 const appCategoryMap = {
     'netflix': 'streaming',
@@ -155,11 +167,9 @@ function getLogoUrl(appName) {
     const nameLow = appName.toLowerCase();
     for (const [key, domain] of Object.entries(logoMap)) {
         if (nameLow.includes(key)) {
-            // Jika domain diawali 'http', gunakan link gambar langsung
             if (domain.startsWith('http')) {
                 return domain;
             }
-            // Jika tidak, gunakan sistem otomatis Google
             return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
         }
     }
@@ -170,26 +180,35 @@ function extractNumK(priceStr) {
     if (!priceStr) return 0;
     let str = String(priceStr).toUpperCase();
     let num = parseInt(str.replace(/[^0-9]/g, '')) || 0;
-    
-    // Jika ada unsur 'K', berarti nilainya adalah dikali 1.000
     if (str.includes('K')) {
         return num * 1000; 
     }
-    // Jika tidak ada 'K' (contoh: 8,250), baca nilai aslinya
     return num;
 }
 
-// Fungsi baru untuk merapikan tampilan harga secara cerdas
 function formatSmartPrice(val) {
     if (val >= 1000 && val % 1000 === 0) {
         return (val / 1000) + 'K';
     }
-    return val.toLocaleString('id-ID'); // Format ke ribuan Indonesia (contoh: 8.250)
+    return val.toLocaleString('id-ID');
 }
 
-// --- AMBIL DATA DARI SERVER ---
+// --- AMBIL DATA DARI SERVER & CEK STATUS TOKO ---
 async function loadPricelist() {
     try {
+        // Cek Status Toko Terlebih Dahulu
+        try {
+            const settingsRes = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`, { cache: 'no-store' });
+            if (settingsRes.ok) {
+                const settingsData = await settingsRes.json();
+                if (settingsData.is_closed) {
+                    showStoreClosedModal(settingsData.message);
+                }
+            }
+        } catch (setErr) {
+            console.error("Gagal memeriksa status toko:", setErr);
+        }
+
         const response = await fetch(`${BASE_URL}/api/pricelist?t=${new Date().getTime()}`, {
             cache: 'no-store'
         });
@@ -257,7 +276,43 @@ async function loadPricelist() {
     }
 }
 
-// --- FITUR DEBOUNCE UNTUK PENCARIAN (Mencegah Lag) ---
+// --- FUNGSI POP-UP TOKO TUTUP ---
+function showStoreClosedModal(msg) {
+    isStoreClosed = true;
+    if (msg) storeClosedMessage = msg;
+
+    let modal = document.getElementById('storeClosedModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'storeClosedModal';
+        modal.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-pink-950/70 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="bg-white border border-pink-200 rounded-[2rem] w-full max-w-sm p-6 text-center shadow-2xl transform scale-100 transition-all">
+                <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-500 shadow-inner">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <h3 class="font-logo text-2xl text-pink-600 mb-2">Ciccu Store Tutup 🌙</h3>
+                <p class="text-xs md:text-sm text-gray-600 font-bold leading-relaxed mb-6" id="storeClosedText">${escapeHTML(storeClosedMessage)}</p>
+                <button onclick="closeStoreClosedModal()" class="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-pink-200 outline-none">
+                    Mengerti 💕
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    } else {
+        document.getElementById('storeClosedText').innerText = storeClosedMessage;
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeStoreClosedModal() {
+    const modal = document.getElementById('storeClosedModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// --- FITUR DEBOUNCE UNTUK PENCARIAN ---
 let searchTimeout;
 
 function debouncedSearch() {
@@ -267,7 +322,6 @@ function debouncedSearch() {
     }, 300);
 }
 
-// --- FILTER & RENDER HOMEPAGE ---
 function switchCategory(cat) {
     currentCategory = cat;
     const categories = ['all', 'streaming', 'music', 'editing', 'study', 'game'];
@@ -324,27 +378,21 @@ function renderCards(apps, orderedNames) {
 
         info.packages.forEach(item => {
             let str = item.price.toUpperCase();
-            // Ambil angka aslinya
             let pVal = parseInt(str.replace(/[^0-9]/g, '')) || 0;
-            
-            // Jika admin pakai format 'K' (misal: 77K), nilai aslinya adalah 77000
             if (str.includes('K')) {
                 pVal = pVal * 1000;
             }
-
-            // Cari nilai paling kecil (termurah)
             if (pVal > 0 && pVal < minRealPrice) {
                 minRealPrice = pVal;
-                // Jangan paksa pakai 'K', tapi gunakan teks asli buatan admin!
                 displayPrice = item.price; 
             }
         });
 
         const logoUrl = getLogoUrl(name);
-                let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-contain bg-white p-1 border border-pink-200 shadow-sm" alt="${name}">` : `
-                <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
-                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                </div>`;
+        let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-contain bg-white p-1 border border-pink-200 shadow-sm" alt="${name}">` : `
+        <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
+            <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        </div>`;
 
         const safeName = name.replace(/'/g, "\\'");
         const categoryBadge = getAppCategory(name);
@@ -391,6 +439,12 @@ function renderCards(apps, orderedNames) {
 
 // --- SISTEM ORDER & CART ---
 function openOrderModal(appName) {
+    // KUNCI JIKA TOKO TUTUP
+    if (isStoreClosed) {
+        showStoreClosedModal(storeClosedMessage);
+        return;
+    }
+
     currentOrderApp = appName;
     document.getElementById('modalAppNameTitle').innerText = appName;
     
@@ -492,6 +546,11 @@ function getQuickAddButtonHTML(appName, cat, dur, price, pkgId, qty) {
 }
 
 function quickAdd(appName, cat, dur, price, pkgId) {
+    if (isStoreClosed) {
+        showStoreClosedModal(storeClosedMessage);
+        return;
+    }
+
     const existIndex = cart.findIndex(item => 
         item.app === appName && item.cat === cat && item.dur === dur
     );
@@ -523,7 +582,6 @@ function quickAdd(appName, cat, dur, price, pkgId) {
     triggerSummaryBounce();
 }
 
-// --- KERANJANG BAWAH (INLINE SUMMARY) ---
 function updateInlineSummaryUI() {
     let count = 0;
     let totalReal = 0;
@@ -641,6 +699,10 @@ function showToast() {
 // --- CHECKOUT & FORMS ---
 function openCheckoutModal(e) {
     if(e) e.stopPropagation(); 
+    if(isStoreClosed) {
+        showStoreClosedModal(storeClosedMessage);
+        return;
+    }
     if(cart.length === 0) return;
 
     renderCheckoutForms();
@@ -807,9 +869,12 @@ function renderCheckoutForms() {
 }
 
 function checkoutCartWA() {
+    if(isStoreClosed) {
+        showStoreClosedModal(storeClosedMessage);
+        return;
+    }
     if(cart.length === 0) return;
 
-    // --- Validasi Form ---
     for (let i = 0; i < cart.length; i++) {
         const item = cart[i];
         const appKey = item.app.toLowerCase().trim();
@@ -859,7 +924,6 @@ function checkoutCartWA() {
             textWA += `\n*DATA USER*\n`;
 
             if (item.useFirstItemData) {
-                // MENCARI NAMA PAKET PERTAMA YANG ADA DI KERANJANG
                 const firstItem = cart.find(c => c.app === item.app);
                 if (firstItem) {
                     textWA += `(Data form sama dengan paket ${firstItem.cat} ${firstItem.dur})\n`;
@@ -892,7 +956,6 @@ function checkoutCartWA() {
         }
     });
 
-    // Menghapus spasi newline (baris kosong) yang berlebihan di akhir daftar pesanan
     textWA = textWA.trimEnd() + `\n\n`;
 
     textWA += `ఌ︎. 𓈄 total order : IDR ${formatSmartPrice(grandTotalReal)} ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n`;
