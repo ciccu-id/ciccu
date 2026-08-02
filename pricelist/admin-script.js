@@ -26,25 +26,126 @@ let sortableReorder = null;
 function switchTab(tabName) {
     const sectionProduk = document.getElementById('section-produk');
     const sectionTestimoni = document.getElementById('section-testimoni');
+    const sectionPengaturan = document.getElementById('section-pengaturan');
+    
     const tabProduk = document.getElementById('tab-produk');
     const tabTestimoni = document.getElementById('tab-testimoni');
+    const tabPengaturan = document.getElementById('tab-pengaturan');
     
+    const activeClass = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all whitespace-nowrap";
+    const inactiveClass = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all whitespace-nowrap";
+
     if (tabName === 'produk') {
         sectionProduk.classList.remove('hidden');
         sectionTestimoni.classList.add('hidden');
-        tabProduk.className = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all";
-        tabTestimoni.className = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all";
+        if (sectionPengaturan) sectionPengaturan.classList.add('hidden');
+        
+        tabProduk.className = activeClass;
+        tabTestimoni.className = inactiveClass;
+        if (tabPengaturan) tabPengaturan.className = inactiveClass;
+        
         updateBulkUI();
-    } else {
+    } else if (tabName === 'testimoni') {
         sectionProduk.classList.add('hidden');
         sectionTestimoni.classList.remove('hidden');
-        tabProduk.className = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all";
-        tabTestimoni.className = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all";
-        document.getElementById('bulkActionBar').classList.add('translate-y-full');
+        if (sectionPengaturan) sectionPengaturan.classList.add('hidden');
         
+        tabProduk.className = inactiveClass;
+        tabTestimoni.className = activeClass;
+        if (tabPengaturan) tabPengaturan.className = inactiveClass;
+        
+        document.getElementById('bulkActionBar').classList.add('translate-y-full');
         loadAdminTestimoni();
+    } else if (tabName === 'pengaturan') {
+        sectionProduk.classList.add('hidden');
+        sectionTestimoni.classList.add('hidden');
+        if (sectionPengaturan) sectionPengaturan.classList.remove('hidden');
+        
+        tabProduk.className = inactiveClass;
+        tabTestimoni.className = inactiveClass;
+        if (tabPengaturan) tabPengaturan.className = activeClass;
+        
+        document.getElementById('bulkActionBar').classList.add('translate-y-full');
+        loadStoreSettings();
     }
 }
+
+// ----- SISTEM PENGATURAN TOKO (BUKA/TUTUP) -----
+async function loadStoreSettings() {
+    if(!sessionPass) return;
+    try {
+        const res = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`);
+        if(res.ok) {
+            const data = await res.json();
+            document.getElementById('storeClosedToggle').checked = data.is_manual_closed || false;
+            
+            const isAuto = data.auto_schedule || false;
+            document.getElementById('autoScheduleToggle').checked = isAuto;
+            
+            document.getElementById('openTimeInput').value = data.open_time || '05:00';
+            document.getElementById('closeTimeInput').value = data.close_time || '23:00';
+            document.getElementById('closeMessageInput').value = data.message || 'Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
+            
+            toggleAutoScheduleUI(isAuto);
+        }
+    } catch (error) {
+        console.error("Gagal memuat pengaturan toko", error);
+    }
+}
+
+function toggleAutoScheduleUI(isChecked) {
+    const openInput = document.getElementById('openTimeInput');
+    const closeInput = document.getElementById('closeTimeInput');
+    
+    openInput.disabled = !isChecked;
+    closeInput.disabled = !isChecked;
+    
+    if(!isChecked) {
+        openInput.classList.add('opacity-50', 'bg-gray-100');
+        closeInput.classList.add('opacity-50', 'bg-gray-100');
+    } else {
+        openInput.classList.remove('opacity-50', 'bg-gray-100');
+        closeInput.classList.remove('opacity-50', 'bg-gray-100');
+    }
+}
+
+async function saveStoreSettings(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveSettings');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = "Menyimpan... ✨";
+    btn.disabled = true;
+
+    const payload = {
+        is_closed: document.getElementById('storeClosedToggle').checked,
+        auto_schedule: document.getElementById('autoScheduleToggle').checked,
+        open_time: document.getElementById('openTimeInput').value,
+        close_time: document.getElementById('closeTimeInput').value,
+        close_message: document.getElementById('closeMessageInput').value
+    };
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/settings`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'x-admin-password': sessionPass 
+            },
+            body: JSON.stringify(payload)
+        });
+        await handleResponseStatus(res);
+        
+        const indicator = document.getElementById('savingIndicator');
+        indicator.classList.remove('hidden'); 
+        setTimeout(() => indicator.classList.add('hidden'), 2000);
+    } catch (error) {
+        alert("Gagal menyimpan pengaturan toko.");
+    } finally {
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+    }
+}
+
 
 // ----- SISTEM LOAD & KELOLA TESTIMONI -----
 async function loadAdminTestimoni() {
@@ -65,12 +166,10 @@ async function loadAdminTestimoni() {
         data.forEach(item => {
             const hasReply = item.balasan_admin && item.balasan_admin.trim() !== '';
             
-            // PENERAPAN ESCAPE HTML
             const safeNamaDisplay = escapeHTML(item.nama);
             const safeKomentarDisplay = escapeHTML(item.komentar);
             const safeBalasanDisplay = hasReply ? escapeHTML(item.balasan_admin) : '';
 
-            // ESCAPE UNTUK ONCLICK JAVASCRIPT
             const safeNama = safeNamaDisplay.replace(/'/g, "\\'");
             const safeKomentar = safeKomentarDisplay.replace(/'/g, "\\'");
             const safeBalasan = safeBalasanDisplay.replace(/'/g, "\\'");
@@ -191,7 +290,6 @@ async function loginAdmin() {
     const input = document.getElementById('adminPasswordInput').value;
     if (!input) return alert("Isi passwordnya dulu ya!");
 
-    // AMBIL TOKEN TURNSTILE
     const turnstileToken = document.querySelector('[name="cf-turnstile-response"]')?.value;
     if (!turnstileToken) {
         return alert("Mohon tunggu dan selesaikan verifikasi keamanan Captcha terlebih dahulu ya! 🎀");
@@ -216,7 +314,7 @@ async function loginAdmin() {
         } else {
             const errData = await res.json();
             alert(errData.error || "Gagal login.");
-            if (typeof turnstile !== 'undefined') turnstile.reset(); // Reset captcha jika gagal
+            if (typeof turnstile !== 'undefined') turnstile.reset(); 
         }
     } catch (err) {
         alert("Terjadi kesalahan jaringan.");
@@ -272,6 +370,10 @@ async function loadData() {
                 }
             }
         } catch(e) {}
+        
+        // Memuat status toko (opsional, agar data juga tersedia saat admin pertama masuk)
+        loadStoreSettings();
+
         filterAdminList(); 
     } catch (error) {
         list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200 shadow-sm mx-2">Gagal memuat data!<br><br><span class="text-xs text-gray-500 font-medium">${error.message}</span></div>`;
