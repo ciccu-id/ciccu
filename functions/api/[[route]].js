@@ -51,6 +51,60 @@ export async function onRequest(context) {
       return jsonResp({ success: true });
     }
 
+    if (path === '/api/settings' && method === 'GET') {
+      const { results } = await env.DB.prepare("SELECT * FROM store_settings WHERE id = 1").all();
+      
+      if (!results || results.length === 0) {
+         return jsonResp({ is_closed: false });
+      }
+      
+      const settings = results[0];
+      let isClosed = settings.is_closed === 1;
+
+      if (settings.auto_schedule === 1) {
+          const nowStr = new Intl.DateTimeFormat('en-GB', {
+              timeZone: 'Asia/Jakarta',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+          }).format(new Date()); 
+          
+          const [currentH, currentM] = nowStr.split(':').map(Number);
+          const [openH, openM] = settings.open_time.split(':').map(Number);
+          const [closeH, closeM] = settings.close_time.split(':').map(Number);
+          
+          const currentTotalMins = currentH * 60 + currentM;
+          const openTotalMins = openH * 60 + openM;
+          const closeTotalMins = closeH * 60 + closeM;
+          
+          if (openTotalMins < closeTotalMins) {
+              
+              if (currentTotalMins < openTotalMins || currentTotalMins >= closeTotalMins) {
+                  isClosed = true;
+              } else {
+                  isClosed = false; 
+              }
+          } else {
+              
+              if (currentTotalMins >= closeTotalMins && currentTotalMins < openTotalMins) {
+                  isClosed = true; 
+              } else {
+                  isClosed = false; 
+              }
+          }
+      }
+
+      return jsonResp({
+          is_closed: isClosed,
+          is_manual_closed: settings.is_closed === 1,
+          auto_schedule: settings.auto_schedule === 1,
+          open_time: settings.open_time,
+          close_time: settings.close_time,
+          message: settings.close_message
+      });
+    }
+    
+
     if (path === '/api/pricelist' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM pricelist").all();
       return jsonResp(results);
@@ -80,10 +134,26 @@ export async function onRequest(context) {
     }
 
     try {
+      // PROTEKSI AUTENTIKASI ADMIN UNTUK ROUTE BERIKUTNYA
       if (method !== 'GET' && path !== '/api/testimoni' && path !== '/api/login' || (path === '/api/testimoni' && method !== 'POST' && method !== 'GET')) {
           checkAuth();
       }
       
+      // --- BAGIAN BARU: ENDPOINT PUT SETTINGS (ADMIN) ---
+      if (path === '/api/settings' && method === 'PUT') {
+        await env.DB.prepare(
+          "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=? WHERE id=1"
+        ).bind(
+          body.is_closed ? 1 : 0, 
+          body.auto_schedule ? 1 : 0, 
+          body.open_time, 
+          body.close_time, 
+          escapeHTML(body.close_message || '')
+        ).run();
+        return jsonResp({ success: true });
+      }
+      // --- AKHIR BAGIAN BARU ---
+
       if (path === '/api/pricelist' && method === 'POST') {
         await env.DB.prepare("INSERT INTO pricelist (app_name, category, duration, price, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
           .bind(body.app_name, body.category, body.duration, body.price, body.status || 'Ready', body.notes || '').run();
@@ -96,7 +166,6 @@ export async function onRequest(context) {
         return jsonResp({ success: true });
       }
       
-      // KEAMANAN BARU: Validasi format Array untuk Bulk Actions
       if (path.startsWith('/api/delete/bulk') && method === 'DELETE') {
         const ids = body.ids; 
         if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
