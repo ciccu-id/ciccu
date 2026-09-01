@@ -10,11 +10,9 @@ let cart = [];
 let currentOrderApp = '';
 let isSummaryExpanded = false; 
 
-// --- VARIABEL STATUS TOKO ---
 let isStoreClosed = false;
 let storeClosedMessage = "Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!";
 
-// FUNGSI PENGAMAN HTML (XSS FILTER)
 function escapeHTML(str) {
     if (!str) return '';
     return String(str).replace(/[&<>'"]/g, match => ({
@@ -22,7 +20,6 @@ function escapeHTML(str) {
     })[match]);
 }
 
-// PETA KATEGORI CICCU
 const appCategoryMap = {
     'netflix': 'streaming',
     'disney': 'streaming',
@@ -46,16 +43,13 @@ const appCategoryMap = {
     'drakor id': 'streaming',
     'mango tv': 'streaming',
     'mangotv': 'streaming',
-
     'spotify': 'music',
     'apple music': 'music',
     'apple': 'music',
-
     'capcut': 'editing',
     'canva': 'editing',
     'alight motion': 'editing',
     'alight': 'editing',
-
     'turnitin': 'study',
     'cek turnitin': 'study',
     'cek ai': 'study',
@@ -66,8 +60,6 @@ const appCategoryMap = {
     'ms365': 'study',
     'microsoft': 'study',
     'duolingo': 'study',
-
-    // Tambahan Baru
     'picsart': 'editing',
     'remini': 'editing',
     'wattpad': 'study',
@@ -112,16 +104,13 @@ const logoMap = {
     'drakor id': 'drakorid.co',
     'mango tv': 'mgtv.com',
     'mangotv': 'mgtv.com',
-
     'spotify': 'open.spotify.com',
     'apple music': 'music.apple.com',
     'apple': 'music.apple.com',
-
     'canva': 'canva.com',
     'capcut': 'capcut.com',
     'alight motion': 'alightcreative.com',
     'alight': 'alightcreative.com',
-
     'chatgpt': 'openai.com',
     'claude': 'anthropic.com',
     'grok': 'x.ai',
@@ -132,8 +121,6 @@ const logoMap = {
     'cek turnitin': 'turnitin.com',
     'cek ai': 'zerogpt.com',
     'duolingo': 'https://img.icons8.com/color/144/duolingo-logo.png',
-
-    // Tambahan Baru
     'picsart': 'picsart.com',
     'remini': 'remini.ai',
     'wattpad': 'wattpad.com',
@@ -187,16 +174,15 @@ function extractNumK(priceStr) {
 }
 
 function formatSmartPrice(val) {
+    if (isNaN(val) || val === null || val === undefined) return '0';
     if (val >= 1000 && val % 1000 === 0) {
         return (val / 1000) + 'K';
     }
     return val.toLocaleString('id-ID');
 }
 
-// --- AMBIL DATA DARI SERVER & CEK STATUS TOKO ---
 async function loadPricelist() {
     try {
-        // Cek Status Toko Terlebih Dahulu
         try {
             const settingsRes = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`, { cache: 'no-store' });
             if (settingsRes.ok) {
@@ -276,7 +262,6 @@ async function loadPricelist() {
     }
 }
 
-// --- FUNGSI POP-UP TOKO TUTUP ---
 function showStoreClosedModal(msg) {
     isStoreClosed = true;
     if (msg) storeClosedMessage = msg;
@@ -312,7 +297,6 @@ function closeStoreClosedModal() {
     }
 }
 
-// --- FITUR DEBOUNCE UNTUK PENCARIAN ---
 let searchTimeout;
 
 function debouncedSearch() {
@@ -377,11 +361,7 @@ function renderCards(apps, orderedNames) {
         let displayPrice = '-';
 
         info.packages.forEach(item => {
-            let str = item.price.toUpperCase();
-            let pVal = parseInt(str.replace(/[^0-9]/g, '')) || 0;
-            if (str.includes('K')) {
-                pVal = pVal * 1000;
-            }
+            let pVal = extractNumK(item.price);
             if (pVal > 0 && pVal < minRealPrice) {
                 minRealPrice = pVal;
                 displayPrice = item.price; 
@@ -389,7 +369,7 @@ function renderCards(apps, orderedNames) {
         });
 
         const logoUrl = getLogoUrl(name);
-        let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-contain bg-white p-1 border border-pink-200 shadow-sm" alt="${name}">` : `
+        let logoHTML = logoUrl ? `<img src="${logoUrl}" loading="lazy" class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl object-contain bg-white p-1 border border-pink-200 shadow-sm" alt="${escapeHTML(name)}">` : `
         <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-400 shadow-sm">
             <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
         </div>`;
@@ -413,19 +393,19 @@ function renderCards(apps, orderedNames) {
             ${infoBtnHTML}
             <div class="relative z-10 flex items-start justify-between mb-2 md:mb-4">
                 ${logoHTML}
-                <span class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded border border-pink-100">${categoryBadge}</span>
+                <span class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded border border-pink-100">${escapeHTML(categoryBadge)}</span>
             </div>
             <div class="relative z-10 mb-2 md:mb-3 flex-1">
-                <h2 class="text-sm md:text-xl font-black text-pink-600 capitalize tracking-tight group-hover:text-pink-400 transition-all truncate pr-4">${name}</h2>
+                <h2 class="text-sm md:text-xl font-black text-pink-600 capitalize tracking-tight group-hover:text-pink-400 transition-all truncate pr-4">${escapeHTML(name)}</h2>
                 <div class="mt-2 md:mt-4 flex items-end gap-1">
                     <span class="text-[10px] md:text-xs text-gray-500 font-bold pb-0.5 md:pb-1">Mulai</span>
-                    <span class="text-lg md:text-2xl font-black text-gray-800 leading-none">${displayPrice}</span>
+                    <span class="text-lg md:text-2xl font-black text-gray-800 leading-none">${escapeHTML(displayPrice)}</span>
                 </div>
             </div>
             <div class="relative z-10 mt-auto pt-2 md:pt-4 border-t border-pink-100 flex items-center justify-between text-gray-400 group-hover:text-pink-500 transition-colors">
                 <p class="text-[9px] md:text-[11px] font-bold flex items-center gap-1">
                     <svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    ${totalPackages} Paket
+                    ${escapeHTML(String(totalPackages))} Paket
                 </p>
                 <div class="bg-pink-50 p-1 md:p-1.5 rounded-lg border border-pink-100 group-hover:bg-pink-400 group-hover:text-white transition-all shadow-sm">
                     <svg class="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -437,9 +417,7 @@ function renderCards(apps, orderedNames) {
     });
 }
 
-// --- SISTEM ORDER & CART ---
 function openOrderModal(appName) {
-    // KUNCI JIKA TOKO TUTUP
     if (isStoreClosed) {
         showStoreClosedModal(storeClosedMessage);
         return;
@@ -449,7 +427,7 @@ function openOrderModal(appName) {
     document.getElementById('modalAppNameTitle').innerText = appName;
     
     const logoUrl = getLogoUrl(appName);
-    document.getElementById('modalAppLogo').innerHTML = logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover">` : `<span class="text-[10px] font-black text-pink-500">${appName.charAt(0)}</span>`;
+    document.getElementById('modalAppLogo').innerHTML = logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover">` : `<span class="text-[10px] font-black text-pink-500">${escapeHTML(appName.charAt(0))}</span>`;
 
     const info = allApps[appName];
     const list = document.getElementById('modalPackagesList');
@@ -460,7 +438,7 @@ function openOrderModal(appName) {
         const cat = item.category;
         const pkgId = `pkg-${cat.replace(/[^a-zA-Z0-9]/g, '-')}-${index}`;
         const noteHtml = item.notes && item.notes.toLowerCase() !== 'nan' 
-            ? `<p class="text-[9px] text-pink-400 font-medium italic mt-1 flex items-center gap-1"><span class="text-pink-300 font-light">↳</span> ${item.notes}</p>` 
+            ? `<p class="text-[9px] text-pink-400 font-medium italic mt-1 flex items-center gap-1"><span class="text-pink-300 font-light">↳</span> ${escapeHTML(item.notes)}</p>` 
             : '';
 
         const isSold = item.status && item.status.toLowerCase() !== 'ready';
@@ -492,14 +470,14 @@ function openOrderModal(appName) {
             <div id="row-${pkgId}" class="flex items-center justify-between p-3.5 md:p-4 transition-all duration-300 ${hoverClass} ${activeClass} ${activeBorder}">
                 <div class="flex-1 pr-3 min-w-0">
                     <div class="flex items-center mb-0.5">
-                        <p class="text-[9px] md:text-[10px] ${isSold ? 'text-gray-500' : 'text-pink-500'} font-black uppercase tracking-widest truncate">${cat}</p>
+                        <p class="text-[9px] md:text-[10px] ${isSold ? 'text-gray-500' : 'text-pink-500'} font-black uppercase tracking-widest truncate">${escapeHTML(cat)}</p>
                         ${soldBadge}
                     </div>
-                    <h4 class="text-xs md:text-sm font-bold ${isSold ? 'text-gray-500 line-through' : 'text-gray-700'} truncate">${item.duration}</h4>
+                    <h4 class="text-xs md:text-sm font-bold ${isSold ? 'text-gray-500 line-through' : 'text-gray-700'} truncate">${escapeHTML(item.duration)}</h4>
                     ${noteHtml}
                 </div>
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
-                    <span class="font-black ${isSold ? 'text-gray-400' : 'text-pink-600'} text-xs md:text-sm">${item.price}</span>
+                    <span class="font-black ${isSold ? 'text-gray-400' : 'text-pink-600'} text-xs md:text-sm">${escapeHTML(item.price)}</span>
                     <div id="btn-container-${pkgId}">
                         ${actionButton}
                     </div>
@@ -527,17 +505,22 @@ function closeOrderModal() {
 }
 
 function getQuickAddButtonHTML(appName, cat, dur, price, pkgId, qty) {
-    const safeAppName = appName.replace(/'/g, "\\'");
+    const safeAppName = escapeHTML(appName.replace(/'/g, "\\'"));
+    const safeCat = escapeHTML(cat.replace(/'/g, "\\'"));
+    const safeDur = escapeHTML(dur.replace(/'/g, "\\'"));
+    const safePrice = escapeHTML(price.replace(/'/g, "\\'"));
+    const safePkgId = escapeHTML(pkgId);
+    
     if (qty > 0) {
         return `
-            <button onclick="quickAdd('${safeAppName}', '${cat}', '${dur}', '${price}', '${pkgId}')" class="bg-pink-400 text-white border border-pink-400 text-[10px] md:text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-md shadow-pink-200 outline-none transform active:scale-95">
+            <button onclick="quickAdd('${safeAppName}', '${safeCat}', '${safeDur}', '${safePrice}', '${safePkgId}')" class="bg-pink-400 text-white border border-pink-400 text-[10px] md:text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 shadow-md shadow-pink-200 outline-none transform active:scale-95">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> 
-                ${qty} pcs
+                ${escapeHTML(String(qty))} pcs
             </button>
         `;
     } else {
         return `
-            <button onclick="quickAdd('${safeAppName}', '${cat}', '${dur}', '${price}', '${pkgId}')" class="bg-white hover:bg-pink-50 text-pink-400 border border-pink-200 text-[10px] md:text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1 outline-none transform active:scale-95 shadow-sm">
+            <button onclick="quickAdd('${safeAppName}', '${safeCat}', '${safeDur}', '${safePrice}', '${safePkgId}')" class="bg-white hover:bg-pink-50 text-pink-400 border border-pink-200 text-[10px] md:text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1 outline-none transform active:scale-95 shadow-sm">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg> 
                 Tambah
             </button>
@@ -642,7 +625,7 @@ function renderInlineSummaryList() {
     cart.forEach((item, index) => {
         const itemTotal = extractNumK(item.price) * item.qty;
         const logoUrl = getLogoUrl(item.app);
-        const logoRender = logoUrl ? `<img src="${logoUrl}" class="w-6 h-6 object-cover rounded-md border border-pink-100">` : `<span class="text-[10px] font-black text-pink-400">${item.app.charAt(0)}</span>`;
+        const logoRender = logoUrl ? `<img src="${logoUrl}" class="w-6 h-6 object-cover rounded-md border border-pink-100">` : `<span class="text-[10px] font-black text-pink-400">${escapeHTML(item.app.charAt(0))}</span>`;
 
         html += `
             <div class="flex items-center justify-between bg-white p-2.5 rounded-[12px] border border-pink-100 gap-3 group transition-colors hover:border-pink-300 shadow-sm">
@@ -651,15 +634,15 @@ function renderInlineSummaryList() {
                         ${logoRender}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h4 class="text-gray-800 font-bold text-xs truncate leading-tight">${item.app}</h4>
-                        <p class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 truncate"><span class="text-pink-500 font-bold uppercase">${item.cat}</span> • ${item.dur}</p>
+                        <h4 class="text-gray-800 font-bold text-xs truncate leading-tight">${escapeHTML(item.app)}</h4>
+                        <p class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 truncate"><span class="text-pink-500 font-bold uppercase">${escapeHTML(item.cat)}</span> • ${escapeHTML(item.dur)}</p>
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
-                    <span class="text-pink-600 font-black text-xs md:text-sm">${formatSmartPrice(itemTotal)}</span>
+                    <span class="text-pink-600 font-black text-xs md:text-sm">${escapeHTML(formatSmartPrice(itemTotal))}</span>
                     <div class="flex items-center gap-1.5 bg-pink-50 border border-pink-100 rounded p-0.5 shadow-inner">
                         <button onclick="updateCartItemQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center bg-white rounded hover:bg-gray-100 text-gray-500 font-bold text-[10px] outline-none transition-colors border border-pink-200 shadow-sm">-</button>
-                        <span class="text-pink-600 font-black w-3 text-center text-[10px]">${item.qty}</span>
+                        <span class="text-pink-600 font-black w-3 text-center text-[10px]">${escapeHTML(String(item.qty))}</span>
                         <button onclick="updateCartItemQty(${index}, 1)" class="w-5 h-5 flex items-center justify-center bg-pink-400 rounded hover:bg-pink-500 text-white font-bold text-[10px] outline-none transition-colors shadow-sm">+</button>
                     </div>
                 </div>
@@ -696,7 +679,6 @@ function showToast() {
     }, 1500);
 }
 
-// --- CHECKOUT & FORMS ---
 function openCheckoutModal(e) {
     if(e) e.stopPropagation(); 
     if(isStoreClosed) {
@@ -774,11 +756,11 @@ function renderCheckoutForms() {
                 <summary class="p-4 flex justify-between items-center cursor-pointer select-none bg-pink-50 border-b border-pink-100 hover:bg-pink-100/50 transition-colors">
                     <div class="flex items-center gap-3.5">
                         <div class="w-10 h-10 md:w-12 md:h-12 rounded-[10px] bg-white border border-pink-200 flex items-center justify-center p-1 shadow-sm">
-                            ${logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover rounded-lg">` : `<span class="text-xs font-black text-pink-400">${group.appName.charAt(0)}</span>`}
+                            ${logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover rounded-lg">` : `<span class="text-xs font-black text-pink-400">${escapeHTML(group.appName.charAt(0))}</span>`}
                         </div>
                         <div>
-                            <h4 class="text-pink-600 font-black text-sm md:text-base tracking-wide">${group.appName}</h4>
-                            <p class="text-[10px] md:text-[11px] text-gray-500 font-medium mt-0.5">${group.items.length} Paket Dipilih</p>
+                            <h4 class="text-pink-600 font-black text-sm md:text-base tracking-wide">${escapeHTML(group.appName)}</h4>
+                            <p class="text-[10px] md:text-[11px] text-gray-500 font-medium mt-0.5">${escapeHTML(String(group.items.length))} Paket Dipilih</p>
                         </div>
                     </div>
                     <div class="text-pink-400 bg-white p-1.5 rounded-lg border border-pink-200 shadow-sm group-open:rotate-180 transition-transform duration-300">
@@ -797,10 +779,10 @@ function renderCheckoutForms() {
                 <div class="bg-pink-50 p-4 rounded-xl border border-pink-100 relative shadow-inner">
                     <div class="flex justify-between items-center border-b border-pink-200 pb-3 mb-3">
                         <div>
-                            <p class="text-[11px] md:text-xs text-gray-500 font-medium"><span class="text-pink-500 font-black uppercase tracking-wider">${gItem.cat}</span> • ${gItem.dur}</p>
-                            <p class="text-[10px] md:text-[11px] text-gray-400 mt-1 font-bold">Harga: ${gItem.price} <span class="mx-1 text-pink-300">|</span> Qty: ${gItem.qty}</p>
+                            <p class="text-[11px] md:text-xs text-gray-500 font-medium"><span class="text-pink-500 font-black uppercase tracking-wider">${escapeHTML(gItem.cat)}</span> • ${escapeHTML(gItem.dur)}</p>
+                            <p class="text-[10px] md:text-[11px] text-gray-400 mt-1 font-bold">Harga: ${escapeHTML(gItem.price)} <span class="mx-1 text-pink-300">|</span> Qty: ${escapeHTML(String(gItem.qty))}</p>
                         </div>
-                        <p class="text-pink-600 font-black text-sm md:text-base">${gItem.itemTotalFormatted}</p>
+                        <p class="text-pink-600 font-black text-sm md:text-base">${escapeHTML(gItem.itemTotalFormatted)}</p>
                     </div>
             `;
 
@@ -809,7 +791,7 @@ function renderCheckoutForms() {
                     appHTML += `
                         <label class="flex items-center gap-2.5 cursor-pointer mb-3 bg-white p-3 rounded-lg border border-pink-200 hover:border-pink-300 transition-colors shadow-sm">
                             <input type="checkbox" ${gItem.useFirstItemData ? 'checked' : ''} onchange="toggleUseFirstItemData(${gItem.cartIndex}, this.checked)" class="w-4 h-4 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500">
-                            <span class="text-[11px] md:text-xs text-gray-600 font-bold leading-tight">Samakan dengan form <b>${group.items[0].cat} ${group.items[0].dur}</b></span>
+                            <span class="text-[11px] md:text-xs text-gray-600 font-bold leading-tight">Samakan dengan form <b>${escapeHTML(group.items[0].cat)} ${escapeHTML(group.items[0].dur)}</b></span>
                         </label>
                     `;
                 }
@@ -819,7 +801,7 @@ function renderCheckoutForms() {
                         appHTML += `
                             <label class="flex items-center gap-2.5 cursor-pointer mb-4 bg-white p-3 rounded-lg border border-pink-200 hover:border-pink-300 transition-colors shadow-sm">
                                 <input type="checkbox" ${!gItem.separateForms ? 'checked' : ''} onchange="toggleSeparateFormsItem(${gItem.cartIndex}, this.checked)" class="w-4 h-4 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500">
-                                <span class="text-[11px] md:text-xs text-gray-600 font-bold leading-tight">Gunakan data yang sama untuk semua ${gItem.qty} akun pesanan ini</span>
+                                <span class="text-[11px] md:text-xs text-gray-600 font-bold leading-tight">Gunakan data yang sama untuk semua ${escapeHTML(String(gItem.qty))} akun pesanan ini</span>
                             </label>
                         `;
                     }
@@ -838,11 +820,11 @@ function renderCheckoutForms() {
 
                             appHTML += `
                                 <div>
-                                    <label class="text-[10px] md:text-[11px] text-gray-500 block mb-1.5 font-bold uppercase tracking-wide ml-1">${field}</label>
+                                    <label class="text-[10px] md:text-[11px] text-gray-500 block mb-1.5 font-bold uppercase tracking-wide ml-1">${escapeHTML(field)}</label>
                                     <input type="text" 
-                                           placeholder="Ketik ${field}" 
-                                           value="${filledVal}" 
-                                           oninput="updateItemForm(${gItem.cartIndex}, ${fIdx}, '${field}', this.value)" 
+                                           placeholder="Ketik ${escapeHTML(field)}" 
+                                           value="${escapeHTML(filledVal)}" 
+                                           oninput="updateItemForm(${gItem.cartIndex}, ${fIdx}, '${escapeHTML(field.replace(/'/g, "\\'"))}', this.value)" 
                                            class="w-full bg-white border border-pink-200 focus:border-pink-400 rounded-xl py-2.5 md:py-3 px-3.5 text-xs md:text-sm outline-none text-gray-700 font-bold transition-colors shadow-inner placeholder-pink-200">
                                 </div>
                             `;
@@ -966,7 +948,6 @@ function checkoutCartWA() {
     window.open(`https://wa.me/6283877337798?text=${encodedText}`, '_blank');
 }
 
-// ----- OTHER MODALS -----
 function openLoyaltyModal() {
     const modal = document.getElementById('loyaltyModal');
     const backdrop = document.getElementById('loyaltyModalBackdrop');
