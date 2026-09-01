@@ -1,15 +1,12 @@
-const CACHE_NAME = 'ciccu-cache-v1';
+const CACHE_NAME = 'ciccu-cache-v2';
 const urlsToCache = [
   './index.html',
-  './admin.html',
   './script.js',
   './manifest.json',
-  './manifest-admin.json',
   './icon-192.png',
   './icon-512.png'
 ];
 
-// Proses Install Cache
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -19,7 +16,20 @@ self.addEventListener('install', event => {
   );
 });
 
-// Proses Fetch Data (Mengutamakan jaringan agar data selalu up-to-date)
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
 self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request).catch(() => {
@@ -27,4 +37,3 @@ self.addEventListener('fetch', event => {
     })
   );
 });
-
