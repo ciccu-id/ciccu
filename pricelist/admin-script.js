@@ -1,7 +1,6 @@
 const API_URL = ""; 
 const BASE_URL = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
 
-// FUNGSI PENGAMAN HTML (XSS FILTER)
 function escapeHTML(str) {
     if (!str) return '';
     return String(str).replace(/[&<>'"]/g, match => ({
@@ -22,7 +21,8 @@ let builderCurrentApp = '';
 let builderFields = [];
 let sortableReorder = null;
 
-// ----- SISTEM NAVIGASI TAB BARU -----
+let testimoniDataCache = {};
+
 function switchTab(tabName) {
     const sectionProduk = document.getElementById('section-produk');
     const sectionTestimoni = document.getElementById('section-testimoni');
@@ -70,7 +70,6 @@ function switchTab(tabName) {
     }
 }
 
-// ----- SISTEM PENGATURAN TOKO (BUKA/TUTUP) -----
 async function loadStoreSettings() {
     if(!sessionPass) return;
     try {
@@ -146,8 +145,6 @@ async function saveStoreSettings(e) {
     }
 }
 
-
-// ----- SISTEM LOAD & KELOLA TESTIMONI -----
 async function loadAdminTestimoni() {
     if(!sessionPass) return;
     const list = document.getElementById('adminTestimoniList');
@@ -162,6 +159,11 @@ async function loadAdminTestimoni() {
             return;
         }
 
+        testimoniDataCache = {};
+        data.forEach(item => {
+            testimoniDataCache[item.id] = item;
+        });
+
         let html = '';
         data.forEach(item => {
             const hasReply = item.balasan_admin && item.balasan_admin.trim() !== '';
@@ -169,10 +171,6 @@ async function loadAdminTestimoni() {
             const safeNamaDisplay = escapeHTML(item.nama);
             const safeKomentarDisplay = escapeHTML(item.komentar);
             const safeBalasanDisplay = hasReply ? escapeHTML(item.balasan_admin) : '';
-
-            const safeNama = safeNamaDisplay.replace(/'/g, "\\'");
-            const safeKomentar = safeKomentarDisplay.replace(/'/g, "\\'");
-            const safeBalasan = safeBalasanDisplay.replace(/'/g, "\\'");
             
             let replyBlock = '';
             if (hasReply) {
@@ -181,13 +179,13 @@ async function loadAdminTestimoni() {
                     <p class="text-[10px] md:text-[11px] font-black text-sky-500">↳ Balasan Admin:</p>
                     <p class="text-xs text-gray-600 font-medium">${safeBalasanDisplay}</p>
                     <div class="flex justify-end pt-1">
-                        <button onclick="openAdminReplyModal(${item.id}, '${safeNama}', '${safeKomentar}', '${safeBalasan}')" class="text-[9px] md:text-[10px] text-pink-400 font-bold hover:underline">Edit Balasan</button>
+                        <button data-reply-id="${item.id}" class="edit-reply-btn text-[9px] md:text-[10px] text-pink-400 font-bold hover:underline">Edit Balasan</button>
                     </div>
                 </div>`;
             } else {
                 replyBlock = `
                 <div class="flex justify-end mt-3">
-                    <button onclick="openAdminReplyModal(${item.id}, '${safeNama}', '${safeKomentar}', '')" class="text-[10px] md:text-xs bg-pink-400 hover:bg-pink-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1">
+                    <button data-reply-id="${item.id}" class="reply-btn text-[10px] md:text-xs bg-pink-400 hover:bg-pink-500 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Balas
                     </button>
                 </div>`;
@@ -200,7 +198,7 @@ async function loadAdminTestimoni() {
                         <h4 class="text-xs md:text-sm font-black text-gray-800">${safeNamaDisplay} <span class="text-[10px] text-gray-400 font-bold ml-1">${new Date(item.created_at).toLocaleDateString('id-ID')}</span></h4>
                         <p class="text-xs text-gray-600 font-medium mt-1">${safeKomentarDisplay}</p>
                     </div>
-                    <button onclick="deleteAdminTestimoni(${item.id})" class="text-gray-400 hover:text-red-500 p-1 rounded transition-colors shadow-sm bg-white border border-pink-100 shrink-0">
+                    <button data-delete-testi-id="${item.id}" class="delete-testi-btn text-gray-400 hover:text-red-500 p-1 rounded transition-colors shadow-sm bg-white border border-pink-100 shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     </button>
                 </div>
@@ -209,6 +207,26 @@ async function loadAdminTestimoni() {
         });
         
         list.innerHTML = html;
+
+        list.querySelectorAll('.reply-btn, .edit-reply-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = parseInt(this.getAttribute('data-reply-id'), 10);
+                if (!isNaN(id) && testimoniDataCache[id]) {
+                    const item = testimoniDataCache[id];
+                    openAdminReplyModal(id, item.nama, item.komentar, item.balasan_admin || '');
+                }
+            });
+        });
+
+        list.querySelectorAll('.delete-testi-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = parseInt(this.getAttribute('data-delete-testi-id'), 10);
+                if (!isNaN(id)) {
+                    deleteAdminTestimoni(id);
+                }
+            });
+        });
+
     } catch (error) {
         list.innerHTML = `<div class="text-center py-5 text-red-500 font-bold text-sm">Gagal memuat testimoni.</div>`;
     }
@@ -273,7 +291,6 @@ async function deleteAdminTestimoni(id) {
     }
 }
 
-// ----- SISTEM LOGIN DENGAN TURNSTILE -----
 function checkSession() {
     sessionPass = sessionStorage.getItem("ciccuAdminPass");
     if (sessionPass) {
@@ -342,7 +359,6 @@ async function handleResponseStatus(res) {
 
 checkSession();
 
-// ----- AMBIL DATA PRODUK ASLI -----
 async function loadData() {
     if(!sessionPass) return;
     const list = document.getElementById('dataList');
@@ -371,12 +387,11 @@ async function loadData() {
             }
         } catch(e) {}
         
-        // Memuat status toko (opsional, agar data juga tersedia saat admin pertama masuk)
         loadStoreSettings();
 
         filterAdminList(); 
     } catch (error) {
-        list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200 shadow-sm mx-2">Gagal memuat data!<br><br><span class="text-xs text-gray-500 font-medium">${error.message}</span></div>`;
+        list.innerHTML = `<div class="text-center py-10 text-red-500 font-bold text-sm bg-white rounded-2xl border border-red-200 shadow-sm mx-2">Gagal memuat data!<br><br><span class="text-xs text-gray-500 font-medium">${escapeHTML(error.message)}</span></div>`;
     }
 }
 
@@ -386,7 +401,6 @@ function parseFormFields(str) {
     return str.split(',').map(s => s.trim()).filter(s => s);
 }
 
-// ----- RENDERING DATA PRODUK ASLI -----
 function renderData(dataArray) {
     const list = document.getElementById('dataList');
     if (dataArray.length === 0) {
@@ -421,7 +435,7 @@ function renderData(dataArray) {
         const isAppAllSelected = packageIds.length > 0 && packageIds.every(id => selectedItems.has(id));
         const isAllSold = packages.length > 0 && packages.every(p => p.status && p.status.toLowerCase() !== 'ready');
 
-        let headerFormText = parsedFields.length > 0 ? `📋 Form Pembeli: <span class="text-sky-500 font-bold">${parsedFields.join(', ')}</span>` : `🌸 Tidak memakai formulir khusus`;
+        let headerFormText = parsedFields.length > 0 ? `📋 Form Pembeli: <span class="text-sky-500 font-bold">${escapeHTML(parsedFields.join(', '))}</span>` : `🌸 Tidak memakai formulir khusus`;
         const appHeaderBg = isAllSold ? 'bg-gray-100 hover:bg-gray-200/80' : 'bg-pink-50 hover:bg-pink-100/60';
         const appTitleColor = isAllSold ? 'text-gray-500' : 'text-pink-500';
         const appBadge = isAllSold ? `<span class="ml-1.5 bg-red-100 text-red-500 border border-red-200 text-[8px] md:text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-widest shadow-sm">Habis</span>` : '';
@@ -430,34 +444,34 @@ function renderData(dataArray) {
             <div class="bg-pink-50 p-3 md:p-4 rounded-xl border border-pink-200 mb-3 md:mb-4">
                 <div class="flex justify-between items-center ${parsedFields.length > 0 ? 'mb-2 md:mb-3' : ''}">
                      <h4 class="text-[10px] md:text-xs font-black text-sky-500 tracking-widest uppercase flex items-center gap-1.5">${parsedFields.length > 0 ? '📋 FORM PEMBELI' : '🌸 TIDAK ADA FORMULIR KHUSUS'}</h4>
-                     <button onclick="openFormModal('${exactAppNameInDb}', '${encodeURIComponent(rawFields)}')" class="text-[9px] md:text-[11px] bg-white text-sky-500 px-2.5 py-1.5 rounded-lg font-bold border border-sky-200 hover:bg-sky-50 transition-colors flex items-center gap-1.5 shadow-sm">
+                     <button onclick="openFormModal('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}', '${encodeURIComponent(rawFields)}')" class="text-[9px] md:text-[11px] bg-white text-sky-500 px-2.5 py-1.5 rounded-lg font-bold border border-sky-200 hover:bg-sky-50 transition-colors flex items-center gap-1.5 shadow-sm">
                          ${parsedFields.length > 0 ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Edit Form' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Buat Form'}
                      </button>
                 </div>
-                ${parsedFields.length > 0 ? `<div class="space-y-1.5 border-t border-pink-200 pt-2 md:pt-3">${parsedFields.map((f, i) => `<div class="flex items-center text-[10px] md:text-xs text-gray-700 bg-white px-2.5 py-2 rounded-lg border border-pink-100 gap-2 shadow-sm font-bold"><span class="w-4 h-4 md:w-5 md:h-5 rounded-md bg-sky-100 text-sky-500 flex items-center justify-center font-black text-[9px] md:text-[10px]">${i+1}</span><span>${f}</span></div>`).join('')}</div>` : ''}
+                ${parsedFields.length > 0 ? `<div class="space-y-1.5 border-t border-pink-200 pt-2 md:pt-3">${parsedFields.map((f, i) => `<div class="flex items-center text-[10px] md:text-xs text-gray-700 bg-white px-2.5 py-2 rounded-lg border border-pink-100 gap-2 shadow-sm font-bold"><span class="w-4 h-4 md:w-5 md:h-5 rounded-md bg-sky-100 text-sky-500 flex items-center justify-center font-black text-[9px] md:text-[10px]">${i+1}</span><span>${escapeHTML(f)}</span></div>`).join('')}</div>` : ''}
             </div>`;
 
         html += `
-            <div class="app-accordion-group bg-white rounded-2xl md:rounded-3xl border border-pink-200 shadow-md shadow-pink-100/50 mb-4 overflow-hidden" data-app="${exactAppNameInDb}">
+            <div class="app-accordion-group bg-white rounded-2xl md:rounded-3xl border border-pink-200 shadow-md shadow-pink-100/50 mb-4 overflow-hidden" data-app="${escapeHTML(exactAppNameInDb)}">
                 <div class="p-2.5 md:p-4 flex items-center ${appHeaderBg} transition-colors gap-2 md:gap-3 select-none border-b border-transparent ${isExpanded ? 'border-pink-200' : ''}">
-                    <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center" onclick="toggleExpand('${exactAppNameInDb}')">
-                        <h3 class="font-black ${appTitleColor} text-sm md:text-lg capitalize flex items-center gap-1">${appName} ${appBadge}</h3>
+                    <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center" onclick="toggleExpand('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}')">
+                        <h3 class="font-black ${appTitleColor} text-sm md:text-lg capitalize flex items-center gap-1">${escapeHTML(appName)} ${appBadge}</h3>
                         <p class="text-[9px] md:text-[11px] text-gray-500 font-bold truncate w-full mt-0.5">${headerFormText}</p>
-                        <div class="mt-1 md:mt-1.5 flex items-center"><span class="text-[8px] md:text-[10px] bg-white text-gray-400 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md md:rounded-lg font-bold border border-gray-200 shadow-sm">${packages.length} Paket</span></div>
+                        <div class="mt-1 md:mt-1.5 flex items-center"><span class="text-[8px] md:text-[10px] bg-white text-gray-400 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md md:rounded-lg font-bold border border-gray-200 shadow-sm">${escapeHTML(String(packages.length))} Paket</span></div>
                     </div>
-                    <div class="cursor-pointer p-1.5 md:p-2 shrink-0 flex items-center justify-center text-pink-300 hover:text-pink-500 transition-colors" onclick="toggleExpand('${exactAppNameInDb}')">
+                    <div class="cursor-pointer p-1.5 md:p-2 shrink-0 flex items-center justify-center text-pink-300 hover:text-pink-500 transition-colors" onclick="toggleExpand('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}')">
                         <svg class="w-5 h-5 md:w-6 md:h-6 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div class="flex items-center gap-2 md:gap-4 shrink-0 border-l border-pink-200 pl-2 md:pl-4">
-                        <button onclick="deleteApplication('${exactAppNameInDb.replace(/'/g, "\\'")}', [${packageIds.join(',')}])" class="text-pink-300 hover:text-red-500 hover:bg-red-50 p-1.5 md:p-2 rounded-lg transition-colors" title="Hapus Aplikasi"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                        <input type="checkbox" onchange="toggleSelectApp('${exactAppNameInDb.replace(/'/g, "\\'")}', this.checked, [${packageIds.join(',')}])" class="w-4 h-4 md:w-5 md:h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500" ${isAppAllSelected ? 'checked' : ''}>
+                        <button onclick="deleteApplication('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}', [${packageIds.join(',')}])" class="text-pink-300 hover:text-red-500 hover:bg-red-50 p-1.5 md:p-2 rounded-lg transition-colors" title="Hapus Aplikasi"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        <input type="checkbox" onchange="toggleSelectApp('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}', this.checked, [${packageIds.join(',')}])" class="w-4 h-4 md:w-5 md:h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500" ${isAppAllSelected ? 'checked' : ''}>
                     </div>
                 </div>
                 <div class="grid transition-all duration-300 ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}"><div class="overflow-hidden"><div class="p-3 md:p-5">
                             ${accordionFormHTML}
                             <div class="flex justify-between items-center mb-2 md:mb-3 mt-1">
                                 <span class="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg> Daftar Paket</span>
-                                <button onclick="openAddPackageModal('${exactAppNameInDb.replace(/'/g, "\\'")}')" class="text-[9px] md:text-[11px] bg-pink-400 hover:bg-pink-500 text-white px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl font-bold shadow-md shadow-pink-200 transition-all flex items-center gap-1"><svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg> Tambah Paket</button>
+                                <button onclick="openAddPackageModal('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}')" class="text-[9px] md:text-[11px] bg-pink-400 hover:bg-pink-500 text-white px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl font-bold shadow-md shadow-pink-200 transition-all flex items-center gap-1"><svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg> Tambah Paket</button>
                             </div>
                             <div class="space-y-2 sortable-list" id="sort-${exactAppNameInDb.replace(/\s+/g, '-')}">`;
 
@@ -473,8 +487,8 @@ function renderData(dataArray) {
                     <div class="flex items-start md:items-center gap-2 flex-1 overflow-hidden">
                         <input type="checkbox" onchange="toggleSelect(${item.id}, this.checked)" class="mt-0.5 md:mt-0 w-4 h-4 md:w-5 md:h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500 shrink-0" ${isSelected ? 'checked' : ''}>
                         <div class="flex-1 overflow-hidden">
-                            <p class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">${item.category} • <span class="text-gray-800">${item.duration}</span> • <span class="text-pink-500 font-black">${item.price}</span></p>
-                            ${item.notes && item.notes.toLowerCase() !== 'nan' ? `<p class="text-[9px] md:text-[10px] text-pink-400 mt-0.5 md:mt-1 italic font-bold">↳ ${item.notes}</p>` : ''}
+                            <p class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">${escapeHTML(item.category)} • <span class="text-gray-800">${escapeHTML(item.duration)}</span> • <span class="text-pink-500 font-black">${escapeHTML(item.price)}</span></p>
+                            ${item.notes && item.notes.toLowerCase() !== 'nan' ? `<p class="text-[9px] md:text-[10px] text-pink-400 mt-0.5 md:mt-1 italic font-bold">↳ ${escapeHTML(item.notes)}</p>` : ''}
                         </div>
                     </div>
                     <div class="flex items-center gap-1.5 md:gap-3 border-l border-pink-200/60 pl-1.5 md:pl-3 shrink-0">
@@ -506,7 +520,6 @@ function toggleExpand(appKey) { expandedApps[appKey] = !expandedApps[appKey]; fi
 function expandAll() { Object.keys(globalAdminData.reduce((acc, item) => { acc[item.app_name] = true; return acc; }, {})).forEach(app => expandedApps[app] = true); filterAdminList(); }
 function collapseAll() { expandedApps = {}; filterAdminList(); }
 
-// ----- FITUR SORTABLE ASLI -----
 function initSortable() {
     document.querySelectorAll('.sortable-list').forEach(container => {
         new Sortable(container, {
@@ -530,7 +543,6 @@ function initSortable() {
     });
 }
 
-// ----- FITUR MODAL URUTAN ASLI -----
 function openReorderModal() {
     const modal = document.getElementById('reorderModal'); const list = document.getElementById('reorderAppList');
     const appOrders = {}; const appFirstIds = {};
@@ -542,7 +554,7 @@ function openReorderModal() {
     const uniqueApps = [...new Set(globalAdminData.map(d => d.app_name))];
     uniqueApps.sort((a, b) => (appOrders[a] - appOrders[b]) || (appFirstIds[a] - appFirstIds[b]));
 
-    list.innerHTML = uniqueApps.map((appName, index) => `<div class="reorder-item bg-white border border-pink-100 p-2.5 md:p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-pink-300 transition-colors shadow-sm" data-app="${appName}"><div class="flex items-center gap-3 w-full overflow-hidden select-none"><span class="reorder-num text-[10px] font-black bg-pink-100 text-pink-500 w-6 h-6 md:w-7 md:h-7 rounded-lg md:rounded-xl flex items-center justify-center shrink-0">${index + 1}</span><span class="font-bold text-xs md:text-sm text-gray-800 capitalize truncate">${appName}</span></div><div class="reorder-handle cursor-grab active:cursor-grabbing bg-pink-50 hover:bg-pink-100 p-1.5 md:p-2 rounded-lg md:rounded-xl text-pink-300 hover:text-pink-500 transition-colors shrink-0 flex items-center justify-center"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg></div></div>`).join('');
+    list.innerHTML = uniqueApps.map((appName, index) => `<div class="reorder-item bg-white border border-pink-100 p-2.5 md:p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-pink-300 transition-colors shadow-sm" data-app="${escapeHTML(appName)}"><div class="flex items-center gap-3 w-full overflow-hidden select-none"><span class="reorder-num text-[10px] font-black bg-pink-100 text-pink-500 w-6 h-6 md:w-7 md:h-7 rounded-lg md:rounded-xl flex items-center justify-center shrink-0">${index + 1}</span><span class="font-bold text-xs md:text-sm text-gray-800 capitalize truncate">${escapeHTML(appName)}</span></div><div class="reorder-handle cursor-grab active:cursor-grabbing bg-pink-50 hover:bg-pink-100 p-1.5 md:p-2 rounded-lg md:rounded-xl text-pink-300 hover:text-pink-500 transition-colors shrink-0 flex items-center justify-center"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg></div></div>`).join('');
     modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
     if (sortableReorder) sortableReorder.destroy();
     sortableReorder = new Sortable(list, {
@@ -560,7 +572,6 @@ async function saveReorderModal() {
     } catch (e) { } finally { btn.innerHTML = "Simpan Urutan Baru"; btn.disabled = false; }
 }
 
-// ----- FITUR BUILDER FORM ASLI -----
 function openFormModal(appName, rawFieldsEnc) { builderCurrentApp = appName; builderFields = parseFormFields(decodeURIComponent(rawFieldsEnc)); document.getElementById('builderAppName').innerText = appName; renderFormBuilderFields(); const modal = document.getElementById('formBuilderModal'); modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10); }
 function closeFormModal() { const modal = document.getElementById('formBuilderModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); }
 function addFormFieldBuilder() { builderFields.push(''); renderFormBuilderFields(); }
@@ -569,7 +580,7 @@ function updateFormFieldBuilder(index, value) { builderFields[index] = value; }
 function renderFormBuilderFields() {
     const container = document.getElementById('formFieldsContainer');
     if(builderFields.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-500 py-4 font-bold border border-pink-200 border-dashed rounded-xl bg-pink-50">Belum ada kolom form 🌸</p>`; return; }
-    container.innerHTML = builderFields.map((f, i) => `<div class="flex gap-2 items-center bg-white p-2.5 rounded-2xl border border-pink-100 shadow-sm"><span class="w-6 h-6 md:w-7 md:h-7 rounded-lg md:rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center text-[10px] font-black shrink-0">${i+1}</span><input type="text" value="${f}" oninput="updateFormFieldBuilder(${i}, this.value)" class="flex-1 bg-transparent text-xs md:text-sm font-bold text-gray-700 outline-none border-b border-pink-100 focus:border-sky-400 px-2 py-1" placeholder="Misal: Nama Profil"><button onclick="removeFormFieldBuilder(${i})" class="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-1.5 md:p-2 rounded-lg md:rounded-xl transition-colors shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`).join('');
+    container.innerHTML = builderFields.map((f, i) => `<div class="flex gap-2 items-center bg-white p-2.5 rounded-2xl border border-pink-100 shadow-sm"><span class="w-6 h-6 md:w-7 md:h-7 rounded-lg md:rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center text-[10px] font-black shrink-0">${i+1}</span><input type="text" value="${escapeHTML(f)}" oninput="updateFormFieldBuilder(${i}, this.value)" class="flex-1 bg-transparent text-xs md:text-sm font-bold text-gray-700 outline-none border-b border-pink-100 focus:border-sky-400 px-2 py-1" placeholder="Misal: Nama Profil"><button onclick="removeFormFieldBuilder(${i})" class="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 p-1.5 md:p-2 rounded-lg md:rounded-xl transition-colors shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`).join('');
 }
 async function saveFormBuilderConfig() {
     const btn = document.getElementById('btnSaveForm'); btn.innerHTML = "Menyimpan..."; btn.disabled = true; const validFields = builderFields.map(f => f.trim()).filter(f => f !== '');
@@ -580,7 +591,6 @@ async function saveFormBuilderConfig() {
     } catch (e) { } finally { btn.innerHTML = "Simpan Form"; btn.disabled = false; }
 }
 
-// ----- FITUR CSV ASLI -----
 function openImportModal() { const modal = document.getElementById('importModal'); document.getElementById('csvFileInputModal').value = ''; document.getElementById('csvProgressModal').classList.add('hidden'); modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10); }
 function closeImportModal() { const modal = document.getElementById('importModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); }
 async function processCSV() {
@@ -603,7 +613,6 @@ function exportCSV() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", `ciccu-pricelist.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
-// ----- FITUR PAKET PRODUK ASLI -----
 function openAddPackageModal(appName) { document.getElementById('addPkgAppName').value = appName; document.getElementById('addPkgAppNameDisplay').innerText = appName; document.getElementById('addPackageForm').reset(); document.getElementById('addPkgStatus').value = 'Ready'; const modal = document.getElementById('addPackageModal'); modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10); }
 function closeAddPackageModal() { const modal = document.getElementById('addPackageModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); }
 async function submitAddPackageForm(e) {
@@ -624,7 +633,6 @@ async function submitEditForm(e) {
     try { const res = await fetch(`${BASE_URL}/api/pricelist/${currentEditId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) }); await handleResponseStatus(res); closeEditModal(); loadData(); } catch (error) { } finally { btn.innerHTML = "Simpan"; btn.disabled = false; }
 }
 
-// ----- BULK ACTIONS & TOGGLE ASLI -----
 function toggleSelect(id, isChecked) { if(isChecked) selectedItems.add(id); else selectedItems.delete(id); updateBulkUI(); filterAdminList(); }
 function toggleSelectApp(appName, isChecked, packageIds) { packageIds.forEach(id => { if (isChecked) selectedItems.add(id); else selectedItems.delete(id); }); updateBulkUI(); filterAdminList(); }
 async function deleteApplication(appName, packageIds) {
