@@ -401,6 +401,50 @@ function parseFormFields(str) {
     return str.split(',').map(s => s.trim()).filter(s => s);
 }
 
+function attachProductEventListeners() {
+    const list = document.getElementById('dataList');
+
+    list.querySelectorAll('.app-header-click').forEach(el => {
+        el.addEventListener('click', function() {
+            const appName = this.getAttribute('data-toggle-app');
+            if (appName) toggleExpand(appName);
+        });
+    });
+
+    list.querySelectorAll('.delete-app-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appName = this.getAttribute('data-delete-app');
+            const idsStr = this.getAttribute('data-package-ids');
+            const packageIds = idsStr ? idsStr.split(',').map(Number).filter(id => !isNaN(id)) : [];
+            if (appName) deleteApplication(appName, packageIds);
+        });
+    });
+
+    list.querySelectorAll('.app-select-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            const appName = this.getAttribute('data-select-app');
+            const idsStr = this.getAttribute('data-package-ids');
+            const packageIds = idsStr ? idsStr.split(',').map(Number).filter(id => !isNaN(id)) : [];
+            if (appName) toggleSelectApp(appName, this.checked, packageIds);
+        });
+    });
+
+    list.querySelectorAll('.add-pkg-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appName = this.getAttribute('data-add-pkg-app');
+            if (appName) openAddPackageModal(appName);
+        });
+    });
+
+    list.querySelectorAll('.form-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const appName = this.getAttribute('data-form-app');
+            const rawFieldsEnc = this.getAttribute('data-form-fields');
+            if (appName) openFormModal(appName, rawFieldsEnc);
+        });
+    });
+}
+
 function renderData(dataArray) {
     const list = document.getElementById('dataList');
     if (dataArray.length === 0) {
@@ -444,7 +488,7 @@ function renderData(dataArray) {
             <div class="bg-pink-50 p-3 md:p-4 rounded-xl border border-pink-200 mb-3 md:mb-4">
                 <div class="flex justify-between items-center ${parsedFields.length > 0 ? 'mb-2 md:mb-3' : ''}">
                      <h4 class="text-[10px] md:text-xs font-black text-sky-500 tracking-widest uppercase flex items-center gap-1.5">${parsedFields.length > 0 ? '📋 FORM PEMBELI' : '🌸 TIDAK ADA FORMULIR KHUSUS'}</h4>
-                     <button onclick="openFormModal('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}', '${encodeURIComponent(rawFields)}')" class="text-[9px] md:text-[11px] bg-white text-sky-500 px-2.5 py-1.5 rounded-lg font-bold border border-sky-200 hover:bg-sky-50 transition-colors flex items-center gap-1.5 shadow-sm">
+                     <button data-form-app="${escapeHTML(exactAppNameInDb)}" data-form-fields="${escapeHTML(encodeURIComponent(rawFields))}" class="form-btn text-[9px] md:text-[11px] bg-white text-sky-500 px-2.5 py-1.5 rounded-lg font-bold border border-sky-200 hover:bg-sky-50 transition-colors flex items-center gap-1.5 shadow-sm">
                          ${parsedFields.length > 0 ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> Edit Form' : '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Buat Form'}
                      </button>
                 </div>
@@ -454,24 +498,24 @@ function renderData(dataArray) {
         html += `
             <div class="app-accordion-group bg-white rounded-2xl md:rounded-3xl border border-pink-200 shadow-md shadow-pink-100/50 mb-4 overflow-hidden" data-app="${escapeHTML(exactAppNameInDb)}">
                 <div class="p-2.5 md:p-4 flex items-center ${appHeaderBg} transition-colors gap-2 md:gap-3 select-none border-b border-transparent ${isExpanded ? 'border-pink-200' : ''}">
-                    <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center" onclick="toggleExpand('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}')">
+                    <div class="flex-1 overflow-hidden cursor-pointer flex flex-col justify-center app-header-click" data-toggle-app="${escapeHTML(exactAppNameInDb)}">
                         <h3 class="font-black ${appTitleColor} text-sm md:text-lg capitalize flex items-center gap-1">${escapeHTML(appName)} ${appBadge}</h3>
                         <p class="text-[9px] md:text-[11px] text-gray-500 font-bold truncate w-full mt-0.5">${headerFormText}</p>
                         <div class="mt-1 md:mt-1.5 flex items-center"><span class="text-[8px] md:text-[10px] bg-white text-gray-400 px-2 py-0.5 md:px-2.5 md:py-1 rounded-md md:rounded-lg font-bold border border-gray-200 shadow-sm">${escapeHTML(String(packages.length))} Paket</span></div>
                     </div>
-                    <div class="cursor-pointer p-1.5 md:p-2 shrink-0 flex items-center justify-center text-pink-300 hover:text-pink-500 transition-colors" onclick="toggleExpand('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}')">
+                    <div class="cursor-pointer p-1.5 md:p-2 shrink-0 flex items-center justify-center text-pink-300 hover:text-pink-500 transition-colors app-header-click" data-toggle-app="${escapeHTML(exactAppNameInDb)}">
                         <svg class="w-5 h-5 md:w-6 md:h-6 transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div class="flex items-center gap-2 md:gap-4 shrink-0 border-l border-pink-200 pl-2 md:pl-4">
-                        <button onclick="deleteApplication('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}', [${packageIds.join(',')}])" class="text-pink-300 hover:text-red-500 hover:bg-red-50 p-1.5 md:p-2 rounded-lg transition-colors" title="Hapus Aplikasi"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                        <input type="checkbox" onchange="toggleSelectApp('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}', this.checked, [${packageIds.join(',')}])" class="w-4 h-4 md:w-5 md:h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500" ${isAppAllSelected ? 'checked' : ''}>
+                        <button data-delete-app="${escapeHTML(exactAppNameInDb)}" data-package-ids="${packageIds.join(',')}" class="delete-app-btn text-pink-300 hover:text-red-500 hover:bg-red-50 p-1.5 md:p-2 rounded-lg transition-colors" title="Hapus Aplikasi"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        <input type="checkbox" data-select-app="${escapeHTML(exactAppNameInDb)}" data-package-ids="${packageIds.join(',')}" class="app-select-checkbox w-4 h-4 md:w-5 md:h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500" ${isAppAllSelected ? 'checked' : ''}>
                     </div>
                 </div>
                 <div class="grid transition-all duration-300 ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}"><div class="overflow-hidden"><div class="p-3 md:p-5">
                             ${accordionFormHTML}
                             <div class="flex justify-between items-center mb-2 md:mb-3 mt-1">
                                 <span class="text-[9px] md:text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg> Daftar Paket</span>
-                                <button onclick="openAddPackageModal('${escapeHTML(exactAppNameInDb.replace(/'/g, "\\'"))}')" class="text-[9px] md:text-[11px] bg-pink-400 hover:bg-pink-500 text-white px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl font-bold shadow-md shadow-pink-200 transition-all flex items-center gap-1"><svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg> Tambah Paket</button>
+                                <button data-add-pkg-app="${escapeHTML(exactAppNameInDb)}" class="add-pkg-btn text-[9px] md:text-[11px] bg-pink-400 hover:bg-pink-500 text-white px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl font-bold shadow-md shadow-pink-200 transition-all flex items-center gap-1"><svg class="w-3 h-3 md:w-3.5 md:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg> Tambah Paket</button>
                             </div>
                             <div class="space-y-2 sortable-list" id="sort-${exactAppNameInDb.replace(/\s+/g, '-')}">`;
 
@@ -507,6 +551,7 @@ function renderData(dataArray) {
         html += `</div></div></div></div></div>`;
     }
     list.innerHTML = html;
+    attachProductEventListeners();
     initSortable();
 }
 
