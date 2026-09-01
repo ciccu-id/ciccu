@@ -374,7 +374,6 @@ function renderCards(apps, orderedNames) {
             <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
         </div>`;
 
-        const safeName = name.replace(/'/g, "\\'");
         const categoryBadge = getAppCategory(name);
         
         const isNetflix = name.toLowerCase().includes('netflix');
@@ -387,7 +386,7 @@ function renderCards(apps, orderedNames) {
         const card = document.createElement('div');
         card.className = 'group flex flex-col bg-white border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-sm transition-transform duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-md fade-in-down relative overflow-hidden cursor-pointer';
         card.style.animationDelay = `${delay}s`;
-        card.onclick = () => openOrderModal(safeName); 
+        card.onclick = () => openOrderModal(name); 
         
         card.innerHTML = `
             ${infoBtnHTML}
@@ -430,6 +429,7 @@ function openOrderModal(appName) {
     document.getElementById('modalAppLogo').innerHTML = logoUrl ? `<img src="${logoUrl}" class="w-full h-full object-cover">` : `<span class="text-[10px] font-black text-pink-500">${escapeHTML(appName.charAt(0))}</span>`;
 
     const info = allApps[appName];
+    if (!info) return;
     const list = document.getElementById('modalPackagesList');
     
     let html = `<div class="bg-white rounded-2xl border border-pink-200 overflow-hidden shadow-sm flex flex-col divide-y divide-pink-100">`;
@@ -505,10 +505,10 @@ function closeOrderModal() {
 }
 
 function getQuickAddButtonHTML(appName, cat, dur, price, pkgId, qty) {
-    const safeAppName = escapeHTML(appName.replace(/'/g, "\\'"));
-    const safeCat = escapeHTML(cat.replace(/'/g, "\\'"));
-    const safeDur = escapeHTML(dur.replace(/'/g, "\\'"));
-    const safePrice = escapeHTML(price.replace(/'/g, "\\'"));
+    const safeAppName = escapeHTML(appName.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+    const safeCat = escapeHTML(cat.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+    const safeDur = escapeHTML(dur.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+    const safePrice = escapeHTML(price.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
     const safePkgId = escapeHTML(pkgId);
     
     if (qty > 0) {
@@ -824,7 +824,7 @@ function renderCheckoutForms() {
                                     <input type="text" 
                                            placeholder="Ketik ${escapeHTML(field)}" 
                                            value="${escapeHTML(filledVal)}" 
-                                           oninput="updateItemForm(${gItem.cartIndex}, ${fIdx}, '${escapeHTML(field.replace(/'/g, "\\'"))}', this.value)" 
+                                           oninput="updateItemForm(${gItem.cartIndex}, ${fIdx}, '${escapeHTML(field.replace(/\\/g, '\\\\').replace(/'/g, "\\'"))}', this.value)" 
                                            class="w-full bg-white border border-pink-200 focus:border-pink-400 rounded-xl py-2.5 md:py-3 px-3.5 text-xs md:text-sm outline-none text-gray-700 font-bold transition-colors shadow-inner placeholder-pink-200">
                                 </div>
                             `;
