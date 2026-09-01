@@ -4,13 +4,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, x-admin-password',
 };
 
-function escapeHTML(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>'"]/g, match => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  })[match]);
-}
-
 async function verifyTurnstile(token, secret) {
   if (!token) return false;
   const formData = new FormData();
@@ -78,14 +71,12 @@ export async function onRequest(context) {
           const closeTotalMins = closeH * 60 + closeM;
           
           if (openTotalMins < closeTotalMins) {
-              
               if (currentTotalMins < openTotalMins || currentTotalMins >= closeTotalMins) {
                   isClosed = true;
               } else {
                   isClosed = false; 
               }
           } else {
-              
               if (currentTotalMins >= closeTotalMins && currentTotalMins < openTotalMins) {
                   isClosed = true; 
               } else {
@@ -103,7 +94,6 @@ export async function onRequest(context) {
           message: settings.close_message
       });
     }
-    
 
     if (path === '/api/pricelist' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM pricelist").all();
@@ -122,8 +112,8 @@ export async function onRequest(context) {
       const isValid = await verifyTurnstile(body.turnstileResponse, env.TURNSTILE_SECRET);
       if (!isValid) return errorResp("Mohon selesaikan verifikasi keamanan", 400);
 
-      const nama = escapeHTML(body.nama || 'Anonim');
-      const komentar = escapeHTML(body.komentar || '');
+      const nama = body.nama || 'Anonim';
+      const komentar = body.komentar || '';
       
       if (!komentar) return errorResp("Komentar tidak boleh kosong", 400);
       if (nama.length > 50) return errorResp("Nama terlalu panjang", 400);
@@ -134,12 +124,10 @@ export async function onRequest(context) {
     }
 
     try {
-      // PROTEKSI AUTENTIKASI ADMIN UNTUK ROUTE BERIKUTNYA
       if (method !== 'GET' && path !== '/api/testimoni' && path !== '/api/login' || (path === '/api/testimoni' && method !== 'POST' && method !== 'GET')) {
           checkAuth();
       }
       
-      // --- BAGIAN BARU: ENDPOINT PUT SETTINGS (ADMIN) ---
       if (path === '/api/settings' && method === 'PUT') {
         await env.DB.prepare(
           "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=? WHERE id=1"
@@ -148,19 +136,20 @@ export async function onRequest(context) {
           body.auto_schedule ? 1 : 0, 
           body.open_time, 
           body.close_time, 
-          escapeHTML(body.close_message || '')
+          body.close_message || ''
         ).run();
         return jsonResp({ success: true });
       }
-      // --- AKHIR BAGIAN BARU ---
 
       if (path === '/api/pricelist' && method === 'POST') {
         await env.DB.prepare("INSERT INTO pricelist (app_name, category, duration, price, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
           .bind(body.app_name, body.category, body.duration, body.price, body.status || 'Ready', body.notes || '').run();
         return jsonResp({ success: true }, 201);
       }
+      
       if (path.startsWith('/api/pricelist/') && method === 'PUT' && path !== '/api/pricelist/reorder') {
-        const id = path.split('/').pop();
+        const id = parseInt(path.split('/').pop(), 10);
+        if (isNaN(id)) return errorResp("ID tidak valid", 400);
         await env.DB.prepare("UPDATE pricelist SET app_name=?, category=?, duration=?, price=?, status=?, notes=? WHERE id=?")
           .bind(body.app_name, body.category, body.duration, body.price, body.status, body.notes || '', id).run();
         return jsonResp({ success: true });
@@ -169,13 +158,16 @@ export async function onRequest(context) {
       if (path.startsWith('/api/delete/bulk') && method === 'DELETE') {
         const ids = body.ids; 
         if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
-        const placeholders = ids.map(() => '?').join(',');
-        await env.DB.prepare(`DELETE FROM pricelist WHERE id IN (${placeholders})`).bind(...ids).run();
+        const validIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (validIds.length === 0) return errorResp("ID tidak valid", 400);
+        const placeholders = validIds.map(() => '?').join(',');
+        await env.DB.prepare(`DELETE FROM pricelist WHERE id IN (${placeholders})`).bind(...validIds).run();
         return jsonResp({ success: true });
       }
       
       if (path.startsWith('/api/delete/') && method === 'DELETE') {
-        const id = path.split('/').pop();
+        const id = parseInt(path.split('/').pop(), 10);
+        if (isNaN(id)) return errorResp("ID tidak valid", 400);
         await env.DB.prepare("DELETE FROM pricelist WHERE id=?").bind(id).run();
         return jsonResp({ success: true });
       }
@@ -183,27 +175,41 @@ export async function onRequest(context) {
       if (path.startsWith('/api/status/bulk') && method === 'PUT') {
         const ids = body.ids;
         if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
-        const placeholders = ids.map(() => '?').join(',');
-        await env.DB.prepare(`UPDATE pricelist SET status=? WHERE id IN (${placeholders})`).bind(body.status, ...ids).run();
+        const validIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (validIds.length === 0) return errorResp("ID tidak valid", 400);
+        const placeholders = validIds.map(() => '?').join(',');
+        await env.DB.prepare(`UPDATE pricelist SET status=? WHERE id IN (${placeholders})`).bind(body.status, ...validIds).run();
         return jsonResp({ success: true });
       }
       
       if (path.startsWith('/api/status/') && method === 'PUT') {
-        const id = path.split('/').pop();
+        const id = parseInt(path.split('/').pop(), 10);
+        if (isNaN(id)) return errorResp("ID tidak valid", 400);
         await env.DB.prepare("UPDATE pricelist SET status=? WHERE id=?").bind(body.status, id).run();
         return jsonResp({ success: true });
       }
       
       if (path === '/api/pricelist/reorder' && method === 'PUT') {
         if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
-        const statements = body.order.map(item => env.DB.prepare("UPDATE pricelist SET sort_order=? WHERE id=?").bind(item.sort_order, item.id));
+        const statements = body.order.map(item => {
+          const id = parseInt(item.id, 10);
+          const sortOrder = parseInt(item.sort_order, 10);
+          if (isNaN(id) || isNaN(sortOrder)) return null;
+          return env.DB.prepare("UPDATE pricelist SET sort_order=? WHERE id=?").bind(sortOrder, id);
+        }).filter(s => s !== null);
+        if (statements.length === 0) return errorResp("Data tidak valid", 400);
         await env.DB.batch(statements);
         return jsonResp({ success: true });
       }
       
       if (path === '/api/reorder-apps' && method === 'PUT') {
         if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
-        const statements = body.order.map(item => env.DB.prepare("UPDATE pricelist SET app_sort_order=? WHERE app_name=?").bind(item.app_sort_order, item.app_name));
+        const statements = body.order.map(item => {
+          const appSortOrder = parseInt(item.app_sort_order, 10);
+          if (isNaN(appSortOrder) || !item.app_name) return null;
+          return env.DB.prepare("UPDATE pricelist SET app_sort_order=? WHERE app_name=?").bind(appSortOrder, item.app_name);
+        }).filter(s => s !== null);
+        if (statements.length === 0) return errorResp("Data tidak valid", 400);
         await env.DB.batch(statements);
         return jsonResp({ success: true });
       }
@@ -219,13 +225,15 @@ export async function onRequest(context) {
         return jsonResp({ success: true });
       }
       if (path.startsWith('/api/testimoni/') && method === 'PUT') {
-        const id = path.split('/').pop();
-        const balasan = escapeHTML(body.balasan_admin || '');
+        const id = parseInt(path.split('/').pop(), 10);
+        if (isNaN(id)) return errorResp("ID tidak valid", 400);
+        const balasan = body.balasan_admin || '';
         await env.DB.prepare("UPDATE testimonials SET balasan_admin=? WHERE id=?").bind(balasan, id).run();
         return jsonResp({ success: true });
       }
       if (path.startsWith('/api/testimoni/') && method === 'DELETE') {
-        const id = path.split('/').pop();
+        const id = parseInt(path.split('/').pop(), 10);
+        if (isNaN(id)) return errorResp("ID tidak valid", 400);
         await env.DB.prepare("DELETE FROM testimonials WHERE id=?").bind(id).run();
         return jsonResp({ success: true });
       }
@@ -238,6 +246,7 @@ export async function onRequest(context) {
     return errorResp("Endpoint tidak ditemukan", 404);
 
   } catch (err) {
-    return errorResp("Terjadi kesalahan di server: " + err.message, 500);
+    console.error("Server error:", err);
+    return errorResp("Terjadi kesalahan di server.", 500);
   }
 }
