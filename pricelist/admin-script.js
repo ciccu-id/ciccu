@@ -85,6 +85,9 @@ async function loadStoreSettings() {
             document.getElementById('closeTimeInput').value = data.close_time || '23:00';
             document.getElementById('closeMessageInput').value = data.message || 'Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
             
+            document.getElementById('flashSaleStartInput').value = data.flash_sale_start || '';
+            document.getElementById('flashSaleEndInput').value = data.flash_sale_end || '';
+            
             toggleAutoScheduleUI(isAuto);
         }
     } catch (error) {
@@ -120,7 +123,9 @@ async function saveStoreSettings(e) {
         auto_schedule: document.getElementById('autoScheduleToggle').checked,
         open_time: document.getElementById('openTimeInput').value,
         close_time: document.getElementById('closeTimeInput').value,
-        close_message: document.getElementById('closeMessageInput').value
+        close_message: document.getElementById('closeMessageInput').value,
+        flash_sale_start: document.getElementById('flashSaleStartInput').value,
+        flash_sale_end: document.getElementById('flashSaleEndInput').value
     };
 
     try {
@@ -525,13 +530,16 @@ function renderData(dataArray) {
             if (isSelected) { rowClass += ' bg-pink-50 border-pink-400 ring-2 ring-pink-200'; } else if (isReady) { rowInlineStyle = 'background-color: #ffffff; border-color: #fce7f3;'; } else { rowInlineStyle = 'background-color: #f9fafb; border-color: #e5e7eb; opacity: 0.6; filter: grayscale(100%);'; }
             const statusBadgeHTML = isReady ? `<span class="text-[8px] md:text-[9px] font-black text-green-500 bg-green-50 border-green-200 px-1.5 md:px-2 py-0.5 rounded border uppercase tracking-wider shadow-sm" id="status-text-${item.id}">READY</span>` : `<span class="text-[8px] md:text-[9px] font-black text-red-500 bg-red-50 border-red-200 px-1.5 md:px-2 py-0.5 rounded border uppercase tracking-wider shadow-sm" id="status-text-${item.id}">SOLD</span>`;
 
+            const hasFlash = item.flash_price && item.flash_price.trim() !== '';
+            const flashBadge = hasFlash ? `<span class="text-[7px] md:text-[8px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded uppercase tracking-wider shadow-sm ml-1">⚡FLASH</span>` : '';
+
             html += `
                 <div class="${rowClass}" style="${rowInlineStyle}" data-id="${item.id}" id="row-item-${item.id}">
                     <div class="drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-pink-500 shrink-0 p-0.5 md:p-1"><svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg></div>
                     <div class="flex items-start md:items-center gap-2 flex-1 overflow-hidden">
                         <input type="checkbox" onchange="toggleSelect(${item.id}, this.checked)" class="mt-0.5 md:mt-0 w-4 h-4 md:w-5 md:h-5 text-pink-500 bg-white border-pink-300 rounded outline-none cursor-pointer accent-pink-500 shrink-0" ${isSelected ? 'checked' : ''}>
                         <div class="flex-1 overflow-hidden">
-                            <p class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">${escapeHTML(item.category)} • <span class="text-gray-800">${escapeHTML(item.duration)}</span> • <span class="text-pink-500 font-black">${escapeHTML(item.price)}</span></p>
+                            <p class="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-widest">${escapeHTML(item.category)} • <span class="text-gray-800">${escapeHTML(item.duration)}</span> • <span class="text-pink-500 font-black">${escapeHTML(item.price)}</span>${flashBadge}</p>
                             ${item.notes && item.notes.toLowerCase() !== 'nan' ? `<p class="text-[9px] md:text-[10px] text-pink-400 mt-0.5 md:mt-1 italic font-bold">↳ ${escapeHTML(item.notes)}</p>` : ''}
                         </div>
                     </div>
@@ -646,15 +654,15 @@ async function processCSV() {
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i]; if (!row.trim()) continue; const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, '')); if (cols.length < 4) continue;
             progress.innerText = `Mengirim baris ${i + 1} dari ${rows.length}...`;
-            try { const res = await fetch(`${BASE_URL}/api/pricelist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ app_name: cols[0], category: cols[1], duration: cols[2], price: cols[3], notes: cols[4] || '', status: cols[5] || 'Ready' }) }); await handleResponseStatus(res); successCount++; } catch (error) { break; }
+            try { const res = await fetch(`${BASE_URL}/api/pricelist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify({ app_name: cols[0], category: cols[1], duration: cols[2], price: cols[3], notes: cols[4] || '', status: cols[5] || 'Ready', flash_price: cols[6] || '' }) }); await handleResponseStatus(res); successCount++; } catch (error) { break; }
         }
         progress.innerText = `Selesai! ${successCount} data berhasil diunggah.`; setTimeout(() => { closeImportModal(); btn.disabled = false; btn.innerHTML = "Import Data"; loadData(); }, 1500);
     }; reader.readAsText(file);
 }
 function exportCSV() {
     const keyword = document.getElementById('adminSearchInput').value.toLowerCase(); const dataToExport = globalAdminData.filter(item => item.app_name.toLowerCase().includes(keyword) || item.category.toLowerCase().includes(keyword) || item.status.toLowerCase().includes(keyword)); if(dataToExport.length === 0) return alert('Tidak ada data untuk diekspor.');
-    let csvContent = "app_name,category,duration,price,status,notes\n";
-    dataToExport.forEach(item => { const escapeQuotes = (str) => `"${String(str).replace(/"/g, '""')}"`; csvContent += [escapeQuotes(item.app_name), escapeQuotes(item.category), escapeQuotes(item.duration), escapeQuotes(item.price), escapeQuotes(item.status), escapeQuotes(item.notes || '')].join(",") + "\n"; });
+    let csvContent = "app_name,category,duration,price,status,notes,flash_price\n";
+    dataToExport.forEach(item => { const escapeQuotes = (str) => `"${String(str).replace(/"/g, '""')}"`; csvContent += [escapeQuotes(item.app_name), escapeQuotes(item.category), escapeQuotes(item.duration), escapeQuotes(item.price), escapeQuotes(item.status), escapeQuotes(item.notes || ''), escapeQuotes(item.flash_price || '')].join(",") + "\n"; });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", `ciccu-pricelist.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 
@@ -662,19 +670,19 @@ function openAddPackageModal(appName) { document.getElementById('addPkgAppName')
 function closeAddPackageModal() { const modal = document.getElementById('addPackageModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); }
 async function submitAddPackageForm(e) {
     e.preventDefault(); const btn = document.getElementById('btnSubmitAddPkg'); btn.innerHTML = "Menyimpan..."; btn.disabled = true; const appName = document.getElementById('addPkgAppName').value;
-    const payload = { app_name: appName, category: document.getElementById('addPkgCat').value, duration: document.getElementById('addPkgDur').value, price: document.getElementById('addPkgPrice').value, status: document.getElementById('addPkgStatus').value, notes: document.getElementById('addPkgNotes').value };
+    const payload = { app_name: appName, category: document.getElementById('addPkgCat').value, duration: document.getElementById('addPkgDur').value, price: document.getElementById('addPkgPrice').value, status: document.getElementById('addPkgStatus').value, notes: document.getElementById('addPkgNotes').value, flash_price: document.getElementById('addPkgFlashPrice').value };
     try { const res = await fetch(`${BASE_URL}/api/pricelist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) }); await handleResponseStatus(res); expandedApps[appName] = true; closeAddPackageModal(); loadData(); } catch (error) { } finally { btn.innerHTML = "Tambahkan"; btn.disabled = false; }
 }
 
 function editPackage(id) {
     const item = globalAdminData.find(d => d.id === id); if(!item) return; currentEditId = id;
-    document.getElementById('editAppName').value = item.app_name; document.getElementById('editAppCat').value = item.category; document.getElementById('editAppDur').value = item.duration; document.getElementById('editAppPrice').value = item.price; document.getElementById('editAppStatus').value = item.status; document.getElementById('editAppNotes').value = (item.notes && item.notes.toLowerCase() !== 'nan') ? item.notes : '';
+    document.getElementById('editAppName').value = item.app_name; document.getElementById('editAppCat').value = item.category; document.getElementById('editAppDur').value = item.duration; document.getElementById('editAppPrice').value = item.price; document.getElementById('editAppStatus').value = item.status; document.getElementById('editAppNotes').value = (item.notes && item.notes.toLowerCase() !== 'nan') ? item.notes : ''; document.getElementById('editAppFlashPrice').value = item.flash_price || '';
     const modal = document.getElementById('editModal'); modal.classList.remove('hidden'); setTimeout(() => modal.lastElementChild.classList.replace('scale-95', 'scale-100'), 10);
 }
 function closeEditModal() { const modal = document.getElementById('editModal'); modal.lastElementChild.classList.replace('scale-100', 'scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); currentEditId = null; }
 async function submitEditForm(e) {
     e.preventDefault(); const btn = document.getElementById('btnSubmitEdit'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
-    const payload = { app_name: document.getElementById('editAppName').value, category: document.getElementById('editAppCat').value, duration: document.getElementById('editAppDur').value, price: document.getElementById('editAppPrice').value, status: document.getElementById('editAppStatus').value, notes: document.getElementById('editAppNotes').value };
+    const payload = { app_name: document.getElementById('editAppName').value, category: document.getElementById('editAppCat').value, duration: document.getElementById('editAppDur').value, price: document.getElementById('editAppPrice').value, status: document.getElementById('editAppStatus').value, notes: document.getElementById('editAppNotes').value, flash_price: document.getElementById('editAppFlashPrice').value };
     try { const res = await fetch(`${BASE_URL}/api/pricelist/${currentEditId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) }); await handleResponseStatus(res); closeEditModal(); loadData(); } catch (error) { } finally { btn.innerHTML = "Simpan"; btn.disabled = false; }
 }
 
@@ -705,7 +713,7 @@ async function bulkDelete() {
 
 async function addData(e) {
     e.preventDefault(); const btn = document.getElementById('btnSubmit'); btn.innerHTML = "Menyimpan..."; btn.disabled = true;
-    const payload = { app_name: document.getElementById('appName').value, category: document.getElementById('appCat').value, duration: document.getElementById('appDur').value, price: document.getElementById('appPrice').value, status: document.getElementById('appStatus').value, notes: document.getElementById('appNotes').value };
+    const payload = { app_name: document.getElementById('appName').value, category: document.getElementById('appCat').value, duration: document.getElementById('appDur').value, price: document.getElementById('appPrice').value, status: document.getElementById('appStatus').value, notes: document.getElementById('appNotes').value, flash_price: document.getElementById('appFlashPrice').value };
     try { const res = await fetch(`${BASE_URL}/api/pricelist`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass }, body: JSON.stringify(payload) }); await handleResponseStatus(res); document.getElementById('addForm').reset(); document.getElementById('adminSearchInput').value = ''; loadData(); } catch (error) { } finally { btn.innerHTML = "Simpan Data ✨"; btn.disabled = false; }
 }
 
