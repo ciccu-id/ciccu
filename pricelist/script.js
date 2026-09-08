@@ -181,6 +181,27 @@ function formatSmartPrice(val) {
     return val.toLocaleString('id-ID');
 }
 
+function onFlashSaleExpire() {
+    cart.forEach(function(item) {
+        const info = allApps[item.app];
+        if (info) {
+            const pkg = info.packages.find(function(p) { return p.category === item.cat && p.duration === item.dur; });
+            if (pkg) {
+                item.price = pkg.price;
+                item.isFlash = false;
+                item.originalPrice = pkg.price;
+            }
+        }
+    });
+    
+    applyFilters();
+    updateInlineSummaryUI();
+    
+    if (!document.getElementById('orderModal').classList.contains('hidden') && currentOrderApp) {
+        openOrderModal(currentOrderApp);
+    }
+}
+
 async function loadPricelist() {
     try {
         try {
@@ -190,6 +211,7 @@ async function loadPricelist() {
                 if (settingsData.is_closed) {
                     showStoreClosedModal(settingsData.message);
                 }
+                FlashSale.init(settingsData.flash_sale_start, settingsData.flash_sale_end, onFlashSaleExpire);
             }
         } catch (setErr) {
             console.error("Gagal memeriksa status toko:", setErr);
@@ -221,6 +243,7 @@ async function loadPricelist() {
             const price = item.price;    
             const notes = item.notes || ''; 
             const status = item.status || 'Ready';
+            const flashPrice = item.flash_price || '';
 
             const appOrderVal = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
 
@@ -233,7 +256,7 @@ async function loadPricelist() {
                 if (item.id < appFirstId[appName]) appFirstId[appName] = item.id;
             }
             
-            apps[appName].packages.push({ category, duration, price, notes, status, id: item.id });
+            apps[appName].packages.push({ category, duration, price, notes, status, id: item.id, flash_price: flashPrice });
         });
 
         allApps = apps;
@@ -359,12 +382,22 @@ function renderCards(apps, orderedNames) {
         let totalPackages = info.packages.length; 
         let minRealPrice = Infinity;
         let displayPrice = '-';
+        let hasFlash = false;
+        let originalDisplayPrice = '';
 
         info.packages.forEach(item => {
-            let pVal = extractNumK(item.price);
+            const effective = FlashSale.getEffectivePrice(item);
+            let pVal = extractNumK(effective.price);
             if (pVal > 0 && pVal < minRealPrice) {
                 minRealPrice = pVal;
-                displayPrice = item.price; 
+                displayPrice = effective.price;
+                if (effective.isFlash) {
+                    hasFlash = true;
+                    originalDisplayPrice = effective.originalPrice;
+                } else {
+                    hasFlash = false;
+                    originalDisplayPrice = '';
+                }
             }
         });
 
@@ -383,6 +416,20 @@ function renderCards(apps, orderedNames) {
             </button>
         ` : '';
 
+        const flashBadgeHTML = hasFlash ? `<span class="text-[8px] md:text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm animate-pulse">⚡</span>` : '';
+
+        let priceHTML = '';
+        if (hasFlash) {
+            priceHTML = `
+                <span class="text-[10px] md:text-xs text-gray-400 line-through font-bold pb-0.5 md:pb-1">${escapeHTML(originalDisplayPrice)}</span>
+                <span class="text-lg md:text-2xl font-black text-pink-600 leading-none">${escapeHTML(displayPrice)}</span>
+            `;
+        } else {
+            priceHTML = `
+                <span class="text-lg md:text-2xl font-black text-gray-800 leading-none">${escapeHTML(displayPrice)}</span>
+            `;
+        }
+
         const card = document.createElement('div');
         card.className = 'group flex flex-col bg-white border border-pink-200 rounded-2xl md:rounded-3xl p-3 md:p-5 shadow-sm transition-transform duration-300 hover:-translate-y-1 md:hover:-translate-y-2 hover:border-pink-300 hover:shadow-md fade-in-down relative overflow-hidden cursor-pointer';
         card.style.animationDelay = `${delay}s`;
@@ -392,13 +439,13 @@ function renderCards(apps, orderedNames) {
             ${infoBtnHTML}
             <div class="relative z-10 flex items-start justify-between mb-2 md:mb-4">
                 ${logoHTML}
-                <span class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded border border-pink-100">${escapeHTML(categoryBadge)}</span>
+                <div class="flex items-center gap-1">${flashBadgeHTML}<span class="text-[8px] md:text-[9px] font-black uppercase tracking-widest text-pink-500 bg-pink-50 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded border border-pink-100">${escapeHTML(categoryBadge)}</span></div>
             </div>
             <div class="relative z-10 mb-2 md:mb-3 flex-1">
                 <h2 class="text-sm md:text-xl font-black text-pink-600 capitalize tracking-tight group-hover:text-pink-400 transition-all truncate pr-4">${escapeHTML(name)}</h2>
                 <div class="mt-2 md:mt-4 flex items-end gap-1">
                     <span class="text-[10px] md:text-xs text-gray-500 font-bold pb-0.5 md:pb-1">Mulai</span>
-                    <span class="text-lg md:text-2xl font-black text-gray-800 leading-none">${escapeHTML(displayPrice)}</span>
+                    ${priceHTML}
                 </div>
             </div>
             <div class="relative z-10 mt-auto pt-2 md:pt-4 border-t border-pink-100 flex items-center justify-between text-gray-400 group-hover:text-pink-500 transition-colors">
@@ -442,6 +489,7 @@ function openOrderModal(appName) {
             : '';
 
         const isSold = item.status && item.status.toLowerCase() !== 'ready';
+        const effective = FlashSale.getEffectivePrice(item);
 
         const cartItem = cart.find(c => c.app === appName && c.cat === cat && c.dur === item.duration);
         const qty = cartItem ? cartItem.qty : 0;
@@ -458,12 +506,23 @@ function openOrderModal(appName) {
 
         const hoverClass = isSold ? '' : 'hover:bg-pink-50/50';
         const soldBadge = isSold ? `<span class="bg-red-100 text-red-500 text-[8px] px-1.5 py-0.5 rounded font-black uppercase tracking-widest ml-2 border border-red-200">Habis</span>` : '';
+        const flashBadge = (effective.isFlash && !isSold) ? `<span class="text-[7px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded uppercase tracking-wider ml-1 animate-pulse">⚡</span>` : '';
+
+        let priceHTML = '';
+        if (effective.isFlash && !isSold) {
+            priceHTML = `
+                <span class="text-[9px] text-gray-400 line-through mr-1">${escapeHTML(effective.originalPrice)}</span>
+                <span class="font-black text-pink-600 text-xs md:text-sm">${escapeHTML(effective.price)}</span>
+            `;
+        } else {
+            priceHTML = `<span class="font-black ${isSold ? 'text-gray-400' : 'text-pink-600'} text-xs md:text-sm">${escapeHTML(effective.price)}</span>`;
+        }
 
         let actionButton = '';
         if (isSold) {
             actionButton = `<span class="text-[9px] font-bold text-red-400 bg-red-50 px-3 py-1.5 rounded-full border border-red-100">Kosong</span>`;
         } else {
-            actionButton = getQuickAddButtonHTML(appName, cat, item.duration, item.price, pkgId, qty);
+            actionButton = getQuickAddButtonHTML(appName, cat, item.duration, effective.price, pkgId, qty);
         }
 
         html += `
@@ -471,13 +530,13 @@ function openOrderModal(appName) {
                 <div class="flex-1 pr-3 min-w-0">
                     <div class="flex items-center mb-0.5">
                         <p class="text-[9px] md:text-[10px] ${isSold ? 'text-gray-500' : 'text-pink-500'} font-black uppercase tracking-widest truncate">${escapeHTML(cat)}</p>
-                        ${soldBadge}
+                        ${soldBadge}${flashBadge}
                     </div>
                     <h4 class="text-xs md:text-sm font-bold ${isSold ? 'text-gray-500 line-through' : 'text-gray-700'} truncate">${escapeHTML(item.duration)}</h4>
                     ${noteHtml}
                 </div>
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
-                    <span class="font-black ${isSold ? 'text-gray-400' : 'text-pink-600'} text-xs md:text-sm">${escapeHTML(item.price)}</span>
+                    <div class="flex items-center gap-1">${priceHTML}</div>
                     <div id="btn-container-${pkgId}">
                         ${actionButton}
                     </div>
@@ -534,6 +593,21 @@ function quickAdd(appName, cat, dur, price, pkgId) {
         return;
     }
 
+    let effectivePrice = price;
+    let isFlash = false;
+    let originalPrice = price;
+    
+    const info = allApps[appName];
+    if (info) {
+        const pkg = info.packages.find(function(p) { return p.category === cat && p.duration === dur; });
+        if (pkg) {
+            const effective = FlashSale.getEffectivePrice(pkg);
+            effectivePrice = effective.price;
+            isFlash = effective.isFlash;
+            originalPrice = effective.isFlash ? effective.originalPrice : effective.price;
+        }
+    }
+
     const existIndex = cart.findIndex(item => 
         item.app === appName && item.cat === cat && item.dur === dur
     );
@@ -544,14 +618,15 @@ function quickAdd(appName, cat, dur, price, pkgId) {
         newQty = cart[existIndex].qty;
     } else {
         cart.push({ 
-            app: appName, cat: cat, dur: dur, price: price, qty: 1, 
-            separateForms: false, useFirstItemData: false, formData: [{}]
+            app: appName, cat: cat, dur: dur, price: effectivePrice, qty: 1, 
+            separateForms: false, useFirstItemData: false, formData: [{}],
+            isFlash: isFlash, originalPrice: originalPrice
         });
     }
 
     const btnContainer = document.getElementById(`btn-container-${pkgId}`);
     if(btnContainer) {
-        btnContainer.innerHTML = getQuickAddButtonHTML(appName, cat, dur, price, pkgId, newQty);
+        btnContainer.innerHTML = getQuickAddButtonHTML(appName, cat, dur, effectivePrice, pkgId, newQty);
     }
 
     const row = document.getElementById(`row-${pkgId}`);
@@ -626,6 +701,7 @@ function renderInlineSummaryList() {
         const itemTotal = extractNumK(item.price) * item.qty;
         const logoUrl = getLogoUrl(item.app);
         const logoRender = logoUrl ? `<img src="${logoUrl}" class="w-6 h-6 object-cover rounded-md border border-pink-100">` : `<span class="text-[10px] font-black text-pink-400">${escapeHTML(item.app.charAt(0))}</span>`;
+        const flashIndicator = item.isFlash ? `<span class="text-[8px] font-black text-amber-500 ml-0.5">⚡</span>` : '';
 
         html += `
             <div class="flex items-center justify-between bg-white p-2.5 rounded-[12px] border border-pink-100 gap-3 group transition-colors hover:border-pink-300 shadow-sm">
@@ -635,7 +711,7 @@ function renderInlineSummaryList() {
                     </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="text-gray-800 font-bold text-xs truncate leading-tight">${escapeHTML(item.app)}</h4>
-                        <p class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 truncate"><span class="text-pink-500 font-bold uppercase">${escapeHTML(item.cat)}</span> • ${escapeHTML(item.dur)}</p>
+                        <p class="text-[9px] md:text-[10px] text-gray-500 mt-0.5 truncate"><span class="text-pink-500 font-bold uppercase">${escapeHTML(item.cat)}</span>${flashIndicator} • ${escapeHTML(item.dur)}</p>
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-1.5 shrink-0">
@@ -775,12 +851,14 @@ function renderCheckoutForms() {
                 cart[gItem.cartIndex].useFirstItemData = false; gItem.useFirstItemData = false;
             }
 
+            const flashLabel = gItem.isFlash ? ` <span class="text-amber-500 font-black">⚡</span>` : '';
+
             appHTML += `
                 <div class="bg-pink-50 p-4 rounded-xl border border-pink-100 relative shadow-inner">
                     <div class="flex justify-between items-center border-b border-pink-200 pb-3 mb-3">
                         <div>
                             <p class="text-[11px] md:text-xs text-gray-500 font-medium"><span class="text-pink-500 font-black uppercase tracking-wider">${escapeHTML(gItem.cat)}</span> • ${escapeHTML(gItem.dur)}</p>
-                            <p class="text-[10px] md:text-[11px] text-gray-400 mt-1 font-bold">Harga: ${escapeHTML(gItem.price)} <span class="mx-1 text-pink-300">|</span> Qty: ${escapeHTML(String(gItem.qty))}</p>
+                            <p class="text-[10px] md:text-[11px] text-gray-400 mt-1 font-bold">Harga: ${escapeHTML(gItem.price)}${flashLabel} <span class="mx-1 text-pink-300">|</span> Qty: ${escapeHTML(String(gItem.qty))}</p>
                         </div>
                         <p class="text-pink-600 font-black text-sm md:text-base">${escapeHTML(gItem.itemTotalFormatted)}</p>
                     </div>
@@ -897,10 +975,12 @@ function checkoutCartWA() {
             else fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : [];
         } catch(e) { fields = fieldsStr ? fieldsStr.split(',').map(f => f.trim()).filter(f => f) : []; }
 
+        const flashTag = item.isFlash ? ` (⚡ Flash Sale)` : '';
+
         textWA += `𖠗  ⊹  ☆̲  ${item.app} — ${item.dur}\n`;
         textWA += `⊹ ꒰ 𓈒 ♡ ——— paket :  ${item.cat}\n`;
         textWA += `⊹ ꒰ 𓈒 ♡ ——— total   :  ${item.qty} pcs\n`;
-        textWA += `⊹ ꒰ 𓈒 ♡ ——— harga   :  IDR ${formatSmartPrice(itemTotalReal)}\n`;
+        textWA += `⊹ ꒰ 𓈒 ♡ ——— harga   :  IDR ${formatSmartPrice(itemTotalReal)}${flashTag}\n`;
 
         if (fields.length > 0) {
             textWA += `\n*DATA USER*\n`;
