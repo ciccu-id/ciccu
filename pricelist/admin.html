@@ -66,14 +66,12 @@
             </div>
         </div>
 
-        <!-- TAB NAVIGASI -->
         <div class="flex gap-4 mb-5 border-b border-pink-100 pb-1 overflow-x-auto hide-scrollbar">
             <button onclick="switchTab('produk')" id="tab-produk" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all whitespace-nowrap">Kelola Produk 📦</button>
             <button onclick="switchTab('testimoni')" id="tab-testimoni" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all whitespace-nowrap">Kelola Testimoni 💬</button>
             <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all whitespace-nowrap">Pengaturan Toko ⚙️</button>
         </div>
 
-        <!-- TAB PENGATURAN TOKO -->
         <div id="section-pengaturan" class="hidden space-y-4">
             <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50">
                 <h2 class="text-xs md:text-sm font-bold text-pink-500 mb-4 uppercase tracking-wider flex items-center gap-1.5">
@@ -83,7 +81,6 @@
                 
                 <form id="settingsForm" class="space-y-4" onsubmit="saveStoreSettings(event)">
                     
-                    <!-- Toggle Tutup Manual -->
                     <div class="flex items-center justify-between p-3 md:p-4 bg-pink-50 rounded-xl border border-pink-100">
                         <div>
                             <p class="font-bold text-gray-800 text-xs md:text-sm">Tutup Toko Manual</p>
@@ -96,7 +93,6 @@
                         </div>
                     </div>
 
-                    <!-- Toggle Jadwal Otomatis -->
                     <div class="flex items-center justify-between p-3 md:p-4 bg-sky-50 rounded-xl border border-sky-100">
                         <div>
                             <p class="font-bold text-gray-800 text-xs md:text-sm">Jadwal Otomatis</p>
@@ -109,25 +105,39 @@
                         </div>
                     </div>
 
-                    <!-- Jam Operasional -->
-<div class="grid grid-cols-2 gap-3 md:gap-4 relative">
-    <div>
-        <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Buka (WIB)</label>
-        <input type="time" id="openTimeInput" class="w-full appearance-none min-h-[44px] bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all block" required>
-    </div>
-    <div>
-        <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Tutup (WIB)</label>
-        <input type="time" id="closeTimeInput" class="w-full appearance-none min-h-[44px] bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all block" required>
-    </div>
-</div>
+                    <div class="grid grid-cols-2 gap-3 md:gap-4 relative">
+                        <div>
+                            <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Buka (WIB)</label>
+                            <input type="time" id="openTimeInput" class="w-full appearance-none min-h-[44px] bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all block" required>
+                        </div>
+                        <div>
+                            <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Jam Tutup (WIB)</label>
+                            <input type="time" id="closeTimeInput" class="w-full appearance-none min-h-[44px] bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm transition-all block" required>
+                        </div>
+                    </div>
                     
-                    <!-- Pesan Notifikasi -->
                     <div>
                         <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Pesan Pop-up Saat Tutup</label>
                         <textarea id="closeMessageInput" rows="3" required class="w-full bg-white border border-pink-200 text-xs md:text-sm rounded-xl p-3 outline-none focus:border-pink-400 font-bold text-gray-700 shadow-sm resize-none"></textarea>
                     </div>
 
-                    <!-- Tombol Simpan -->
+                    <div class="bg-amber-50 p-3 md:p-4 rounded-xl border border-amber-200 space-y-3">
+                        <div>
+                            <p class="font-bold text-gray-800 text-xs md:text-sm flex items-center gap-1.5">⚡ Pengaturan Flash Sale</p>
+                            <p class="text-[10px] md:text-xs text-gray-500 font-medium mt-0.5">Flash Sale aktif otomatis saat waktu berada di antara Mulai dan Selesai (WIB). Kosongkan untuk menonaktifkan.</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Waktu Mulai (WIB)</label>
+                                <input type="datetime-local" id="flashSaleStartInput" class="w-full appearance-none min-h-[44px] bg-white border border-amber-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-amber-400 font-bold text-gray-700 shadow-sm transition-all block">
+                            </div>
+                            <div>
+                                <label class="text-[10px] md:text-xs text-gray-500 font-bold block mb-1">Waktu Selesai (WIB)</label>
+                                <input type="datetime-local" id="flashSaleEndInput" class="w-full appearance-none min-h-[44px] bg-white border border-amber-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-amber-400 font-bold text-gray-700 shadow-sm transition-all block">
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" id="btnSaveSettings" class="w-full bg-pink-400 hover:bg-pink-500 text-white text-xs md:text-sm font-bold py-3 rounded-xl transition-all shadow-md flex justify-center items-center gap-2 mt-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
                         Simpan Pengaturan ✨
@@ -136,7 +146,6 @@
             </div>
         </div>
 
-        <!-- TAB KELOLA PRODUK (ASLI) -->
         <div id="section-produk" class="space-y-4">
             <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50 mb-5">
                 <h2 class="text-xs md:text-sm font-bold text-pink-500 mb-3 md:mb-4 uppercase tracking-wider flex items-center gap-1.5">
@@ -154,6 +163,7 @@
                             <option value="Sold" class="text-red-500">Sold</option>
                         </select>
                         <input type="text" id="appNotes" placeholder="Catatan (Opsional)" class="bg-pink-50 border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700 shadow-inner">
+                        <input type="text" id="appFlashPrice" placeholder="Harga Flash Sale (Opsional)" class="col-span-2 bg-amber-50 border border-amber-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-amber-400 w-full font-bold text-gray-700 shadow-inner">
                     </div>
                     <button type="submit" id="btnSubmit" class="w-full bg-pink-400 hover:bg-pink-500 text-white text-xs md:text-sm font-bold py-3 rounded-xl transition-all mt-2 shadow-md">Simpan Data ✨</button>
                 </form>
@@ -165,7 +175,8 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> Buka
                     </button>
                     <button onclick="collapseAll()" class="text-[10px] md:text-xs bg-pink-50 text-pink-600 px-3 py-1.5 md:px-4 md:py-2 rounded-lg border border-pink-200 hover:bg-pink-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7m-7 17v-6m0 0h6m-6 0l7 7M10 4v6m0 0H4m6 0L3 3"></path></button>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7m-7 17v-6m0 0h6m-6 0l7 7M10 4v6m0 0H4m6 0L3 3"></path></svg> Tutup
+                    </button>
                     
                     <button onclick="openReorderModal()" class="text-[10px] md:text-xs bg-sky-50 text-sky-500 px-3 py-1.5 md:px-4 md:py-2 rounded-lg border border-sky-200 hover:bg-sky-100 transition-colors font-bold whitespace-nowrap flex items-center gap-1.5 ml-1">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg> Urutan
@@ -193,7 +204,6 @@
             </div>
         </div>
 
-        <!-- TAB KELOLA TESTIMONI (ASLI) -->
         <div id="section-testimoni" class="hidden space-y-3">
             <div class="bg-white p-4 md:p-5 rounded-2xl md:rounded-3xl border border-pink-200 shadow-xl shadow-pink-100/50">
                 <h2 class="text-xs md:text-sm font-bold text-pink-500 mb-4 uppercase tracking-wider flex items-center gap-1.5">
@@ -226,7 +236,6 @@
         </div>
     </div>
 
-    <!-- Modals untuk CRUD Produk -->
     <div id="reorderModal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-pink-900/40 backdrop-blur-sm transition-opacity" onclick="closeReorderModal()"></div>
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300 max-h-[85vh]">
@@ -263,6 +272,7 @@
                     <option value="Sold" class="text-red-500">Sold</option>
                 </select>
                 <input type="text" id="addPkgNotes" class="bg-pink-50 border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Catatan (Opsional)">
+                <input type="text" id="addPkgFlashPrice" class="bg-amber-50 border border-amber-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-amber-400 w-full font-bold text-gray-700" placeholder="Harga Flash Sale (Opsional)">
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeAddPackageModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 md:py-3 text-sm rounded-xl transition-all">Batal</button>
                     <button type="submit" id="btnSubmitAddPkg" class="flex-1 bg-pink-400 hover:bg-pink-500 text-white font-bold py-2.5 md:py-3 text-sm rounded-xl transition-all shadow-md">Tambahkan</button>
@@ -287,6 +297,7 @@
                     <option value="Sold" class="text-red-500">Sold</option>
                 </select>
                 <input type="text" id="editAppNotes" class="bg-pink-50 border border-pink-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-pink-400 w-full font-bold text-gray-700" placeholder="Catatan (Opsional)">
+                <input type="text" id="editAppFlashPrice" class="bg-amber-50 border border-amber-200 text-xs md:text-sm rounded-xl p-2.5 md:p-3 outline-none focus:border-amber-400 w-full font-bold text-gray-700" placeholder="Harga Flash Sale (Opsional)">
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 md:py-3 text-sm rounded-xl transition-all">Batal</button>
                     <button type="submit" id="btnSubmitEdit" class="flex-1 bg-pink-400 hover:bg-pink-500 text-white font-bold py-2.5 md:py-3 text-sm rounded-xl transition-all shadow-md">Simpan</button>
@@ -323,7 +334,7 @@
         <div class="relative bg-white border border-pink-200 rounded-3xl w-full max-w-sm flex flex-col shadow-2xl transform scale-95 transition-all duration-300">
             <div class="p-4 md:p-5 border-b border-pink-100 bg-pink-50 rounded-t-3xl">
                 <h3 class="text-base md:text-lg font-black text-pink-600">Import CSV ☁️</h3>
-                <p class="text-[9px] md:text-[10px] text-gray-500 mt-1 font-bold">Format: app_name, category, duration, price, status, notes</p>
+                <p class="text-[9px] md:text-[10px] text-gray-500 mt-1 font-bold">Format: app_name, category, duration, price, status, notes, flash_price</p>
             </div>
             <div class="p-4 md:p-5 bg-white">
                 <input type="file" id="csvFileInputModal" accept=".csv" class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-pink-100 file:text-pink-600 hover:file:bg-pink-200 cursor-pointer border border-pink-200 rounded-lg bg-pink-50">
@@ -356,6 +367,6 @@
       }
     </script>
 
-    <script src="admin-script.js?v=4"></script>
+    <script src="admin-script.js?v=5"></script>
 </body>
 </html>
