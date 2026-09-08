@@ -1,7 +1,8 @@
-const CACHE_NAME = 'ciccu-cache-v2';
+const CACHE_NAME = 'ciccu-cache-v3';
 const urlsToCache = [
   './index.html',
   './script.js',
+  './flashsale.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
