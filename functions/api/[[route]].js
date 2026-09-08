@@ -48,7 +48,11 @@ export async function onRequest(context) {
       const { results } = await env.DB.prepare("SELECT * FROM store_settings WHERE id = 1").all();
       
       if (!results || results.length === 0) {
-         return jsonResp({ is_closed: false });
+         return jsonResp({ 
+           is_closed: false, 
+           flash_sale_start: '', 
+           flash_sale_end: '' 
+         });
       }
       
       const settings = results[0];
@@ -91,7 +95,9 @@ export async function onRequest(context) {
           auto_schedule: settings.auto_schedule === 1,
           open_time: settings.open_time,
           close_time: settings.close_time,
-          message: settings.close_message
+          message: settings.close_message,
+          flash_sale_start: settings.flash_sale_start || '',
+          flash_sale_end: settings.flash_sale_end || ''
       });
     }
 
@@ -130,28 +136,30 @@ export async function onRequest(context) {
       
       if (path === '/api/settings' && method === 'PUT') {
         await env.DB.prepare(
-          "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=? WHERE id=1"
+          "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=?, flash_sale_start=?, flash_sale_end=? WHERE id=1"
         ).bind(
           body.is_closed ? 1 : 0, 
           body.auto_schedule ? 1 : 0, 
           body.open_time, 
           body.close_time, 
-          body.close_message || ''
+          body.close_message || '',
+          body.flash_sale_start || '',
+          body.flash_sale_end || ''
         ).run();
         return jsonResp({ success: true });
       }
 
       if (path === '/api/pricelist' && method === 'POST') {
-        await env.DB.prepare("INSERT INTO pricelist (app_name, category, duration, price, status, notes) VALUES (?, ?, ?, ?, ?, ?)")
-          .bind(body.app_name, body.category, body.duration, body.price, body.status || 'Ready', body.notes || '').run();
+        await env.DB.prepare("INSERT INTO pricelist (app_name, category, duration, price, status, notes, flash_price) VALUES (?, ?, ?, ?, ?, ?, ?)")
+          .bind(body.app_name, body.category, body.duration, body.price, body.status || 'Ready', body.notes || '', body.flash_price || '').run();
         return jsonResp({ success: true }, 201);
       }
       
       if (path.startsWith('/api/pricelist/') && method === 'PUT' && path !== '/api/pricelist/reorder') {
         const id = parseInt(path.split('/').pop(), 10);
         if (isNaN(id)) return errorResp("ID tidak valid", 400);
-        await env.DB.prepare("UPDATE pricelist SET app_name=?, category=?, duration=?, price=?, status=?, notes=? WHERE id=?")
-          .bind(body.app_name, body.category, body.duration, body.price, body.status, body.notes || '', id).run();
+        await env.DB.prepare("UPDATE pricelist SET app_name=?, category=?, duration=?, price=?, status=?, notes=?, flash_price=? WHERE id=?")
+          .bind(body.app_name, body.category, body.duration, body.price, body.status, body.notes || '', body.flash_price || '', id).run();
         return jsonResp({ success: true });
       }
       
