@@ -73,7 +73,7 @@ function switchTab(tabName) {
 async function loadStoreSettings() {
     if(!sessionPass) return;
     try {
-        const res = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`);
+        const res = await fetch(`${BASE_URL}/api/settings`);
         if(res.ok) {
             const data = await res.json();
             document.getElementById('storeClosedToggle').checked = data.is_manual_closed || false;
@@ -148,7 +148,7 @@ async function saveStoreSettings(e) {
 async function loadFlashSaleSettings() {
     if(!sessionPass) return;
     try {
-        const res = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`);
+        const res = await fetch(`${BASE_URL}/api/settings`);
         if(res.ok) {
             const data = await res.json();
             document.getElementById('fsNameInput').value = data.flash_sale_name || 'Flash Sale';
@@ -169,7 +169,7 @@ async function saveFlashSaleSettings(e) {
     btn.disabled = true;
 
     try {
-        const currentRes = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`);
+        const currentRes = await fetch(`${BASE_URL}/api/settings`);
         const currentData = await currentRes.json();
 
         const payload = {
@@ -559,7 +559,7 @@ async function loadData() {
     if(!sessionPass) return;
     const list = document.getElementById('dataList');
     try {
-        const response = await fetch(`${BASE_URL}/api/pricelist?t=${new Date().getTime()}`);
+        const response = await fetch(`${BASE_URL}/api/pricelist`);
         if (!response.ok) throw new Error(`Server membalas dengan status: ${response.status}`);
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error("Data ditarik bukan format tabel.");
@@ -573,7 +573,7 @@ async function loadData() {
         });
 
         try {
-            const formResponse = await fetch(`${BASE_URL}/api/forms?t=${new Date().getTime()}`);
+            const formResponse = await fetch(`${BASE_URL}/api/forms`);
             if(formResponse.ok) {
                 const formData = await formResponse.json();
                 globalFormsData = {};
