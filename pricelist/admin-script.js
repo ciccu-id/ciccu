@@ -20,6 +20,7 @@ let currentReplyId = null;
 let builderCurrentApp = '';
 let builderFields = [];
 let sortableReorder = null;
+let sortableFlashSale = null;
 
 let testimoniDataCache = {};
 
@@ -27,45 +28,44 @@ function switchTab(tabName) {
     const sectionProduk = document.getElementById('section-produk');
     const sectionTestimoni = document.getElementById('section-testimoni');
     const sectionPengaturan = document.getElementById('section-pengaturan');
+    const sectionFlashSale = document.getElementById('section-flashsale');
     
     const tabProduk = document.getElementById('tab-produk');
     const tabTestimoni = document.getElementById('tab-testimoni');
     const tabPengaturan = document.getElementById('tab-pengaturan');
+    const tabFlashSale = document.getElementById('tab-flashsale');
     
     const activeClass = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-pink-400 text-pink-500 outline-none transition-all whitespace-nowrap";
     const inactiveClass = "pb-2 px-1 text-xs md:text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-pink-400 outline-none transition-all whitespace-nowrap";
 
+    sectionProduk.classList.add('hidden');
+    sectionTestimoni.classList.add('hidden');
+    if (sectionPengaturan) sectionPengaturan.classList.add('hidden');
+    if (sectionFlashSale) sectionFlashSale.classList.add('hidden');
+
+    tabProduk.className = inactiveClass;
+    tabTestimoni.className = inactiveClass;
+    if (tabPengaturan) tabPengaturan.className = inactiveClass;
+    if (tabFlashSale) tabFlashSale.className = inactiveClass;
+
+    document.getElementById('bulkActionBar').classList.add('translate-y-full');
+
     if (tabName === 'produk') {
         sectionProduk.classList.remove('hidden');
-        sectionTestimoni.classList.add('hidden');
-        if (sectionPengaturan) sectionPengaturan.classList.add('hidden');
-        
         tabProduk.className = activeClass;
-        tabTestimoni.className = inactiveClass;
-        if (tabPengaturan) tabPengaturan.className = inactiveClass;
-        
         updateBulkUI();
     } else if (tabName === 'testimoni') {
-        sectionProduk.classList.add('hidden');
         sectionTestimoni.classList.remove('hidden');
-        if (sectionPengaturan) sectionPengaturan.classList.add('hidden');
-        
-        tabProduk.className = inactiveClass;
         tabTestimoni.className = activeClass;
-        if (tabPengaturan) tabPengaturan.className = inactiveClass;
-        
-        document.getElementById('bulkActionBar').classList.add('translate-y-full');
         loadAdminTestimoni();
+    } else if (tabName === 'flashsale') {
+        sectionFlashSale.classList.remove('hidden');
+        tabFlashSale.className = activeClass;
+        loadFlashSaleSettings();
+        renderFlashSaleItems();
     } else if (tabName === 'pengaturan') {
-        sectionProduk.classList.add('hidden');
-        sectionTestimoni.classList.add('hidden');
-        if (sectionPengaturan) sectionPengaturan.classList.remove('hidden');
-        
-        tabProduk.className = inactiveClass;
-        tabTestimoni.className = inactiveClass;
-        if (tabPengaturan) tabPengaturan.className = activeClass;
-        
-        document.getElementById('bulkActionBar').classList.add('translate-y-full');
+        sectionPengaturan.classList.remove('hidden');
+        tabPengaturan.className = activeClass;
         loadStoreSettings();
     }
 }
@@ -84,9 +84,6 @@ async function loadStoreSettings() {
             document.getElementById('openTimeInput').value = data.open_time || '05:00';
             document.getElementById('closeTimeInput').value = data.close_time || '23:00';
             document.getElementById('closeMessageInput').value = data.message || 'Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
-            
-            document.getElementById('flashSaleStartInput').value = data.flash_sale_start || '';
-            document.getElementById('flashSaleEndInput').value = data.flash_sale_end || '';
             
             toggleAutoScheduleUI(isAuto);
         }
@@ -123,9 +120,7 @@ async function saveStoreSettings(e) {
         auto_schedule: document.getElementById('autoScheduleToggle').checked,
         open_time: document.getElementById('openTimeInput').value,
         close_time: document.getElementById('closeTimeInput').value,
-        close_message: document.getElementById('closeMessageInput').value,
-        flash_sale_start: document.getElementById('flashSaleStartInput').value,
-        flash_sale_end: document.getElementById('flashSaleEndInput').value
+        close_message: document.getElementById('closeMessageInput').value
     };
 
     try {
@@ -147,6 +142,202 @@ async function saveStoreSettings(e) {
     } finally {
         btn.innerHTML = oldText;
         btn.disabled = false;
+    }
+}
+
+async function loadFlashSaleSettings() {
+    if(!sessionPass) return;
+    try {
+        const res = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`);
+        if(res.ok) {
+            const data = await res.json();
+            document.getElementById('fsNameInput').value = data.flash_sale_name || 'Flash Sale';
+            document.getElementById('fsDescInput').value = data.flash_sale_description || '';
+            document.getElementById('fsStartInput').value = data.flash_sale_start || '';
+            document.getElementById('fsEndInput').value = data.flash_sale_end || '';
+        }
+    } catch (error) {
+        console.error("Gagal memuat pengaturan flash sale", error);
+    }
+}
+
+async function saveFlashSaleSettings(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveFlashSale');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = "Menyimpan... ⚡";
+    btn.disabled = true;
+
+    try {
+        const currentRes = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`);
+        const currentData = await currentRes.json();
+
+        const payload = {
+            is_closed: currentData.is_manual_closed || false,
+            auto_schedule: currentData.auto_schedule || false,
+            open_time: currentData.open_time || '05:00',
+            close_time: currentData.close_time || '23:00',
+            close_message: currentData.message || '',
+            flash_sale_start: document.getElementById('fsStartInput').value,
+            flash_sale_end: document.getElementById('fsEndInput').value,
+            flash_sale_name: document.getElementById('fsNameInput').value,
+            flash_sale_description: document.getElementById('fsDescInput').value
+        };
+
+        const res = await fetch(`${BASE_URL}/api/settings`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'x-admin-password': sessionPass 
+            },
+            body: JSON.stringify(payload)
+        });
+        await handleResponseStatus(res);
+        
+        const indicator = document.getElementById('savingIndicator');
+        indicator.classList.remove('hidden'); 
+        setTimeout(() => indicator.classList.add('hidden'), 2000);
+    } catch (error) {
+        alert("Gagal menyimpan pengaturan Flash Sale.");
+    } finally {
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+    }
+}
+
+function renderFlashSaleItems() {
+    const list = document.getElementById('flashSaleItemList');
+    const countEl = document.getElementById('fsItemCount');
+
+    const flashItems = globalAdminData.filter(item => item.flash_price && item.flash_price.trim() !== '');
+
+    flashItems.sort((a, b) => {
+        const aFlash = (a.flash_sort_order && a.flash_sort_order > 0 && a.flash_sort_order < 9999) ? a.flash_sort_order : 9999;
+        const bFlash = (b.flash_sort_order && b.flash_sort_order > 0 && b.flash_sort_order < 9999) ? b.flash_sort_order : 9999;
+        const aApp = (a.app_sort_order && a.app_sort_order > 0) ? a.app_sort_order : 9999;
+        const bApp = (b.app_sort_order && b.app_sort_order > 0) ? b.app_sort_order : 9999;
+        const aPkg = (a.sort_order && a.sort_order > 0) ? a.sort_order : 9999;
+        const bPkg = (b.sort_order && b.sort_order > 0) ? b.sort_order : 9999;
+        return (aFlash - bFlash) || (aApp - bApp) || (aPkg - bPkg) || (a.id - b.id);
+    });
+
+    countEl.innerText = `${flashItems.length} item`;
+
+    if (flashItems.length === 0) {
+        list.innerHTML = `<div class="text-center py-8 text-gray-400 font-bold text-sm">Belum ada item Flash Sale 🥺<br><span class="text-[10px] font-medium mt-1 block">Isi "Harga Flash Sale" di tab Kelola Produk untuk menambahkan item.</span></div>`;
+        return;
+    }
+
+    let html = '';
+    flashItems.forEach(item => {
+        html += `
+        <div class="fs-item bg-amber-50/50 p-3 md:p-4 rounded-xl border border-amber-100 flex items-center gap-2 md:gap-3 transition-all" data-id="${item.id}">
+            <div class="fs-drag-handle cursor-grab active:cursor-grabbing text-gray-400 hover:text-amber-500 shrink-0 p-1">
+                <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs md:text-sm font-bold text-gray-800 truncate">${escapeHTML(item.app_name)} • ${escapeHTML(item.category)} • ${escapeHTML(item.duration)}</p>
+                <p class="text-[10px] md:text-xs text-gray-500 font-bold mt-0.5">
+                    ${escapeHTML(item.price)} → <span class="text-amber-600 font-black">${escapeHTML(item.flash_price)}</span>
+                    ${item.status && item.status.toLowerCase() !== 'ready' ? '<span class="text-red-400 ml-1">(Sold)</span>' : ''}
+                </p>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button data-edit-fs-id="${item.id}" class="edit-fs-btn text-[9px] md:text-[10px] bg-white text-pink-500 px-2 py-1.5 md:px-2.5 md:py-2 rounded-lg font-bold border border-pink-200 hover:bg-pink-50 transition-colors shadow-sm">Edit</button>
+                <button data-remove-fs-id="${item.id}" class="remove-fs-btn text-[9px] md:text-[10px] bg-white text-red-400 px-2 py-1.5 md:px-2.5 md:py-2 rounded-lg font-bold border border-red-200 hover:bg-red-50 transition-colors shadow-sm">Hapus</button>
+            </div>
+        </div>`;
+    });
+
+    list.innerHTML = html;
+
+    list.querySelectorAll('.edit-fs-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.getAttribute('data-edit-fs-id'), 10);
+            if (!isNaN(id)) editFlashSaleItem(id);
+        });
+    });
+
+    list.querySelectorAll('.remove-fs-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = parseInt(this.getAttribute('data-remove-fs-id'), 10);
+            if (!isNaN(id)) removeFromFlashSale(id);
+        });
+    });
+
+    initFlashSaleSortable();
+}
+
+function initFlashSaleSortable() {
+    const list = document.getElementById('flashSaleItemList');
+    if (sortableFlashSale) sortableFlashSale.destroy();
+    
+    sortableFlashSale = new Sortable(list, {
+        animation: 150,
+        handle: '.fs-drag-handle',
+        ghostClass: 'sortable-ghost',
+        dragClass: 'sortable-drag',
+        onEnd: async function() {
+            const items = list.querySelectorAll('.fs-item');
+            const newOrder = Array.from(items).map((el, index) => ({
+                id: parseInt(el.dataset.id),
+                flash_sort_order: index + 1
+            }));
+
+            newOrder.forEach(o => {
+                const dataItem = globalAdminData.find(d => d.id === o.id);
+                if (dataItem) dataItem.flash_sort_order = o.flash_sort_order;
+            });
+
+            try {
+                const res = await fetch(`${BASE_URL}/api/flashsale/reorder`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
+                    body: JSON.stringify({ order: newOrder })
+                });
+                await handleResponseStatus(res);
+                const indicator = document.getElementById('savingIndicator');
+                indicator.classList.remove('hidden');
+                setTimeout(() => indicator.classList.add('hidden'), 2000);
+            } catch(e) {
+                loadData();
+            }
+        }
+    });
+}
+
+function editFlashSaleItem(id) {
+    switchTab('produk');
+    setTimeout(() => {
+        editPackage(id);
+    }, 100);
+}
+
+async function removeFromFlashSale(id) {
+    if(!confirm("Hapus item ini dari Flash Sale? Item tetap ada di daftar produk, hanya tidak ikut Flash Sale lagi.")) return;
+    
+    const item = globalAdminData.find(d => d.id === id);
+    if (!item) return;
+
+    try {
+        const res = await fetch(`${BASE_URL}/api/pricelist/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-admin-password': sessionPass },
+            body: JSON.stringify({
+                app_name: item.app_name,
+                category: item.category,
+                duration: item.duration,
+                price: item.price,
+                status: item.status,
+                notes: item.notes || '',
+                flash_price: ''
+            })
+        });
+        await handleResponseStatus(res);
+        item.flash_price = '';
+        renderFlashSaleItems();
+    } catch (error) {
+        alert("Gagal menghapus item dari Flash Sale.");
     }
 }
 
