@@ -211,7 +211,12 @@ async function loadPricelist() {
                 if (settingsData.is_closed) {
                     showStoreClosedModal(settingsData.message);
                 }
-                FlashSale.init(settingsData.flash_sale_start, settingsData.flash_sale_end, onFlashSaleExpire);
+                FlashSale.init({
+                    start: settingsData.flash_sale_start,
+                    end: settingsData.flash_sale_end,
+                    name: settingsData.flash_sale_name,
+                    description: settingsData.flash_sale_description
+                }, onFlashSaleExpire);
             }
         } catch (setErr) {
             console.error("Gagal memeriksa status toko:", setErr);
@@ -244,6 +249,7 @@ async function loadPricelist() {
             const notes = item.notes || ''; 
             const status = item.status || 'Ready';
             const flashPrice = item.flash_price || '';
+            const flashSortOrder = item.flash_sort_order || 9999;
 
             const appOrderVal = (item.app_sort_order && item.app_sort_order > 0) ? item.app_sort_order : 9999;
 
@@ -256,13 +262,15 @@ async function loadPricelist() {
                 if (item.id < appFirstId[appName]) appFirstId[appName] = item.id;
             }
             
-            apps[appName].packages.push({ category, duration, price, notes, status, id: item.id, flash_price: flashPrice });
+            apps[appName].packages.push({ category, duration, price, notes, status, id: item.id, flash_price: flashPrice, flash_sort_order: flashSortOrder });
         });
 
         allApps = apps;
         orderedAppNames = Object.keys(apps);
         
         orderedAppNames.sort((a, b) => (appMinOrder[a] - appMinOrder[b]) || (appFirstId[a] - appFirstId[b]));
+
+        FlashSale.setItems(allApps);
 
         try {
             const formRes = await fetch(`${BASE_URL}/api/forms?t=${new Date().getTime()}`, { cache: 'no-store' });
@@ -338,9 +346,9 @@ function switchCategory(cat) {
         if (!btn) return;
         
         if (c === cat) {
-            btn.className = "w-full py-2.5 md:py-3 rounded-xl border border-pink-400 bg-pink-400 text-[10px] md:text-xs font-bold text-white shadow-lg shadow-pink-200 transition-all outline-none";
+            btn.className = "shrink-0 py-2.5 px-4 md:px-5 rounded-xl border border-pink-400 bg-pink-400 text-[10px] md:text-xs font-bold text-white shadow-lg shadow-pink-200 transition-all outline-none whitespace-nowrap";
         } else {
-            btn.className = "w-full py-2.5 md:py-3 rounded-xl border border-pink-200 bg-white text-[10px] md:text-xs font-bold text-pink-400 hover:bg-pink-50 transition-all outline-none";
+            btn.className = "shrink-0 py-2.5 px-4 md:px-5 rounded-xl border border-pink-200 bg-white text-[10px] md:text-xs font-bold text-pink-400 hover:bg-pink-50 transition-all outline-none whitespace-nowrap";
         }
     });
     
