@@ -18,6 +18,21 @@ async function verifyTurnstile(token, secret) {
   return outcome.success;
 }
 
+function truncate(str, maxLen) {
+  if (!str) return '';
+  return String(str).slice(0, maxLen);
+}
+
+function isValidTimeFormat(str) {
+  if (!str) return false;
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(str);
+}
+
+function isValidDateTimeFormat(str) {
+  if (!str) return true;
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str);
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -26,7 +41,15 @@ export async function onRequest(context) {
 
   if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
-  const jsonResp = (data, status = 200) => new Response(JSON.stringify(data), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status });
+  const jsonResp = (data, status = 200, cacheSeconds = 0) => {
+    const headers = { ...corsHeaders, 'Content-Type': 'application/json' };
+    if (cacheSeconds > 0) {
+      headers['Cache-Control'] = `public, max-age=${cacheSeconds}`;
+    } else {
+      headers['Cache-Control'] = 'no-store';
+    }
+    return new Response(JSON.stringify(data), { headers, status });
+  };
   const errorResp = (msg, status = 500) => jsonResp({ error: msg }, status);
 
   const checkAuth = () => {
@@ -54,7 +77,7 @@ export async function onRequest(context) {
            flash_sale_end: '',
            flash_sale_name: 'Flash Sale',
            flash_sale_description: ''
-         });
+         }, 200, 10);
       }
       
       const settings = results[0];
@@ -69,8 +92,8 @@ export async function onRequest(context) {
           }).format(new Date()); 
           
           const [currentH, currentM] = nowStr.split(':').map(Number);
-          const [openH, openM] = settings.open_time.split(':').map(Number);
-          const [closeH, closeM] = settings.close_time.split(':').map(Number);
+          const [openH, openM] = (settings.open_time || '05:00').split(':').map(Number);
+          const [closeH, closeM] = (settings.close_time || '23:00').split(':').map(Number);
           
           const currentTotalMins = currentH * 60 + currentM;
           const openTotalMins = openH * 60 + openM;
@@ -102,20 +125,20 @@ export async function onRequest(context) {
           flash_sale_end: settings.flash_sale_end || '',
           flash_sale_name: settings.flash_sale_name || 'Flash Sale',
           flash_sale_description: settings.flash_sale_description || ''
-      });
+      }, 200, 10);
     }
 
     if (path === '/api/pricelist' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM pricelist").all();
-      return jsonResp(results);
+      return jsonResp(results, 200, 30);
     }
     if (path === '/api/forms' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM app_forms").all();
-      return jsonResp(results);
+      return jsonResp(results, 200, 30);
     }
     if (path === '/api/testimoni' && method === 'GET') {
       const { results } = await env.DB.prepare("SELECT * FROM testimonials ORDER BY created_at DESC").all();
-      return jsonResp(results);
+      return jsonResp(results, 200, 30);
     }
 
     if (path === '/api/testimoni' && method === 'POST') {
@@ -139,39 +162,70 @@ export async function onRequest(context) {
       }
       
       if (path === '/api/settings' && method === 'PUT') {
+        const closeMessage = truncate(body.close_message || '', 500);
+        const fsName = truncate(body.flash_sale_name || 'Flash Sale', 100);
+        const fsDesc = truncate(body.flash_sale_description || '', 200);
+        const fsStart = body.flash_sale_start || '';
+        const fsEnd = body.flash_sale_end || '';
+        const openTime = body.open_time || '05:00';
+        const closeTime = body.close_time || '23:00';
+
+        if (!isValidTimeFormat(openTime)) return errorResp("Format jam buka tidak valid", 400);
+        if (!isValidTimeFormat(closeTime)) return errorResp("Format jam tutup tidak valid", 400);
+        if (!isValidDateTimeFormat(fsStart)) return errorResp("Format waktu mulai flash sale tidak valid", 400);
+        if (!isValidDateTimeFormat(fsEnd)) return errorResp("Format waktu selesai flash sale tidak valid", 400);
+
         await env.DB.prepare(
           "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=?, flash_sale_start=?, flash_sale_end=?, flash_sale_name=?, flash_sale_description=? WHERE id=1"
         ).bind(
           body.is_closed ? 1 : 0, 
           body.auto_schedule ? 1 : 0, 
-          body.open_time, 
-          body.close_time, 
-          body.close_message || '',
-          body.flash_sale_start || '',
-          body.flash_sale_end || '',
-          body.flash_sale_name || 'Flash Sale',
-          body.flash_sale_description || ''
+          openTime, 
+          closeTime, 
+          closeMessage,
+          fsStart,
+          fsEnd,
+          fsName,
+          fsDesc
         ).run();
         return jsonResp({ success: true });
       }
 
       if (path === '/api/pricelist' && method === 'POST') {
+        const appName = truncate(body.app_name, 100);
+        const category = truncate(body.category, 100);
+        const duration = truncate(body.duration, 100);
+        const price = truncate(body.price, 50);
+        const notes = truncate(body.notes || '', 500);
+        const flashPrice = truncate(body.flash_price || '', 50);
+
+        if (!appName || !category || !duration || !price) return errorResp("Data tidak lengkap", 400);
+
         await env.DB.prepare("INSERT INTO pricelist (app_name, category, duration, price, status, notes, flash_price) VALUES (?, ?, ?, ?, ?, ?, ?)")
-          .bind(body.app_name, body.category, body.duration, body.price, body.status || 'Ready', body.notes || '', body.flash_price || '').run();
+          .bind(appName, category, duration, price, body.status || 'Ready', notes, flashPrice).run();
         return jsonResp({ success: true }, 201);
       }
       
       if (path.startsWith('/api/pricelist/') && method === 'PUT' && path !== '/api/pricelist/reorder') {
         const id = parseInt(path.split('/').pop(), 10);
         if (isNaN(id)) return errorResp("ID tidak valid", 400);
+
+        const appName = truncate(body.app_name, 100);
+        const category = truncate(body.category, 100);
+        const duration = truncate(body.duration, 100);
+        const price = truncate(body.price, 50);
+        const notes = truncate(body.notes || '', 500);
+        const flashPrice = truncate(body.flash_price || '', 50);
+
         await env.DB.prepare("UPDATE pricelist SET app_name=?, category=?, duration=?, price=?, status=?, notes=?, flash_price=? WHERE id=?")
-          .bind(body.app_name, body.category, body.duration, body.price, body.status, body.notes || '', body.flash_price || '', id).run();
+          .bind(appName, category, duration, price, body.status, notes, flashPrice, id).run();
         return jsonResp({ success: true });
       }
       
       if (path.startsWith('/api/delete/bulk') && method === 'DELETE') {
         const ids = body.ids; 
         if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
+        if (ids.length > 100) return errorResp("Terlalu banyak item", 400);
         const validIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
         if (validIds.length === 0) return errorResp("ID tidak valid", 400);
         const placeholders = validIds.map(() => '?').join(',');
@@ -189,6 +243,7 @@ export async function onRequest(context) {
       if (path.startsWith('/api/status/bulk') && method === 'PUT') {
         const ids = body.ids;
         if (!ids || !Array.isArray(ids) || ids.length === 0) return errorResp("Data tidak valid", 400);
+        if (ids.length > 100) return errorResp("Terlalu banyak item", 400);
         const validIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
         if (validIds.length === 0) return errorResp("ID tidak valid", 400);
         const placeholders = validIds.map(() => '?').join(',');
@@ -205,6 +260,7 @@ export async function onRequest(context) {
       
       if (path === '/api/pricelist/reorder' && method === 'PUT') {
         if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
+        if (body.order.length > 200) return errorResp("Terlalu banyak item", 400);
         const statements = body.order.map(item => {
           const id = parseInt(item.id, 10);
           const sortOrder = parseInt(item.sort_order, 10);
@@ -218,6 +274,7 @@ export async function onRequest(context) {
 
       if (path === '/api/flashsale/reorder' && method === 'PUT') {
         if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
+        if (body.order.length > 100) return errorResp("Terlalu banyak item", 400);
         const statements = body.order.map(item => {
           const id = parseInt(item.id, 10);
           const flashSortOrder = parseInt(item.flash_sort_order, 10);
@@ -231,10 +288,11 @@ export async function onRequest(context) {
       
       if (path === '/api/reorder-apps' && method === 'PUT') {
         if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
+        if (body.order.length > 100) return errorResp("Terlalu banyak item", 400);
         const statements = body.order.map(item => {
           const appSortOrder = parseInt(item.app_sort_order, 10);
           if (isNaN(appSortOrder) || !item.app_name) return null;
-          return env.DB.prepare("UPDATE pricelist SET app_sort_order=? WHERE app_name=?").bind(appSortOrder, item.app_name);
+          return env.DB.prepare("UPDATE pricelist SET app_sort_order=? WHERE app_name=?").bind(appSortOrder, truncate(item.app_name, 100));
         }).filter(s => s !== null);
         if (statements.length === 0) return errorResp("Data tidak valid", 400);
         await env.DB.batch(statements);
@@ -242,8 +300,11 @@ export async function onRequest(context) {
       }
       
       if (path === '/api/forms' && method === 'POST') {
+        const appName = truncate(body.app_name, 100);
+        const formFields = truncate(body.form_fields, 2000);
+        if (!appName) return errorResp("Nama aplikasi tidak boleh kosong", 400);
         await env.DB.prepare("INSERT INTO app_forms (app_name, form_fields) VALUES (?, ?) ON CONFLICT(app_name) DO UPDATE SET form_fields=excluded.form_fields")
-          .bind(body.app_name, body.form_fields).run();
+          .bind(appName, formFields).run();
         return jsonResp({ success: true });
       }
       if (path.startsWith('/api/forms/') && method === 'DELETE') {
@@ -254,7 +315,7 @@ export async function onRequest(context) {
       if (path.startsWith('/api/testimoni/') && method === 'PUT') {
         const id = parseInt(path.split('/').pop(), 10);
         if (isNaN(id)) return errorResp("ID tidak valid", 400);
-        const balasan = body.balasan_admin || '';
+        const balasan = truncate(body.balasan_admin || '', 500);
         await env.DB.prepare("UPDATE testimonials SET balasan_admin=? WHERE id=?").bind(balasan, id).run();
         return jsonResp({ success: true });
       }
