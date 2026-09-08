@@ -243,10 +243,23 @@ const FlashSale = {
 
             var disabledAttr = (isSold || isUpcoming) ? 'disabled' : '';
 
+            var logoUrl = (typeof getLogoUrl === 'function') ? getLogoUrl(item.appName) : '';
+            var logoHTML = '';
+            if (logoUrl) {
+                logoHTML = '<img src="' + logoUrl + '" class="w-full h-full object-contain rounded" loading="lazy">';
+            } else {
+                logoHTML = '<span class="text-[10px] md:text-xs font-black text-pink-400">' + escapeHTML(item.appName.charAt(0)) + '</span>';
+            }
+
             html += '<div class="fs-card shrink-0 w-[140px] md:w-[170px] bg-white border border-amber-200 rounded-2xl p-3 md:p-4 shadow-sm flex flex-col relative overflow-hidden">' +
                 '<div class="absolute top-1.5 right-1.5 text-[8px] font-black text-amber-500 bg-amber-50 border border-amber-200 px-1 py-0.5 rounded">⚡</div>' +
-                '<p class="text-[11px] md:text-xs font-black text-gray-800 truncate pr-5">' + escapeHTML(item.appName) + '</p>' +
-                '<p class="text-[9px] md:text-[10px] text-gray-400 font-bold truncate mt-0.5">' + escapeHTML(item.category) + ' • ' + escapeHTML(item.duration) + '</p>' +
+                '<div class="flex items-center gap-2 mb-1.5">' +
+                    '<div class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-pink-50 border border-pink-100 flex items-center justify-center overflow-hidden shrink-0 p-0.5">' +
+                        logoHTML +
+                    '</div>' +
+                    '<p class="text-[11px] md:text-xs font-black text-gray-800 truncate">' + escapeHTML(item.appName) + '</p>' +
+                '</div>' +
+                '<p class="text-[9px] md:text-[10px] text-gray-400 font-bold truncate">' + escapeHTML(item.category) + ' • ' + escapeHTML(item.duration) + '</p>' +
                 '<div class="mt-2 flex items-end gap-1.5">' +
                     '<span class="text-[9px] md:text-[10px] text-gray-400 line-through font-bold">' + escapeHTML(item.price) + '</span>' +
                     '<span class="text-sm md:text-base font-black text-pink-600 leading-none">' + escapeHTML(item.flash_price) + '</span>' +
