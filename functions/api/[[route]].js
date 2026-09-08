@@ -51,7 +51,9 @@ export async function onRequest(context) {
          return jsonResp({ 
            is_closed: false, 
            flash_sale_start: '', 
-           flash_sale_end: '' 
+           flash_sale_end: '',
+           flash_sale_name: 'Flash Sale',
+           flash_sale_description: ''
          });
       }
       
@@ -97,7 +99,9 @@ export async function onRequest(context) {
           close_time: settings.close_time,
           message: settings.close_message,
           flash_sale_start: settings.flash_sale_start || '',
-          flash_sale_end: settings.flash_sale_end || ''
+          flash_sale_end: settings.flash_sale_end || '',
+          flash_sale_name: settings.flash_sale_name || 'Flash Sale',
+          flash_sale_description: settings.flash_sale_description || ''
       });
     }
 
@@ -136,7 +140,7 @@ export async function onRequest(context) {
       
       if (path === '/api/settings' && method === 'PUT') {
         await env.DB.prepare(
-          "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=?, flash_sale_start=?, flash_sale_end=? WHERE id=1"
+          "UPDATE store_settings SET is_closed=?, auto_schedule=?, open_time=?, close_time=?, close_message=?, flash_sale_start=?, flash_sale_end=?, flash_sale_name=?, flash_sale_description=? WHERE id=1"
         ).bind(
           body.is_closed ? 1 : 0, 
           body.auto_schedule ? 1 : 0, 
@@ -144,7 +148,9 @@ export async function onRequest(context) {
           body.close_time, 
           body.close_message || '',
           body.flash_sale_start || '',
-          body.flash_sale_end || ''
+          body.flash_sale_end || '',
+          body.flash_sale_name || 'Flash Sale',
+          body.flash_sale_description || ''
         ).run();
         return jsonResp({ success: true });
       }
@@ -204,6 +210,19 @@ export async function onRequest(context) {
           const sortOrder = parseInt(item.sort_order, 10);
           if (isNaN(id) || isNaN(sortOrder)) return null;
           return env.DB.prepare("UPDATE pricelist SET sort_order=? WHERE id=?").bind(sortOrder, id);
+        }).filter(s => s !== null);
+        if (statements.length === 0) return errorResp("Data tidak valid", 400);
+        await env.DB.batch(statements);
+        return jsonResp({ success: true });
+      }
+
+      if (path === '/api/flashsale/reorder' && method === 'PUT') {
+        if (!body.order || !Array.isArray(body.order)) return errorResp("Data tidak valid", 400);
+        const statements = body.order.map(item => {
+          const id = parseInt(item.id, 10);
+          const flashSortOrder = parseInt(item.flash_sort_order, 10);
+          if (isNaN(id) || isNaN(flashSortOrder)) return null;
+          return env.DB.prepare("UPDATE pricelist SET flash_sort_order=? WHERE id=?").bind(flashSortOrder, id);
         }).filter(s => s !== null);
         if (statements.length === 0) return errorResp("Data tidak valid", 400);
         await env.DB.batch(statements);
