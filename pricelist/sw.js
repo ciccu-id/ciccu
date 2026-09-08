@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ciccu-cache-v4';
+const CACHE_NAME = 'ciccu-cache-v5';
 const urlsToCache = [
   './index.html',
   './script.js',
