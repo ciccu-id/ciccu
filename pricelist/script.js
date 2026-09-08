@@ -205,7 +205,7 @@ function onFlashSaleExpire() {
 async function loadPricelist() {
     try {
         try {
-            const settingsRes = await fetch(`${BASE_URL}/api/settings?t=${new Date().getTime()}`, { cache: 'no-store' });
+            const settingsRes = await fetch(`${BASE_URL}/api/settings`);
             if (settingsRes.ok) {
                 const settingsData = await settingsRes.json();
                 if (settingsData.is_closed) {
@@ -222,9 +222,7 @@ async function loadPricelist() {
             console.error("Gagal memeriksa status toko:", setErr);
         }
 
-        const response = await fetch(`${BASE_URL}/api/pricelist?t=${new Date().getTime()}`, {
-            cache: 'no-store'
-        });
+        const response = await fetch(`${BASE_URL}/api/pricelist`);
         if (!response.ok) throw new Error("Gagal mengambil data");
         
         let data = await response.json();
@@ -273,7 +271,7 @@ async function loadPricelist() {
         FlashSale.setItems(allApps);
 
         try {
-            const formRes = await fetch(`${BASE_URL}/api/forms?t=${new Date().getTime()}`, { cache: 'no-store' });
+            const formRes = await fetch(`${BASE_URL}/api/forms`);
             if (formRes.ok) {
                 const formsData = await formRes.json();
                 appForms = {};
