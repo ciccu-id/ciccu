@@ -57,6 +57,17 @@
         .fs-scroll::-webkit-scrollbar { height: 4px; }
         .fs-scroll::-webkit-scrollbar-thumb { background: #fde68a; border-radius: 10px; }
         .fs-scroll::-webkit-scrollbar-track { background: transparent; }
+
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(5deg); }
+        }
+        @keyframes float-slow-reverse {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(6px) rotate(-5deg); }
+        }
+        .animate-float-slow { animation: float-slow 4s ease-in-out infinite; }
+        .animate-float-slow-reverse { animation: float-slow-reverse 5s ease-in-out infinite; }
     </style>
 
     <link rel="manifest" href="manifest.json">
@@ -100,26 +111,39 @@
             </div>
         </div>
 
-        <div id="flashSaleBanner" class="hidden mb-4 md:mb-6 fade-in-down">
-            <div class="bg-white border border-amber-200 rounded-2xl md:rounded-3xl shadow-md shadow-amber-100/50 p-4 md:p-5 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-amber-100/50 blur-2xl rounded-full pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 w-16 h-16 bg-pink-100/50 blur-2xl rounded-full pointer-events-none"></div>
-                <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-4">
-                    <div class="flex items-center gap-2 md:gap-3">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center text-base md:text-xl shrink-0">⚡</div>
-                        <div>
-                            <h2 id="fsBannerName" class="text-sm md:text-base font-black text-gray-800 leading-tight">Flash Sale</h2>
-                            <p id="fsBannerDesc" class="text-[10px] md:text-xs text-gray-400 font-bold mt-0.5"></p>
-                        </div>
+        <div id="flashSaleBanner" class="hidden mb-6 md:mb-8 fade-in-down">
+            <div class="bg-gradient-to-br from-pink-100 via-rose-50 to-amber-100 border-2 border-pink-200/60 rounded-[2rem] shadow-lg shadow-pink-200/40 p-5 md:p-6 relative overflow-hidden">
+                
+                <div class="absolute top-3 left-4 text-xl md:text-2xl opacity-60 animate-float-slow pointer-events-none">✨</div>
+                <div class="absolute top-4 right-5 text-lg md:text-xl opacity-60 animate-float-slow-reverse pointer-events-none">🎀</div>
+                <div class="absolute bottom-3 left-6 text-lg md:text-xl opacity-50 animate-float-slow-reverse pointer-events-none">🌸</div>
+                <div class="absolute bottom-4 right-4 text-xl md:text-2xl opacity-60 animate-float-slow pointer-events-none">⚡</div>
+                
+                <div class="relative z-10 flex flex-col items-center text-center gap-2 md:gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg md:text-xl">⚡</span>
+                        <h2 id="fsBannerName" class="text-lg md:text-xl font-black text-pink-600 drop-shadow-sm tracking-tight">Flash Sale</h2>
+                        <span class="text-lg md:text-xl">⚡</span>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <span id="flashSaleStatusText" class="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-wider">Berakhir dalam</span>
-                        <div class="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5 md:px-3 md:py-2">
-                            <span id="fsHours" class="text-sm md:text-lg font-black text-amber-600 tabular-nums">00</span>
-                            <span class="text-amber-400 font-black text-xs md:text-sm">:</span>
-                            <span id="fsMinutes" class="text-sm md:text-lg font-black text-amber-600 tabular-nums">00</span>
-                            <span class="text-amber-400 font-black text-xs md:text-sm">:</span>
-                            <span id="fsSeconds" class="text-sm md:text-lg font-black text-amber-600 tabular-nums">00</span>
+                    
+                    <p id="fsBannerDesc" class="text-[11px] md:text-xs text-pink-500/90 font-bold max-w-sm leading-snug px-2"></p>
+                    
+                    <p id="flashSaleStatusText" class="text-[10px] md:text-xs text-amber-600 font-black uppercase tracking-widest mt-1">Berakhir dalam</p>
+                    
+                    <div class="flex items-center gap-2 md:gap-3 mt-1">
+                        <div class="bg-white/80 backdrop-blur-sm border border-pink-200 rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-sm min-w-[56px] md:min-w-[68px]">
+                            <span id="fsHours" class="text-xl md:text-2xl font-black text-pink-600 tabular-nums block leading-none">00</span>
+                            <span class="text-[8px] md:text-[9px] text-pink-400 font-bold uppercase tracking-wider">Jam</span>
+                        </div>
+                        <span class="text-pink-400 font-black text-lg md:text-xl mb-3 md:mb-4">:</span>
+                        <div class="bg-white/80 backdrop-blur-sm border border-pink-200 rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-sm min-w-[56px] md:min-w-[68px]">
+                            <span id="fsMinutes" class="text-xl md:text-2xl font-black text-pink-600 tabular-nums block leading-none">00</span>
+                            <span class="text-[8px] md:text-[9px] text-pink-400 font-bold uppercase tracking-wider">Mnt</span>
+                        </div>
+                        <span class="text-pink-400 font-black text-lg md:text-xl mb-3 md:mb-4">:</span>
+                        <div class="bg-white/80 backdrop-blur-sm border border-pink-200 rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-2.5 shadow-sm min-w-[56px] md:min-w-[68px]">
+                            <span id="fsSeconds" class="text-xl md:text-2xl font-black text-pink-600 tabular-nums block leading-none">00</span>
+                            <span class="text-[8px] md:text-[9px] text-pink-400 font-bold uppercase tracking-wider">Dtk</span>
                         </div>
                     </div>
                 </div>
@@ -326,7 +350,7 @@
       }
     </script>
 
-    <script src="flashsale.js?v=2"></script>
-    <script src="script.js?v=9"></script>
+    <script src="flashsale.js?v=3"></script>
+    <script src="script.js?v=10"></script>
 </body>
 </html>
