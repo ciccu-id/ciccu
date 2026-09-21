@@ -1,11 +1,11 @@
 .font-logo{font-family:'Fredoka',sans-serif;font-weight:700;letter-spacing:.5px}
 .custom-scroll::-webkit-scrollbar{width:5px;height:5px}
-.custom-scroll::-webkit-scrollbar-thumb{background:#fbcfe8;border-radius:10px}
+.custom-scroll::-webkit-scrollbar-thumb{background:var(--blue-200);border-radius:10px}
 .custom-scroll::-webkit-scrollbar-track{background:transparent}
 .fs-scroll::-webkit-scrollbar{height:4px}
-.fs-scroll::-webkit-scrollbar-thumb{background:#fde68a;border-radius:10px}
+.fs-scroll::-webkit-scrollbar-thumb{background:var(--butter-300);border-radius:10px}
 .fs-scroll::-webkit-scrollbar-track{background:transparent}
-.loader{border:3px solid rgba(244,114,182,.3);border-left-color:#ec4899;border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite}
+.loader{border:3px solid rgba(67,47,46,.15);border-left-color:var(--choco-600);border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .fade-in-down{animation:fadeInDown .5s ease-out forwards;opacity:0;transform:translateY(-15px)}
 @keyframes fadeInDown{to{opacity:1;transform:translateY(0)}}
@@ -17,7 +17,7 @@
 @keyframes floatSlow{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(5deg)}}
 .float-slow-rev{animation:floatSlowRev 5s ease-in-out infinite}
 @keyframes floatSlowRev{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(6px) rotate(-5deg)}}
-.shimmer{background:linear-gradient(90deg,var(--pk50) 25%,var(--pk100) 50%,var(--pk50) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+.shimmer{background:linear-gradient(90deg,var(--blue-50) 25%,var(--butter-100) 50%,var(--blue-50) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .cart-icon-wrap.bounce{animation:cartBounce .3s ease-out}
 @keyframes cartBounce{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
@@ -25,4 +25,4 @@ details.checkout-group>.checkout-group-body{display:none}
 details.checkout-group[open]>.checkout-group-body{display:block}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 input[type=number]{-moz-appearance:textfield}
-::selection{background:var(--pk200);color:var(--pk600)}
+::selection{background:var(--butter-200);color:var(--choco-600)}
