@@ -3,6 +3,7 @@ var isSummaryExpanded=false;
 var appForms={};
 var cartPanelEl=null,cartBadgeEl=null,cartTotalEl=null,cartListEl=null,checkoutOverlayEl=null,checkoutBodyEl=null,checkoutTotalEl=null,toastEl=null;
 function svgI(d,w,h){var ns='http://www.w3.org/2000/svg',s=document.createElementNS(ns,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');if(w)s.style.width=w;if(h)s.style.height=h;var p=document.createElementNS(ns,'path');p.setAttribute('d',d);s.appendChild(p);return s}
+function waIcon(w,h){var ns='http://www.w3.org/2000/svg',s=document.createElementNS(ns,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','currentColor');if(w)s.style.width=w;if(h)s.style.height=h;var p=document.createElementNS(ns,'path');p.setAttribute('d','M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z');s.appendChild(p);return s}
 function parseFormFields(str){
 if(!str)return[];
 try{if(str.trim().startsWith('['))return JSON.parse(str).map(function(i){return i.name||i})}catch(e){}
@@ -43,7 +44,7 @@ checkoutBtn.addEventListener('click',function(e){e.stopPropagation();openCheckou
 right.appendChild(checkoutBtn);
 var toggleBtn=ce('div','cart-toggle');
 toggleBtn.id='cartToggleIcon';
-toggleBtn.appendChild(svgI('M5 15l7-7 7 7','.875rem','.875rem'));
+toggleBtn.appendChild(svgI('M19 9l-7 7-7-7','.875rem','.875rem'));
 right.appendChild(toggleBtn);
 header.appendChild(left);header.appendChild(right);
 header.addEventListener('click',function(e){if(e.target.closest('.cart-checkout'))return;toggleSummaryList()});
@@ -55,8 +56,8 @@ document.body.appendChild(cartPanelEl);
 function toggleSummaryList(){
 isSummaryExpanded=!isSummaryExpanded;
 var icon=document.getElementById('cartToggleIcon');
-if(isSummaryExpanded){cartListEl.classList.add('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M19 9l-7-7-7-7','.875rem','.875rem'))}}
-else{cartListEl.classList.remove('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M5 15l7-7 7 7','.875rem','.875rem'))}}
+if(isSummaryExpanded){cartListEl.classList.add('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M5 15l7-7 7 7','.875rem','.875rem'))}}
+else{cartListEl.classList.remove('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M19 9l-7 7-7-7','.875rem','.875rem'))}}
 }
 function addToCart(appName,cat,dur,price){
 if(typeof isStoreClosed!=='undefined'&&isStoreClosed){if(typeof showStoreClosedModal==='function')showStoreClosedModal();return}
@@ -172,7 +173,7 @@ totalRow.appendChild(checkoutTotalEl);
 foot.appendChild(totalRow);
 var waBtn=ce('button','btn btn-green');
 waBtn.setAttribute('type','button');
-waBtn.appendChild(svgI('M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z','1.125rem','1.125rem'));
+waBtn.appendChild(waIcon('1.125rem','1.125rem'));
 waBtn.appendChild(ce('span',null,'Kirim Pesanan ke WA'));
 waBtn.addEventListener('click',checkoutWA);
 foot.appendChild(waBtn);
@@ -319,7 +320,7 @@ for(var fi=0;fi<fields.length;fi++){
 if(!item.formData||!item.formData[fIdx]||!item.formData[fIdx][fields[fi]]||!item.formData[fIdx][fields[fi]].trim()){
 var msg='Mohon lengkapi kolom "'+fields[fi]+'" untuk pesanan '+item.app+' ('+item.cat+' '+item.dur+')';
 if(item.separateForms&&item.qty>1)msg+=' (Pada Data Akun #'+(fIdx+1)+')';
-alert(msg+' terlebih dahulu 🥺🎀');
+alert(msg+' terlebih dahulu 🥺');
 return;
 }}}}
 }
@@ -333,7 +334,7 @@ var fields=parseFormFields(appForms[key]||'');
 var flashTag=item.isFlash?' (⚡ Flash Sale)':'';
 text+='  ⊹  ☆̲  '+item.app+' — '+item.dur+'\n';
 text+='⊹  𓈒  ——— paket :  '+item.cat+'\n';
-text+='⊹ ꒰ 𓈒 ♡ ——— total   :  '+item.qty+' pcs\n';
+text+='⊹ ꒰  ♡ ——— total   :  '+item.qty+' pcs\n';
 text+='⊹ ꒰  ♡ ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
 if(fields.length>0){
 text+='\n*DATA USER*\n';
@@ -363,8 +364,8 @@ text+='\n\n';
 }else text+='\n\n';
 }
 text=text.trimEnd()+'\n\n';
-text+='ఌ︎. 𓈄 total order : IDR '+formatSmartPrice(grandTotal)+' ⸝ 𓇼 ︎. ⟡ \n\n';
-text+=' ⑅  bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β \nhave a sweet day  𖠗\n\n';
+text+='ఌ︎. 𓈄 total order : IDR '+formatSmartPrice(grandTotal)+' ⸝  ︎. ⟡ \n\n';
+text+=' ⑅  bisa bantu untuk prosesnya kak?  ♡  .. thank you   ⊹ (. .*)β \nhave a sweet day  𖠗\n\n';
 text+='https://ciccu.biz.id/qris';
 window.open('https://wa.me/6283877337798?text='+encodeURIComponent(text),'_blank');
 }
