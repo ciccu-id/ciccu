@@ -11,3 +11,4 @@ return Promise.all(keys.map(function(k){if(k!==CACHE)return caches.delete(k)}));
 self.addEventListener('fetch',function(e){
 e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request)}));
 });
+
