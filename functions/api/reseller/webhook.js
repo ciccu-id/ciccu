@@ -1,6 +1,6 @@
-import{getProvider}from'../../../lib/payment/provider.js';
-import{markPaymentSettle,markPaymentFailed}from'../../../lib/fulfillment.js';
-import{audit}from'../../../lib/db.js';
+import{getProvider}from'../../lib/payment/provider.js';
+import{markPaymentSettle,markPaymentFailed}from'../../lib/fulfillment.js';
+import{audit}from'../../lib/db.js';
 const json=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
 export async function onRequest(context){
 const{request,env}=context;
