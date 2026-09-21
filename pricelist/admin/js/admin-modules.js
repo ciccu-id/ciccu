@@ -3,6 +3,7 @@ var sortableFlashSale=null,currentReplyId=null;
 var TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 var adminTurnstileId=null;
 var RES_SUB='rprice';
+var ADM_TITLES={produk:'Produk & Paket',flashsale:'Flash Sale',reseller:'Manajemen Reseller',testimoni:'Testimoni',pengaturan:'Pengaturan Toko'};
 function escapeHTML(str){if(!str)return'';return String(str).replace(/[&<>'"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]})}
 function ce(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined&&x!==null)e.textContent=x;return e}
 function ensureTurnstile(cb){
@@ -35,7 +36,7 @@ var overlay=document.getElementById('loginOverlay');
 var main=document.getElementById('mainContent');
 if(sessionPass){
 if(overlay)overlay.style.display='none';
-if(main)main.style.display='block';
+if(main)main.style.display='flex';
 if(typeof loadData==='function')loadData();
 }else{
 if(overlay)overlay.style.display='flex';
@@ -78,10 +79,14 @@ function switchTab(tabName){
 var sections=['produk','flashsale','reseller','testimoni','pengaturan'];
 for(var i=0;i<sections.length;i++){
 var sec=document.getElementById('section-'+sections[i]);
-var tab=document.getElementById('tab-'+sections[i]);
+var sb=document.getElementById('sbtab-'+sections[i]);
 if(sec){if(sections[i]===tabName)sec.classList.remove('hidden');else sec.classList.add('hidden')}
-if(tab){if(sections[i]===tabName)tab.classList.add('active');else tab.classList.remove('active')}
+if(sb){if(sections[i]===tabName)sb.classList.add('active');else sb.classList.remove('active')}
 }
+var title=document.getElementById('admTopbarTitle');
+if(title)title.textContent=ADM_TITLES[tabName]||'Admin';
+var nav=document.getElementById('navToggle');
+if(nav)nav.checked=false;
 var bulkBar=document.getElementById('bulkActionBar');
 if(bulkBar)bulkBar.classList.remove('visible');
 if(tabName==='flashsale'){loadFlashSaleSettings();renderFlashSaleItems()}
@@ -350,8 +355,8 @@ if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter'
 var btnLogout=document.getElementById('btnLogout');
 if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
 ['produk','flashsale','reseller','testimoni','pengaturan'].forEach(function(t){
-var tabBtn=document.getElementById('tab-'+t);
-if(tabBtn)tabBtn.addEventListener('click',function(){switchTab(t)});
+var sbBtn=document.getElementById('sbtab-'+t);
+if(sbBtn)sbBtn.addEventListener('click',function(){switchTab(t)});
 });
 ['rprice','rstock','rorders','raccounts'].forEach(function(s){
 var subBtn=document.getElementById('subtab-'+s);
