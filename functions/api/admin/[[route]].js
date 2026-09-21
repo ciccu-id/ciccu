@@ -1,5 +1,5 @@
 import{hashNewPassword,nowStr}from'../../lib/auth-reseller.js';
-import{listCatalog,setResellerPrice,setTemplate,listStock,addStock,addStockBulk,updateStockFields,disableStock,deleteAvailableStock,countAvailable,lowStock,getOrder,listOrderCredentials,audit}from'../../lib/db.js';
+import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,listStock,addStock,addStockBulk,updateStockFields,disableStock,deleteAvailableStock,countAvailable,lowStock,getOrder,listOrderCredentials,audit}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder}from'../../lib/fulfillment.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, x-admin-password'};
 function truncate(s,m){return s?String(s).slice(0,m):''}
@@ -116,40 +116,29 @@ if(isNaN(id))return err('ID tidak valid',400);
 await env.DB.prepare('DELETE FROM testimonials WHERE id=?').bind(id).run();
 return json({success:true});
 }
-if(q==='/resellers'&&m==='GET'){const r=await env.DB.prepare('SELECT id,username,display_name,status,failed_attempts,locked_until,last_login_at,created_at FROM rsl_resellers ORDER BY id').all();return json(r.results)}
-if(q==='/resellers'&&m==='POST'){
-const username=String(b.username||'').trim().slice(0,50);
-const password=String(b.password||'').slice(0,200);
-const dn=String(b.display_name||'').slice(0,100);
-if(!username||!password||password.length<8)return err('Username & password minimal 8 karakter wajib',400);
-const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
-if(ex)return err('Username sudah dipakai',400);
-const h=await hashNewPassword(password);
-await env.DB.prepare('INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name) VALUES(?,?,?,?,?)').bind(username,h.hash,h.salt,h.iter,dn||username).run();
-await audit(env,'admin',null,'reseller.create','reseller',null,{username},ip);
-return json({success:true},201);
+if(q==='/rpricelist'&&m==='GET'){const rows=await listCatalog(env);return json(rows)}
+if(q==='/rpricelist'&&m==='POST'){
+const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.duration,100),pr=truncate(b.price,50),nt=truncate(b.notes||'',500);
+if(!an||!cat||!dur||!pr)return err('Data tidak lengkap',400);
+const st=(b.status==='Sold')?'Sold':'Ready';
+const id=await createVariant(env,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999});
+await audit(env,'admin',null,'rpricelist.create','variant',id,{app:an},ip);
+return json({success:true,id:id},201);
 }
-const rm=q.match(/^\/resellers\/(\d+)$/);
-if(rm&&m==='PUT'){
-const id=num(rm[1]);
-const sets=[];const args=[];
-if(b.display_name!==undefined){sets.push('display_name=?');args.push(String(b.display_name).slice(0,100))}
-if(b.status!==undefined){const st=String(b.status);if(st!=='active'&&st!=='suspended')return err('Status tidak valid',400);sets.push('status=?');args.push(st)}
-if(b.password){const pw=String(b.password).slice(0,200);if(pw.length<8)return err('Password minimal 8 karakter',400);const h=await hashNewPassword(pw);sets.push('pass_hash=?','pass_salt=?','pass_iter=?');args.push(h.hash,h.salt,h.iter);await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE reseller_id=? AND revoked_at IS NULL').bind(nowStr(),id).run()}
-if(!sets.length)return err('Tidak ada perubahan',400);
-args.push(id);
-await env.DB.prepare('UPDATE rsl_resellers SET '+sets.join(',')+' WHERE id=?').bind(...args).run();
-await audit(env,'admin',null,'reseller.update','reseller',id,{},ip);
+const rpm=q.match(/^\/rpricelist\/(\d+)$/);
+if(rpm&&m==='PUT'){
+const id=num(rpm[1]);
+const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.duration,100),pr=truncate(b.price,50),nt=truncate(b.notes||'',500);
+if(!an||!cat||!dur||!pr)return err('Data tidak lengkap',400);
+const st=(b.status==='Sold')?'Sold':'Ready';
+await updateVariant(env,id,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999});
+await audit(env,'admin',null,'rpricelist.update','variant',id,{app:an},ip);
 return json({success:true});
 }
-if(q==='/reseller-prices'&&m==='GET'){const rows=await listCatalog(env);return json(rows)}
-const pm=q.match(/^\/reseller-prices\/(\d+)$/);
-if(pm&&m==='PUT'){
-const vid=num(pm[1]);
-const price=String(b.reseller_price||'').slice(0,50);
-if(!price)return err('Harga wajib diisi',400);
-await setResellerPrice(env,vid,price);
-await audit(env,'admin',null,'price.reseller.set','variant',vid,{price},ip);
+if(rpm&&m==='DELETE'){
+const id=num(rpm[1]);
+await deleteVariant(env,id);
+await audit(env,'admin',null,'rpricelist.delete','variant',id,{},ip);
 return json({success:true});
 }
 if(q==='/cred-templates'&&m==='GET'){const r=await env.DB.prepare('SELECT app_name,fields,updated_at FROM rsl_cred_templates ORDER BY app_name').all();return json(r.results)}
@@ -193,6 +182,32 @@ if(q==='/audit'&&m==='GET'){
 const lim=Math.min(num(url.searchParams.get('limit'))||50,200);
 const r=await env.DB.prepare('SELECT id,actor_type,actor_id,action,entity_type,entity_id,meta,ip,created_at FROM rsl_audit ORDER BY id DESC LIMIT ?').bind(lim).all();
 return json(r.results);
+}
+if(q==='/resellers'&&m==='GET'){const r=await env.DB.prepare('SELECT id,username,display_name,status,failed_attempts,locked_until,last_login_at,created_at FROM rsl_resellers ORDER BY id').all();return json(r.results)}
+if(q==='/resellers'&&m==='POST'){
+const username=String(b.username||'').trim().slice(0,50);
+const password=String(b.password||'').slice(0,200);
+const dn=String(b.display_name||'').slice(0,100);
+if(!username||!password||password.length<8)return err('Username & password minimal 8 karakter wajib',400);
+const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
+if(ex)return err('Username sudah dipakai',400);
+const h=await hashNewPassword(password,env.RES_PEPPER||'');
+await env.DB.prepare('INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name) VALUES(?,?,?,?,?)').bind(username,h.hash,h.salt,h.iter,dn||username).run();
+await audit(env,'admin',null,'reseller.create','reseller',null,{username},ip);
+return json({success:true},201);
+}
+const rm=q.match(/^\/resellers\/(\d+)$/);
+if(rm&&m==='PUT'){
+const id=num(rm[1]);
+const sets=[];const args=[];
+if(b.display_name!==undefined){sets.push('display_name=?');args.push(String(b.display_name).slice(0,100))}
+if(b.status!==undefined){const st=String(b.status);if(st!=='active'&&st!=='suspended')return err('Status tidak valid',400);sets.push('status=?');args.push(st)}
+if(b.password){const pw=String(b.password).slice(0,200);if(pw.length<8)return err('Password minimal 8 karakter',400);const h=await hashNewPassword(pw,env.RES_PEPPER||'');sets.push('pass_hash=?','pass_salt=?','pass_iter=?');args.push(h.hash,h.salt,h.iter);await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE reseller_id=? AND revoked_at IS NULL').bind(nowStr(),id).run()}
+if(!sets.length)return err('Tidak ada perubahan',400);
+args.push(id);
+await env.DB.prepare('UPDATE rsl_resellers SET '+sets.join(',')+' WHERE id=?').bind(...args).run();
+await audit(env,'admin',null,'reseller.update','reseller',id,{},ip);
+return json({success:true});
 }
 return err('Endpoint tidak ditemukan',404);
 }catch(e){
