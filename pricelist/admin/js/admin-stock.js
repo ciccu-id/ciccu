@@ -16,6 +16,8 @@ op.value=r.id;
 op.textContent=r.app_name+' • '+r.category+' • '+r.duration+' ('+r.reseller_price+')';
 sel.appendChild(op);
 });
+if(sel.value){refreshStockTemplate();loadStockList()}
+else{var info=document.getElementById('stockTemplateInfo');if(info)info.textContent='Pilih varian dari dropdown di atas.'}
 }).catch(function(e){console.error('Gagal memuat katalog stok',e)});
 }
 function loadTemplates(){
@@ -206,10 +208,10 @@ fetch('/api/admin/stock/'+stockCurrentVariant.id+'/bulk',{method:'POST',headers:
 }
 function loadStockTab(){loadStockCatalog();loadTemplates();loadLowStock()}
 document.addEventListener('DOMContentLoaded',function(){
-var btnLoad=document.getElementById('btnLoadStock');
-if(btnLoad)btnLoad.addEventListener('click',function(){refreshStockTemplate();loadStockList()});
 var sel=document.getElementById('stockVariantSelect');
 if(sel)sel.addEventListener('change',function(){refreshStockTemplate();loadStockList()});
+var btnLoad=document.getElementById('btnLoadStock');
+if(btnLoad)btnLoad.addEventListener('click',function(){refreshStockTemplate();loadStockList()});
 var bTpl=document.getElementById('btnOpenTpl');
 if(bTpl)bTpl.addEventListener('click',openTemplateModal);
 var bAdd=document.getElementById('btnOpenAddStock');
