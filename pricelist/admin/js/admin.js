@@ -14,7 +14,7 @@ var loading=ce('div','loading-state');
 loading.appendChild(ce('div','loader'));
 loading.appendChild(ce('p',null,'Memuat data...'));
 list.appendChild(loading);
-fetch('/api/pricelist',{headers:{'x-admin-password':sessionPass}})
+fetch('/api/admin/pricelist',{headers:{'x-admin-password':sessionPass}})
 .then(function(r){if(!r.ok)throw new Error('Server: '+r.status);return r.json()})
 .then(function(data){
 if(!Array.isArray(data))throw new Error('Data bukan format tabel');
@@ -23,7 +23,7 @@ var aA=(a.app_sort_order&&a.app_sort_order>0)?a.app_sort_order:9999,bA=(b.app_so
 var aP=(a.sort_order&&a.sort_order>0)?a.sort_order:9999,bP=(b.sort_order&&b.sort_order>0)?b.sort_order:9999;
 return(aA-bA)||(aP-bP)||(a.id-b.id);
 });
-return fetch('/api/forms',{headers:{'x-admin-password':sessionPass}});
+return fetch('/api/admin/forms',{headers:{'x-admin-password':sessionPass}});
 })
 .then(function(r){return r.json()})
 .then(function(formData){
@@ -34,8 +34,7 @@ filterAdminList();
 })
 .catch(function(e){
 while(list.firstChild)list.removeChild(list.firstChild);
-var errDiv=ce('div','empty-state','Gagal memuat data! '+e.message);
-list.appendChild(errDiv);
+list.appendChild(ce('div','empty-state','Gagal memuat data! '+e.message));
 });
 }
 function filterAdminList(){
@@ -80,10 +79,9 @@ group.setAttribute('data-app',exactAppName);
 var header=ce('div','app-header '+(isAllSold?'app-header-gray':'app-header-pink')+(isExpanded?' open':''));
 var headerInfo=ce('div','app-header-info');
 var nameRow=ce('h3','app-header-name'+(isAllSold?' sold':''),appName);
-if(isAllSold){var soldBadge=ce('span',null,' ');soldBadge.style.cssText='font-size:.5rem;background:var(--red100);color:var(--red500);border:1px solid var(--red200);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem';soldBadge.textContent='Habis';nameRow.appendChild(soldBadge)}
+if(isAllSold){var soldBadge=ce('span',null,'Habis');soldBadge.style.cssText='font-size:.5rem;background:var(--brick-50);color:var(--brick-500);border:1px solid var(--brick-200);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem';nameRow.appendChild(soldBadge)}
 headerInfo.appendChild(nameRow);
-var formText=parsedFields.length>0?'📋 Form Pembeli: '+parsedFields.join(', '):'🌸 Tidak memakai formulir khusus';
-headerInfo.appendChild(ce('p','app-header-form',formText));
+headerInfo.appendChild(ce('p','app-header-form',parsedFields.length>0?'📋 Form Pembeli: '+parsedFields.join(', '):'🌸 Tidak memakai formulir khusus'));
 var countWrap=ce('div','app-header-count');
 countWrap.appendChild(ce('span',null,packages.length+' Paket'));
 headerInfo.appendChild(countWrap);
@@ -157,11 +155,9 @@ main.appendChild(cb);
 var info=ce('div','pkg-info');
 var infoLine=ce('p','pkg-info-line');
 infoLine.appendChild(ce('span',null,item.category+' • '));
-var durSpan=ce('span','app-name',item.duration);
-infoLine.appendChild(durSpan);
+infoLine.appendChild(ce('span','app-name',item.duration));
 infoLine.appendChild(ce('span',null,' • '));
-var priceSpan=ce('span','price',item.price);
-infoLine.appendChild(priceSpan);
+infoLine.appendChild(ce('span','price',item.price));
 if(item.flash_price&&item.flash_price.trim()!=='')infoLine.appendChild(ce('span','pkg-flash-badge','⚡FLASH'));
 info.appendChild(infoLine);
 if(item.notes&&item.notes.toLowerCase()!=='nan')info.appendChild(ce('p','pkg-note','↳ '+item.notes));
@@ -227,10 +223,7 @@ onEnd:function(){
 var items=container.querySelectorAll('.pkg-row');
 var newOrder=[];
 items.forEach(function(el,index){newOrder.push({id:parseInt(el.getAttribute('data-id'),10),sort_order:index+1})});
-newOrder.forEach(function(o){
-var dataItem=globalAdminData.find(function(d){return d.id===o.id});
-if(dataItem)dataItem.sort_order=o.sort_order;
-});
+newOrder.forEach(function(o){var d=globalAdminData.find(function(x){return x.id===o.id});if(d)d.sort_order=o.sort_order});
 filterAdminList();
 fetch('/api/admin/pricelist/reorder',{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({order:newOrder})})
 .then(handleResponseStatus)
@@ -251,7 +244,7 @@ var order=(item.app_sort_order&&item.app_sort_order>0)?item.app_sort_order:9999;
 if(!appOrders[item.app_name]||order<appOrders[item.app_name])appOrders[item.app_name]=order;
 if(!appFirstIds[item.app_name]||item.id<appFirstIds[item.app_name])appFirstIds[item.app_name]=item.id;
 });
-var uniqueApps=[];var seen={};
+var uniqueApps=[],seen={};
 globalAdminData.forEach(function(d){if(!seen[d.app_name]){seen[d.app_name]=true;uniqueApps.push(d.app_name)}});
 uniqueApps.sort(function(a,b){return(appOrders[a]-appOrders[b])||(appFirstIds[a]-appFirstIds[b])});
 uniqueApps.forEach(function(appName,index){
@@ -313,10 +306,7 @@ function renderFormBuilderFields(){
 var container=document.getElementById('formFieldsContainer');
 if(!container)return;
 while(container.firstChild)container.removeChild(container.firstChild);
-if(!builderFields.length){
-container.appendChild(ce('div','empty-state','Belum ada kolom form 🌸'));
-return;
-}
+if(!builderFields.length){container.appendChild(ce('div','empty-state','Belum ada kolom form 🌸'));return}
 builderFields.forEach(function(f,i){
 var row=ce('div','form-field-row');
 row.appendChild(ce('span','form-field-num',String(i+1)));
