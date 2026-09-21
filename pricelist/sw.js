@@ -1,40 +1,13 @@
-const CACHE_NAME = 'ciccu-cache-v5';
-const urlsToCache = [
-  './index.html',
-  './script.js',
-  './flashsale.js',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+var CACHE='ciccu-v1';
+var ASSETS=['./index.html','./css/style.css','./css/custom.css','./js/flashsale.js','./js/cart.js','./js/pricelist.js','./js/welcome.js','./js/app.js','./manifest.json','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',function(e){
+e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(ASSETS)}));
 });
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+self.addEventListener('activate',function(e){
+e.waitUntil(caches.keys().then(function(keys){
+return Promise.all(keys.map(function(k){if(k!==CACHE)return caches.delete(k)}));
+}));
 });
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+self.addEventListener('fetch',function(e){
+e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request)}));
 });
