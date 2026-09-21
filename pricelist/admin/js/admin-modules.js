@@ -1,7 +1,29 @@
 var sessionPass='',globalAdminData=[],globalFormsData={},testimoniDataCache={};
 var sortableFlashSale=null,currentReplyId=null;
+var TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
+var adminTurnstileId=null;
 function escapeHTML(str){if(!str)return'';return String(str).replace(/[&<>'"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]})}
 function ce(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined&&x!==null)e.textContent=x;return e}
+function ensureTurnstile(cb){
+if(window.turnstile)return cb();
+var n=0;
+var iv=setInterval(function(){
+n++;
+if(window.turnstile){clearInterval(iv);cb()}
+else if(n>40){clearInterval(iv)}
+},250);
+}
+function renderAdminTurnstile(){
+if(!document.getElementById('turnstileWidget'))return;
+if(adminTurnstileId!==null&&window.turnstile){try{turnstile.remove(adminTurnstileId)}catch(e){}}
+adminTurnstileId=turnstile.render('#turnstileWidget',{sitekey:TURNSTILE_SITE_KEY});
+}
+function getAdminTurnstileToken(){
+if(window.turnstile&&adminTurnstileId!==null){try{var t=turnstile.getResponse(adminTurnistleFix())||turnstile.getResponse(adminTurnstileId);if(t)return t}catch(e){}}
+var el=document.querySelector('[name="cf-turnstile-response"]');
+return el?el.value:'';
+}
+function adminTurnistleFix(){return adminTurnstileId}
 function handleResponseStatus(res){
 if(res.status===403){alert('Gagal memproses! Password admin Anda salah atau sesi berakhir.');logoutAdmin();throw new Error('Unauthorized')}
 if(!res.ok)throw new Error('Server response error: '+res.status);
@@ -18,28 +40,28 @@ if(typeof loadData==='function')loadData();
 }else{
 if(overlay)overlay.style.display='flex';
 if(main)main.style.display='none';
+ensureTurnstile(renderAdminTurnstile);
 }
 }
 function loginAdmin(){
 var input=document.getElementById('adminPasswordInput');
 if(!input||!input.value)return alert('Isi passwordnya dulu ya!');
-var turnstileToken=document.querySelector('[name="cf-turnstile-response"]');
-var token=turnstileToken?turnstileToken.value:'';
-if(!token)return alert('Mohon tunggu dan selesaikan verifikasi keamanan Captcha terlebih dahulu ya! 🎀');
+var token=getAdminTurnstileToken();
+if(!token)return alert('Mohon tunggu dan selesaikan verifikasi keamanan Captcha terlebih dahulu ya!');
 var btn=document.getElementById('btnLogin');
 var oldText=btn?btn.textContent:'';
-if(btn){btn.textContent='Memverifikasi... ✨';btn.disabled=true}
+if(btn){btn.textContent='Memverifikasi...';btn.disabled=true}
 fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:input.value,turnstileResponse:token})})
 .then(function(res){
-if(res.ok){sessionStorage.setItem('ciccuAdminPass',input.value);if(typeof turnstile!=='undefined')turnstile.reset();checkSession()}
-else return res.json().then(function(d){alert(d.error||'Gagal login.');if(typeof turnstile!=='undefined')turnstile.reset();throw new Error('login failed')});
+if(res.ok){sessionStorage.setItem('ciccuAdminPass',input.value);if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId);checkSession()}
+else return res.json().then(function(d){alert(d.error||'Gagal login.');if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId);throw new Error('login failed')});
 })
-.catch(function(e){if(e.message!=='login failed')alert('Terjadi kesalahan jaringan.');if(typeof turnstile!=='undefined')turnstile.reset()})
+.catch(function(e){if(e.message!=='login failed')alert('Terjadi kesalahan jaringan.');if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId)})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function logoutAdmin(){sessionStorage.removeItem('ciccuAdminPass');location.reload()}
 function switchTab(tabName){
-var sections=['produk','flashsale','testimoni','pengaturan'];
+var sections=['produk','flashsale','stok','pesanan','reseller','testimoni','pengaturan'];
 for(var i=0;i<sections.length;i++){
 var sec=document.getElementById('section-'+sections[i]);
 var tab=document.getElementById('tab-'+sections[i]);
@@ -51,6 +73,9 @@ if(bulkBar)bulkBar.classList.remove('visible');
 if(tabName==='flashsale'){loadFlashSaleSettings();renderFlashSaleItems()}
 else if(tabName==='testimoni')loadAdminTestimoni();
 else if(tabName==='pengaturan')loadStoreSettings();
+else if(tabName==='stok'){if(typeof loadStockTab==='function')loadStockTab()}
+else if(tabName==='pesanan'){if(typeof loadOrders==='function')loadOrders()}
+else if(tabName==='reseller'){if(typeof loadResellers==='function')loadResellers()}
 else if(tabName==='produk'&&typeof updateBulkUI==='function')updateBulkUI();
 }
 function loadStoreSettings(){
@@ -80,7 +105,7 @@ function saveStoreSettings(e){
 e.preventDefault();
 var btn=document.getElementById('btnSaveSettings');
 var oldText=btn?btn.textContent:'';
-if(btn){btn.textContent='Menyimpan... ✨';btn.disabled=true}
+if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
 var payload={
 is_closed:document.getElementById('storeClosedToggle').checked,
 auto_schedule:document.getElementById('autoScheduleToggle').checked,
@@ -113,7 +138,7 @@ function saveFlashSaleSettings(e){
 e.preventDefault();
 var btn=document.getElementById('btnSaveFlashSale');
 var oldText=btn?btn.textContent:'';
-if(btn){btn.textContent='Menyimpan... ⚡';btn.disabled=true}
+if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
 fetch('/api/admin/settings',{headers:{'x-admin-password':sessionPass}})
 .then(function(r){return r.json()})
 .then(function(current){
@@ -151,16 +176,12 @@ return(aF-bF)||(aA-bA)||(aP-bP)||(a.id-b.id);
 });
 if(countEl)countEl.textContent=flashItems.length+' item';
 while(list.firstChild)list.removeChild(list.firstChild);
-if(!flashItems.length){list.appendChild(ce('div','empty-state','Belum ada item Flash Sale 🥺'));return}
+if(!flashItems.length){list.appendChild(ce('div','empty-state','Belum ada item Flash Sale'));return}
 flashItems.forEach(function(item){
 var row=ce('div','fs-item');
 row.setAttribute('data-id',item.id);
 var drag=ce('div','fs-drag');
-var dragSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-dragSvg.setAttribute('viewBox','0 0 24 24');dragSvg.setAttribute('fill','none');dragSvg.setAttribute('stroke','currentColor');dragSvg.setAttribute('stroke-width','2');
-var dragPath=document.createElementNS('http://www.w3.org/2000/svg','path');
-dragPath.setAttribute('d','M4 8h16M4 16h16');
-dragSvg.appendChild(dragPath);drag.appendChild(dragSvg);
+drag.appendChild(admSvg('M4 8h16M4 16h16','1rem','1rem'));
 row.appendChild(drag);
 var info=ce('div','fs-item-info');
 info.appendChild(ce('p','fs-item-name',item.app_name+' • '+item.category+' • '+item.duration));
@@ -173,13 +194,11 @@ row.appendChild(info);
 var actions=ce('div','fs-item-actions');
 var editBtn=ce('button','fs-edit-btn','Edit');
 editBtn.setAttribute('type','button');
-editBtn.setAttribute('data-edit-fs-id',item.id);
-editBtn.addEventListener('click',function(){var id=parseInt(this.getAttribute('data-edit-fs-id'),10);if(!isNaN(id))editFlashSaleItem(id)});
+editBtn.addEventListener('click',function(){editFlashSaleItem(item.id)});
 actions.appendChild(editBtn);
 var removeBtn=ce('button','fs-remove-btn','Hapus');
 removeBtn.setAttribute('type','button');
-removeBtn.setAttribute('data-remove-fs-id',item.id);
-removeBtn.addEventListener('click',function(){var id=parseInt(this.getAttribute('data-remove-fs-id'),10);if(!isNaN(id))removeFromFlashSale(id)});
+removeBtn.addEventListener('click',function(){removeFromFlashSale(item.id)});
 actions.appendChild(removeBtn);
 row.appendChild(actions);
 list.appendChild(row);
@@ -209,7 +228,7 @@ switchTab('produk');
 setTimeout(function(){if(typeof editPackage==='function')editPackage(id)},100);
 }
 function removeFromFlashSale(id){
-if(!confirm('Hapus item ini dari Flash Sale? Item tetap ada di daftar produk, hanya tidak ikut Flash Sale lagi.'))return;
+if(!confirm('Hapus item ini dari Flash Sale? Item tetap ada di daftar produk.'))return;
 var item=globalAdminData.find(function(d){return d.id===id});
 if(!item)return;
 fetch('/api/admin/pricelist/'+id,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({app_name:item.app_name,category:item.category,duration:item.duration,price:item.price,status:item.status,notes:item.notes||'',flash_price:''})})
@@ -245,11 +264,7 @@ nameDiv.appendChild(ce('p','testi-text',item.komentar));
 header.appendChild(nameDiv);
 var delBtn=ce('button','testi-del-btn');
 delBtn.setAttribute('type','button');
-var delSvg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-delSvg.setAttribute('viewBox','0 0 24 24');delSvg.setAttribute('fill','none');delSvg.setAttribute('stroke','currentColor');delSvg.setAttribute('stroke-width','2');
-var delPath=document.createElementNS('http://www.w3.org/2000/svg','path');
-delPath.setAttribute('d','M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16');
-delSvg.appendChild(delPath);delBtn.appendChild(delSvg);
+delBtn.appendChild(admSvg('M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16','1rem','1rem'));
 delBtn.addEventListener('click',function(){deleteAdminTestimoni(item.id)});
 header.appendChild(delBtn);
 testiItem.appendChild(header);
@@ -322,7 +337,7 @@ var passInput=document.getElementById('adminPasswordInput');
 if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter')loginAdmin()});
 var btnLogout=document.getElementById('btnLogout');
 if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
-['produk','flashsale','testimoni','pengaturan'].forEach(function(t){
+['produk','flashsale','stok','pesanan','reseller','testimoni','pengaturan'].forEach(function(t){
 var tabBtn=document.getElementById('tab-'+t);
 if(tabBtn)tabBtn.addEventListener('click',function(){switchTab(t)});
 });
@@ -368,5 +383,8 @@ var replyCancelBtn=document.getElementById('replyCancelBtn');
 if(replyCancelBtn)replyCancelBtn.addEventListener('click',closeAdminReplyModal);
 var replyForm=document.getElementById('replyTestimoniForm');
 if(replyForm)replyForm.addEventListener('submit',submitAdminReply);
+var orderDetailClose=document.getElementById('orderDetailClose');
+if(orderDetailClose)orderDetailClose.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
 checkSession();
+ensureTurnstile(renderAdminTurnstile);
 });
