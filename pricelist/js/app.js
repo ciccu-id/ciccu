@@ -3,6 +3,13 @@ if('serviceWorker'in navigator){navigator.serviceWorker.register('sw.js').catch(
 createCartPanel();
 createCheckoutPanel();
 createToast();
+function syncScrollLock(){
+var open=document.querySelector('.modal-overlay:not(.hidden),.checkout-overlay:not(.hidden),.store-closed-overlay:not(.hidden)');
+document.body.style.overflow=open?'hidden':'';
+}
+var lockObserver=new MutationObserver(syncScrollLock);
+lockObserver.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+syncScrollLock();
 loadPricelist().then(function(){
 showWelcome();
 }).catch(function(e){
@@ -33,4 +40,3 @@ if(!container)return;
 renderWelcomeView(container);
 };
 });
-
