@@ -386,3 +386,4 @@ var replyForm=document.getElementById('replyTestimoniForm');
 if(replyForm)replyForm.addEventListener('submit',submitAdminReply);
 checkSession();
 });
+
