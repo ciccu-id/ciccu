@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Admin Panel - Ciccu Store</title>
+<link rel="manifest" href="manifest-admin.json">
+<meta name="theme-color" content="#fce7f3">
+<link rel="apple-touch-icon" href="../icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<div id="loginOverlay" class="login-overlay">
+<div class="login-box">
+<img src="https://raw.githubusercontent.com/ciccu-id/ciccu/b553f21b7c60f88452032a100f8873bfb597daf7/lp.jpeg" alt="Logo" class="login-logo">
+<h2 class="login-title">Halo, Admin! 🌸</h2>
+<p class="login-sub">Masukkan password untuk masuk.</p>
+<input type="password" id="adminPasswordInput" class="login-input" placeholder="Ketik password...">
+<div class="cf-turnstile" data-sitekey="0x4AAAAAADpiSjv84N_2_kvG"></div>
+<button type="button" id="btnLogin" class="login-btn">Masuk ✨</button>
+</div>
+</div>
+<main id="mainContent" class="admin-main" style="display:none">
+<div class="admin-header">
+<h1 class="admin-title">❤︎ Ciccu<span class="admin-title-sky">Admin</span></h1>
+<div class="admin-header-right">
+<div id="savingIndicator" class="saving-ind hidden"><span class="saving-dot"></span>Save</div>
+<button type="button" id="btnLogout" class="logout-btn">Keluar 🚪</button>
+</div>
+</div>
+<div class="tab-bar">
+<button type="button" id="tab-produk" class="tab-btn active">Kelola Produk 📦</button>
+<button type="button" id="tab-flashsale" class="tab-btn">Flash Sale ⚡</button>
+<button type="button" id="tab-testimoni" class="tab-btn">Kelola Testimoni 💬</button>
+<button type="button" id="tab-pengaturan" class="tab-btn">Pengaturan Toko ⚙️</button>
+</div>
+<div id="section-produk" class="section">
+<div class="card">
+<h2 class="card-title">➕ Tambah Data Aplikasi &amp; Paket</h2>
+<form id="addForm" class="add-form">
+<input type="text" id="appName" class="form-input span-2" placeholder="Nama Aplikasi (misal: Netflix)" required>
+<input type="text" id="appCat" class="form-input span-2" placeholder="Nama Paket (misal: 1P1U)" required>
+<input type="text" id="appDur" class="form-input" placeholder="Durasi (1 Bulan)" required>
+<input type="text" id="appPrice" class="form-input" placeholder="Harga (50K)" required>
+<select id="appStatus" class="form-input"><option value="Ready" selected>Ready</option><option value="Sold">Sold</option></select>
+<input type="text" id="appNotes" class="form-input" placeholder="Catatan (Opsional)">
+<input type="text" id="appFlashPrice" class="form-input span-2 flash-input" placeholder="Harga Flash Sale (Opsional)">
+<button type="submit" id="btnSubmit" class="submit-btn">Simpan Data ✨</button>
+</form>
+</div>
+<div class="toolbar-row">
+<button type="button" id="btnExpandAll" class="tool-btn">📂 Buka</button>
+<button type="button" id="btnCollapseAll" class="tool-btn">📁 Tutup</button>
+<button type="button" id="btnReorder" class="tool-btn sky">↕️ Urutan</button>
+<span class="tool-sep"></span>
+<button type="button" id="btnImport" class="tool-btn purple">📥 Import CSV</button>
+<button type="button" id="btnExport" class="tool-btn green">📤 Export CSV</button>
+</div>
+<div class="search-row">
+<input type="text" id="adminSearchInput" class="search-input" placeholder="Cari aplikasi atau paket...">
+</div>
+<div id="dataList" class="data-list"><div class="loading-state"><div class="loader"></div><p>Memuat data...</p></div></div>
+</div>
+<div id="section-flashsale" class="section hidden">
+<div class="card">
+<h2 class="card-title amber">⚡ Pengaturan Event Flash Sale</h2>
+<form id="flashSaleSettingsForm" class="settings-form">
+<div class="field"><label>Nama Flash Sale</label><input type="text" id="fsNameInput" class="form-input" placeholder="Contoh: Flash Sale Weekend"></div>
+<div class="field"><label>Deskripsi Singkat</label><input type="text" id="fsDescInput" class="form-input" placeholder="Contoh: Diskon spesial untuk beberapa produk pilihan!"></div>
+<div class="field-row">
+<div class="field"><label>Waktu Mulai (WIB)</label><input type="datetime-local" id="fsStartInput" class="form-input"></div>
+<div class="field"><label>Waktu Selesai (WIB)</label><input type="datetime-local" id="fsEndInput" class="form-input"></div>
+</div>
+<p class="field-hint">Flash Sale aktif otomatis saat waktu berada di antara Mulai dan Selesai. Kosongkan waktu untuk menonaktifkan.</p>
+<button type="submit" id="btnSaveFlashSale" class="submit-btn amber">Simpan Pengaturan Flash Sale ⚡</button>
+</form>
+</div>
+<div class="card">
+<div class="card-header-row">
+<h2 class="card-title amber">📦 Item Flash Sale</h2>
+<span id="fsItemCount" class="item-count">0 item</span>
+</div>
+<p class="field-hint">Geser ikon ☰ untuk mengatur urutan tampil di halaman publik. Untuk menambahkan item, isi "Harga Flash Sale" di tab Kelola Produk.</p>
+<div id="flashSaleItemList" class="fs-item-list"><div class="empty-state">Belum ada item Flash Sale 🥺</div></div>
+</div>
+</div>
+<div id="section-testimoni" class="section hidden">
+<div class="card">
+<h2 class="card-title">💬 Daftar Testimoni Pelanggan</h2>
+<div id="adminTestimoniList" class="testi-list"></div>
+</div>
+</div>
+<div id="section-pengaturan" class="section hidden">
+<div class="card">
+<h2 class="card-title">⚙️ Pengaturan Buka/Tutup Toko</h2>
+<form id="settingsForm" class="settings-form">
+<div class="toggle-row">
+<div><p class="toggle-label-text">Tutup Toko Manual</p><p class="toggle-hint">Aktifkan untuk menutup toko secara manual sekarang juga.</p></div>
+<div class="toggle-wrap"><input type="checkbox" id="storeClosedToggle" class="toggle-cb"><label for="storeClosedToggle" class="toggle-track"></label><div class="toggle-circle"></div></div>
+</div>
+<div class="toggle-row sky-bg">
+<div><p class="toggle-label-text">Jadwal Otomatis</p><p class="toggle-hint">Toko akan buka &amp; tutup otomatis mengikuti jam operasional (WIB).</p></div>
+<div class="toggle-wrap"><input type="checkbox" id="autoScheduleToggle" class="toggle-cb"><label for="autoScheduleToggle" class="toggle-track"></label><div class="toggle-circle"></div></div>
+</div>
+<div class="field-row">
+<div class="field"><label>Jam Buka (WIB)</label><input type="time" id="openTimeInput" class="form-input" required></div>
+<div class="field"><label>Jam Tutup (WIB)</label><input type="time" id="closeTimeInput" class="form-input" required></div>
+</div>
+<div class="field"><label>Pesan Pop-up Saat Tutup</label><textarea id="closeMessageInput" class="form-input" rows="3" required></textarea></div>
+<button type="submit" id="btnSaveSettings" class="submit-btn">Simpan Pengaturan ✨</button>
+</form>
+</div>
+</div>
+</main>
+<div id="editModal" class="modal-overlay hidden">
+<div class="modal-backdrop" id="editModalBackdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><h3>Edit Paket 🌸</h3><button type="button" id="editModalClose" class="modal-close-btn">✕</button></div>
+<form id="editForm" class="modal-form">
+<input type="text" id="editAppName" class="form-input" placeholder="Nama Aplikasi" required>
+<input type="text" id="editAppCat" class="form-input" placeholder="Nama Paket" required>
+<input type="text" id="editAppDur" class="form-input" placeholder="Durasi" required>
+<input type="text" id="editAppPrice" class="form-input" placeholder="Harga" required>
+<select id="editAppStatus" class="form-input"><option value="Ready">Ready</option><option value="Sold">Sold</option></select>
+<input type="text" id="editAppNotes" class="form-input" placeholder="Catatan (Opsional)">
+<input type="text" id="editAppFlashPrice" class="form-input flash-input" placeholder="Harga Flash Sale (Opsional)">
+<div class="modal-actions"><button type="button" id="editCancelBtn" class="cancel-btn">Batal</button><button type="submit" id="btnSubmitEdit" class="submit-btn">Simpan</button></div>
+</form>
+</div>
+</div>
+<div id="addPackageModal" class="modal-overlay hidden">
+<div class="modal-backdrop" id="addPkgBackdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><h3>Tambah Paket <span id="addPkgAppNameDisplay"></span></h3><button type="button" id="addPkgClose" class="modal-close-btn">✕</button></div>
+<form id="addPackageForm" class="modal-form">
+<input type="hidden" id="addPkgAppName">
+<input type="text" id="addPkgCat" class="form-input" placeholder="Nama Paket (misal: 1P1U)" required>
+<input type="text" id="addPkgDur" class="form-input" placeholder="Durasi (misal: 1 Bulan)" required>
+<input type="text" id="addPkgPrice" class="form-input" placeholder="Harga (misal: 50K)" required>
+<select id="addPkgStatus" class="form-input"><option value="Ready" selected>Ready</option><option value="Sold">Sold</option></select>
+<input type="text" id="addPkgNotes" class="form-input" placeholder="Catatan (Opsional)">
+<input type="text" id="addPkgFlashPrice" class="form-input flash-input" placeholder="Harga Flash Sale (Opsional)">
+<div class="modal-actions"><button type="button" id="addPkgCancelBtn" class="cancel-btn">Batal</button><button type="submit" id="btnSubmitAddPkg" class="submit-btn">Tambahkan</button></div>
+</form>
+</div>
+</div>
+<div id="formBuilderModal" class="modal-overlay hidden">
+<div class="modal-backdrop" id="formBuilderBackdrop"></div>
+<div class="modal-box tall">
+<div class="modal-head"><div><h3>Kelola Form Pembeli</h3><p class="modal-sub" id="builderAppName">Aplikasi</p></div><button type="button" id="formBuilderClose" class="modal-close-btn">✕</button></div>
+<div class="modal-body-scroll"><div id="formFieldsContainer" class="form-fields"></div>
+<button type="button" id="btnAddField" class="add-field-btn">＋ Tambah Kolom</button></div>
+<div class="modal-actions"><button type="button" id="formBuilderCancel" class="cancel-btn">Batal</button><button type="button" id="btnSaveForm" class="submit-btn sky">Simpan Form</button></div>
+</div>
+</div>
+<div id="reorderModal" class="modal-overlay hidden">
+<div class="modal-backdrop" id="reorderBackdrop"></div>
+<div class="modal-box tall">
+<div class="modal-head"><div><h3>Atur Urutan</h3><p class="modal-sub">Tahan ikon kanan &amp; geser</p></div><button type="button" id="reorderClose" class="modal-close-btn">✕</button></div>
+<div class="modal-body-scroll"><div id="reorderAppList" class="reorder-list"></div></div>
+<div class="modal-actions"><button type="button" id="btnSaveReorder" class="submit-btn" style="width:100%">Simpan Urutan Baru</button></div>
+</div>
+</div>
+<div id="importModal" class="modal-overlay hidden">
+<div class="modal-backdrop" id="importBackdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Import CSV ☁️</h3><p class="modal-sub">Format: app_name, category, duration, price, status, notes, flash_price</p></div><button type="button" id="importClose" class="modal-close-btn">✕</button></div>
+<div class="modal-body-scroll">
+<input type="file" id="csvFileInput" class="file-input" accept=".csv">
+<div id="csvProgress" class="csv-progress hidden">Memproses...</div>
+</div>
+<div class="modal-actions"><button type="button" id="importCancelBtn" class="cancel-btn">Batal</button><button type="button" id="btnSubmitImport" class="submit-btn">Import Data</button></div>
+</div>
+</div>
+<div id="replyTestimoniModal" class="modal-overlay hidden">
+<div class="modal-backdrop" id="replyTestiBackdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Balas Testimoni 🌸</h3><p class="modal-sub">Membalas: <span id="replyTargetName"></span></p><p class="modal-sub italic" id="replyTargetComment"></p></div><button type="button" id="replyTestiClose" class="modal-close-btn">✕</button></div>
+<form id="replyTestimoniForm" class="modal-form">
+<textarea id="replyText" class="form-input" rows="3" placeholder="Ketik balasan admin di sini... ☁️✨" required></textarea>
+<div class="modal-actions"><button type="button" id="replyCancelBtn" class="cancel-btn">Batal</button><button type="submit" class="submit-btn">Kirim Balasan</button></div>
+</form>
+</div>
+</div>
+<div id="bulkActionBar" class="bulk-bar">
+<span id="bulkCount" class="bulk-count">0 terpilih 🎀</span>
+<div class="bulk-actions">
+<button type="button" id="btnBulkReady" class="bulk-btn green">Ready</button>
+<button type="button" id="btnBulkSold" class="bulk-btn red">Sold</button>
+<button type="button" id="btnBulkDelete" class="bulk-btn red-outline">Hapus</button>
+<button type="button" id="btnBulkCancel" class="bulk-btn gray">Batal</button>
+</div>
+</div>
+<script src="js/admin-modules.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
