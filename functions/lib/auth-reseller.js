@@ -24,3 +24,4 @@ export async function revokeSession(env,request){const token=parseCookies(reques
 export function isLocked(r){return!!(r&&r.locked_until&&r.locked_until>nowStr())}
 export async function recordFailure(env,id){const r=await env.DB.prepare('SELECT failed_attempts FROM rsl_resellers WHERE id=?').bind(id).first();const n=(r?r.failed_attempts:0)+1;if(n>=MAX_FAILED)await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=0,locked_until=? WHERE id=?').bind(addMinutes(LOCK_MINUTES),id).run();else await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=? WHERE id=?').bind(n,id).run()}
 export async function resetFailures(env,id){await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=0,locked_until=NULL,last_login_at=? WHERE id=?').bind(nowStr(),id).run()}
+
