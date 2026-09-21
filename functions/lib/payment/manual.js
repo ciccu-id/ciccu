@@ -8,3 +8,4 @@ return{ok:true,providerRef:ref,instruction:{type:'manual',order_id:order.id,tota
 export async function verifyPayment(env,order){
 return{status:'pending',txId:order.provider_ref||'',raw:'manual-awaiting-admin'};
 }
+
