@@ -25,7 +25,7 @@ var inner=ce('div','cart-inner');
 var header=ce('div','cart-header');
 var left=ce('div','cart-left');
 var iconWrap=ce('div','cart-icon-wrap');
-iconWrap.appendChild(svgI('M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z','1.25rem','1.25rem'));
+iconWrap.appendChild(svgI('M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z','1rem','1rem'));
 cartBadgeEl=ce('span','cart-badge','0');
 iconWrap.appendChild(cartBadgeEl);
 left.appendChild(iconWrap);
@@ -35,18 +35,18 @@ cartTotalEl=ce('p','cart-info-total','0K');
 info.appendChild(cartTotalEl);
 left.appendChild(info);
 var right=ce('div','cart-right');
-var checkoutBtn=ce('button','btn btn-primary');
+var checkoutBtn=ce('button','cart-checkout');
 checkoutBtn.setAttribute('type','button');
 checkoutBtn.appendChild(ce('span',null,'Checkout'));
-checkoutBtn.appendChild(svgI('M14 5l7 7m0 0l-7 7m7-7H3','1rem','1rem'));
+checkoutBtn.appendChild(svgI('M14 5l7 7m0 0l-7 7m7-7H3','.75rem','.75rem'));
 checkoutBtn.addEventListener('click',function(e){e.stopPropagation();openCheckout()});
 right.appendChild(checkoutBtn);
 var toggleBtn=ce('div','cart-toggle');
 toggleBtn.id='cartToggleIcon';
-toggleBtn.appendChild(svgI('M5 15l7-7 7 7','1rem','1rem'));
+toggleBtn.appendChild(svgI('M5 15l7-7 7 7','.875rem','.875rem'));
 right.appendChild(toggleBtn);
 header.appendChild(left);header.appendChild(right);
-header.addEventListener('click',function(e){if(e.target.closest('.btn'))return;toggleSummaryList()});
+header.addEventListener('click',function(e){if(e.target.closest('.cart-checkout'))return;toggleSummaryList()});
 cartListEl=ce('div','cart-list');
 inner.appendChild(header);inner.appendChild(cartListEl);
 cartPanelEl.appendChild(inner);
@@ -55,8 +55,8 @@ document.body.appendChild(cartPanelEl);
 function toggleSummaryList(){
 isSummaryExpanded=!isSummaryExpanded;
 var icon=document.getElementById('cartToggleIcon');
-if(isSummaryExpanded){cartListEl.classList.add('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M19 9l-7-7-7-7','1rem','1rem'))}}
-else{cartListEl.classList.remove('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M5 15l7-7 7 7','1rem','1rem'))}}
+if(isSummaryExpanded){cartListEl.classList.add('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M19 9l-7-7-7-7','.875rem','.875rem'))}}
+else{cartListEl.classList.remove('open');if(icon){while(icon.firstChild)icon.removeChild(icon.firstChild);icon.appendChild(svgI('M5 15l7-7 7 7','.875rem','.875rem'))}}
 }
 function addToCart(appName,cat,dur,price){
 if(typeof isStoreClosed!=='undefined'&&isStoreClosed){if(typeof showStoreClosedModal==='function')showStoreClosedModal();return}
@@ -103,7 +103,7 @@ left.appendChild(logoWrap);
 var info=ce('div','cart-item-info');
 info.appendChild(ce('p','cart-item-name',item.app));
 var pkg=ce('p','cart-item-pkg');
-var catSpan=ce('span',null,item.cat);catSpan.style.color='var(--pk500)';catSpan.style.fontWeight='700';catSpan.style.textTransform='uppercase';
+var catSpan=ce('span',null,item.cat);catSpan.style.color='var(--choco-600)';catSpan.style.fontWeight='700';catSpan.style.textTransform='uppercase';
 pkg.appendChild(catSpan);
 if(item.isFlash)pkg.appendChild(ce('span','flash-ind','⚡'));
 pkg.appendChild(ce('span',null,' • '+item.dur));
@@ -139,7 +139,7 @@ setTimeout(function(){toastEl.classList.remove('show')},1500);
 function createToast(){
 toastEl=ce('div','toast');
 var icon=ce('div','toast-icon');
-icon.appendChild(svgI('M5 13l4 4L19 7','1.25rem','1.25rem'));
+icon.appendChild(svgI('M5 13l4 4L19 7','1rem','1rem'));
 toastEl.appendChild(icon);
 var text=ce('div','toast-text');
 text.appendChild(ce('b',null,'Ditambahkan! 💕'));
@@ -155,11 +155,10 @@ backdrop.addEventListener('click',closeCheckout);
 checkoutOverlayEl.appendChild(backdrop);
 var panel=ce('div','checkout-panel');
 var head=ce('div','checkout-head');
-var h3=ce('h3',null,'Lengkapi Data 📝');
-head.appendChild(h3);
+head.appendChild(ce('h3',null,'Lengkapi Data 📝'));
 var closeBtn=ce('button','modal-close');
 closeBtn.setAttribute('type','button');
-closeBtn.appendChild(svgI('M6 18L18 6M6 6l12 12','1.25rem','1.25rem'));
+closeBtn.appendChild(svgI('M6 18L18 6M6 6l12 12','1rem','1rem'));
 closeBtn.addEventListener('click',closeCheckout);
 head.appendChild(closeBtn);
 panel.appendChild(head);
@@ -173,7 +172,7 @@ totalRow.appendChild(checkoutTotalEl);
 foot.appendChild(totalRow);
 var waBtn=ce('button','btn btn-green');
 waBtn.setAttribute('type','button');
-waBtn.appendChild(svgI('M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z','1.25rem','1.25rem'));
+waBtn.appendChild(svgI('M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z','1.125rem','1.125rem'));
 waBtn.appendChild(ce('span',null,'Kirim Pesanan ke WA'));
 waBtn.addEventListener('click',checkoutWA);
 foot.appendChild(waBtn);
@@ -221,7 +220,7 @@ sInfo.appendChild(ce('p','checkout-group-count',group.items.length+' Paket Dipil
 sLeft.appendChild(sInfo);
 summary.appendChild(sLeft);
 var arrow=ce('div','checkout-group-arrow');
-arrow.appendChild(svgI('M19 9l-7 7-7-7','1rem','1rem'));
+arrow.appendChild(svgI('M19 9l-7 7-7-7','.875rem','.875rem'));
 summary.appendChild(arrow);
 details.appendChild(summary);
 var body=ce('div','checkout-group-body');
@@ -231,13 +230,12 @@ var itemDiv=ce('div','checkout-item');
 var itemTop=ce('div','checkout-item-top');
 var itemInfo=ce('div');
 var catP=ce('p','checkout-item-cat');
-var catB=ce('b',null,gItem.item.cat);
-catP.appendChild(catB);
+catP.appendChild(ce('b',null,gItem.item.cat));
 catP.appendChild(ce('span',null,' • '+gItem.item.dur));
 itemInfo.appendChild(catP);
 var metaP=ce('p','checkout-item-meta');
 metaP.appendChild(ce('span',null,'Harga: '+gItem.item.price));
-if(gItem.item.isFlash){var fi=ce('span','flash-ind',' ⚡');metaP.appendChild(fi)}
+if(gItem.item.isFlash)metaP.appendChild(ce('span','flash-ind',' ⚡'));
 metaP.appendChild(ce('span',null,' | Qty: '+gItem.item.qty));
 itemInfo.appendChild(metaP);
 itemTop.appendChild(itemInfo);
@@ -249,12 +247,9 @@ var sameLabel=ce('label','checkout-same-label');
 var sameCb=ce('input');
 sameCb.setAttribute('type','checkbox');
 if(gItem.item.useFirstItemData)sameCb.setAttribute('checked','');
-(function(ci){
-sameCb.addEventListener('change',function(){cart[ci].useFirstItemData=this.checked;renderCheckoutForms()});
-})(gItem.idx);
+(function(ci){sameCb.addEventListener('change',function(){cart[ci].useFirstItemData=this.checked;renderCheckoutForms()})})(gItem.idx);
 sameLabel.appendChild(sameCb);
-var sameText=ce('span',null,'Samakan dengan form '+group.items[0].item.cat+' '+group.items[0].item.dur);
-sameLabel.appendChild(sameText);
+sameLabel.appendChild(ce('span',null,'Samakan dengan form '+group.items[0].item.cat+' '+group.items[0].item.dur));
 itemDiv.appendChild(sameLabel);
 }
 if(!gItem.item.useFirstItemData){
@@ -263,9 +258,7 @@ var sepLabel=ce('label','checkout-same-label');
 var sepCb=ce('input');
 sepCb.setAttribute('type','checkbox');
 if(!gItem.item.separateForms)sepCb.setAttribute('checked','');
-(function(ci){
-sepCb.addEventListener('change',function(){cart[ci].separateForms=!this.checked;renderCheckoutForms()});
-})(gItem.idx);
+(function(ci){sepCb.addEventListener('change',function(){cart[ci].separateForms=!this.checked;renderCheckoutForms()})})(gItem.idx);
 sepLabel.appendChild(sepCb);
 sepLabel.appendChild(ce('span',null,'Gunakan data yang sama untuk semua '+gItem.item.qty+' akun pesanan ini'));
 itemDiv.appendChild(sepLabel);
@@ -301,7 +294,7 @@ itemDiv.appendChild(fieldsWrap);
 }
 }else{
 var okDiv=ce('div','checkout-same-ok');
-okDiv.appendChild(svgI('M5 13l4 4L19 7','1rem','1rem'));
+okDiv.appendChild(svgI('M5 13l4 4L19 7','.875rem','.875rem'));
 okDiv.appendChild(ce('p',null,'Data akan disalin otomatis.'));
 itemDiv.appendChild(okDiv);
 }
@@ -331,17 +324,17 @@ return;
 }}}}
 }
 var grandTotal=0;
-var text='୨ ⁺ ૮₍˶ᵔ ᵕ ᵔ˶₎აhaloo, aku mau jajan ini! ౿ \n\n';
+var text='୨  ૮˶ ᵕ ˶₎აhaloo, aku mau jajan ini! ౿ \n\n';
 for(var i=0;i<cart.length;i++){
 var item=cart[i],itemTotal=extractNumK(item.price)*item.qty;
 grandTotal+=itemTotal;
 var key=item.app.toLowerCase().trim();
 var fields=parseFormFields(appForms[key]||'');
 var flashTag=item.isFlash?' (⚡ Flash Sale)':'';
-text+='𖠗  ⊹  ☆̲  '+item.app+' — '+item.dur+'\n';
-text+='⊹ ꒰ 𓈒 ♡ ——— paket :  '+item.cat+'\n';
+text+='  ⊹  ☆̲  '+item.app+' — '+item.dur+'\n';
+text+='⊹  𓈒  ——— paket :  '+item.cat+'\n';
 text+='⊹ ꒰ 𓈒 ♡ ——— total   :  '+item.qty+' pcs\n';
-text+='⊹ ꒰ 𓈒 ♡ ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
+text+='⊹ ꒰  ♡ ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
 if(fields.length>0){
 text+='\n*DATA USER*\n';
 if(item.useFirstItemData){
@@ -370,9 +363,8 @@ text+='\n\n';
 }else text+='\n\n';
 }
 text=text.trimEnd()+'\n\n';
-text+='ఌ︎. 𓈄 total order : IDR '+formatSmartPrice(grandTotal)+' ⸝⸝ 𓇼 ఌ︎. ⟡ \n\n';
-text+=' ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β \nhave a sweet day  𖠗\n\n';
+text+='ఌ︎. 𓈄 total order : IDR '+formatSmartPrice(grandTotal)+' ⸝ 𓇼 ︎. ⟡ \n\n';
+text+=' ⑅  bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (. .*)β \nhave a sweet day  𖠗\n\n';
 text+='https://ciccu.biz.id/qris';
 window.open('https://wa.me/6283877337798?text='+encodeURIComponent(text),'_blank');
 }
-
