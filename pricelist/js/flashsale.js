@@ -132,3 +132,4 @@ else{btn.textContent='+ Tambah';btn.classList.remove('active')}
 },
 hide:function(){if(this.el)this.el.classList.add('hidden')}
 };
+
