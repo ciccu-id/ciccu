@@ -1,6 +1,7 @@
 var allApps={},orderedAppNames=[],currentCategory='all',isStoreClosed=false,storeClosedMessage='Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
 var searchTimeout=null,orderModalEl=null,orderModalListEl=null,orderModalTitleEl=null,orderModalLogoEl=null,storeClosedEl=null,currentOrderApp='';
 var BASE_URL='';
+var gridLabelMap={all:'Semua Aplikasi',streaming:'Aplikasi Streaming',music:'Aplikasi Music',editing:'Aplikasi Editing',study:'Study Needs',game:'Game'};
 var appCategoryMap={'netflix':'streaming','disney':'streaming','youtube':'streaming','viu':'streaming','iqiyi':'streaming','prime':'streaming','amazon':'streaming','hbo':'streaming','wetv':'streaming','we tv':'streaming','vidio':'streaming','crunchyroll':'streaming','loklok':'streaming','loktv':'streaming','gagaoolala':'streaming','dramabox':'streaming','apple tv':'streaming','bstation':'streaming','viki plus':'streaming','drakor id':'streaming','mango tv':'streaming','mangotv':'streaming','spotify':'music','apple music':'music','apple':'music','capcut':'editing','canva':'editing','alight motion':'editing','alight':'editing','turnitin':'study','cek turnitin':'study','cek ai':'study','chatgpt':'study','claude':'study','grok':'study','grokai':'study','ms365':'study','microsoft':'study','duolingo':'study','picsart':'editing','remini':'editing','wattpad':'study','pollar':'editing','ibis paint':'editing','quillbot':'study','meitu':'editing','camscanner':'study','grammarly':'study','viki rakuten':'streaming','wink':'editing','aio drama':'streaming','aiodrama':'streaming','aio':'streaming','ilovepdf':'study','wps office':'study','robux':'game','youku':'streaming','sushiroll':'streaming'};
 var logoMap={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'polarr.com','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
 function getAppCategory(name){var n=name.toLowerCase();for(var k in appCategoryMap){if(n.includes(k))return appCategoryMap[k]}return'lainnya'}
@@ -49,14 +50,14 @@ var toolbar=ce('div','toolbar');
 var headerBar=ce('div','header-bar');
 var backBtn=ce('button','btn-back');
 backBtn.setAttribute('type','button');
-backBtn.appendChild(svgI('M15 19l-7-7 7-7','0.875rem','0.875rem'));
+backBtn.appendChild(svgI('M15 19l-7-7 7-7','.875rem','.875rem'));
 backBtn.appendChild(ce('span',null,'Kembali'));
 backBtn.addEventListener('click',function(){if(typeof showWelcome==='function')showWelcome()});
 headerBar.appendChild(backBtn);
 var searchWrap=ce('div','search-wrap');
 var searchInput=ce('input','search-input');
 searchInput.setAttribute('type','text');
-searchInput.setAttribute('placeholder','Cari aplikasi favoritmu 🎀');
+searchInput.setAttribute('placeholder','Cari aplikasi...');
 searchInput.id='searchInput';
 searchInput.addEventListener('input',function(){
 clearTimeout(searchTimeout);
@@ -64,13 +65,13 @@ searchTimeout=setTimeout(function(){applyFilters()},300);
 });
 searchWrap.appendChild(searchInput);
 var searchIcon=ce('div','search-icon');
-searchIcon.appendChild(svgI('M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z','1.125rem','1.125rem'));
+searchIcon.appendChild(svgI('M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z','1rem','1rem'));
 searchWrap.appendChild(searchIcon);
 headerBar.appendChild(searchWrap);
 toolbar.appendChild(headerBar);
 var catBar=ce('div','cat-bar');
 var cats=['all','streaming','music','editing','study','game'];
-var catLabels={all:'SEMUA',streaming:'STREAMING',music:'MUSIC',editing:'EDITING',study:'STUDY NEEDS',game:'GAME'};
+var catLabels={all:'SEMUA',streaming:'STREAMING',music:'MUSIC',editing:'EDITING',study:'STUDY',game:'GAME'};
 cats.forEach(function(c){
 var btn=ce('button','cat-btn'+(c===currentCategory?' active':''),catLabels[c]);
 btn.setAttribute('type','button');
@@ -85,19 +86,21 @@ if(fsEl)container.appendChild(fsEl);
 var statusMsg=ce('div','loading');
 statusMsg.id='statusMessage';
 statusMsg.appendChild(ce('div','loader'));
-statusMsg.appendChild(ce('p',null,'Menyiapkan etalase toko... ☁️🌸'));
+statusMsg.appendChild(ce('p',null,'Menyiapkan etalase...'));
 container.appendChild(statusMsg);
+var gridLabel=ce('p','section-label',gridLabelMap[currentCategory]||'Semua Aplikasi');
+gridLabel.id='gridLabel';
+container.appendChild(gridLabel);
 var grid=ce('div','product-grid');
 grid.id='pricingGrid';
 var noRes=ce('div','no-results');
 noRes.id='noResults';
 noRes.classList.add('hidden');
 var noResBox=ce('div','no-results-box');
-noResBox.appendChild(ce('p',null,'Aplikasi tidak ditemukan di kategori ini 🥺'));
+noResBox.appendChild(ce('p',null,'Aplikasi tidak ditemukan 🥺'));
 noRes.appendChild(noResBox);
 grid.appendChild(noRes);
 container.appendChild(grid);
-container.appendChild(ce('div','footer','© 2026 Ciccu Store. All Rights Reserved.'));
 applyFilters();
 var sm=document.getElementById('statusMessage');
 if(sm)sm.classList.add('hidden');
@@ -109,6 +112,8 @@ btns.forEach(function(b){
 if(b.getAttribute('data-cat')===cat)b.classList.add('active');
 else b.classList.remove('active');
 });
+var lbl=document.getElementById('gridLabel');
+if(lbl)lbl.textContent=gridLabelMap[cat]||'Semua Aplikasi';
 applyFilters();
 }
 function applyFilters(){
@@ -152,7 +157,7 @@ card.appendChild(infoBtn);
 var top=ce('div','product-card-top');
 var logoUrl=getLogoUrl(name);
 if(logoUrl){var img=ce('img','product-logo');img.setAttribute('src',logoUrl);img.setAttribute('alt',name);img.setAttribute('loading','lazy');top.appendChild(img)}
-else{var ph=ce('div','product-logo-placeholder');ph.appendChild(svgI('M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z','1.25rem','1.25rem'));top.appendChild(ph)}
+else{var ph=ce('div','product-logo-placeholder');ph.appendChild(svgI('M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z','1rem','1rem'));top.appendChild(ph)}
 var badges=ce('div','product-badges');
 if(hasFlash)badges.appendChild(ce('span','badge badge-flash','⚡'));
 badges.appendChild(ce('span','badge badge-cat',getAppCategory(name)));
@@ -168,11 +173,11 @@ mid.appendChild(prices);
 card.appendChild(mid);
 var foot=ce('div','product-footer');
 var count=ce('p','product-count');
-count.appendChild(svgI('M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z','0.75rem','0.75rem'));
+count.appendChild(svgI('M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z','.625rem','.625rem'));
 count.appendChild(ce('span',null,totalPkgs+' Paket'));
 foot.appendChild(count);
 var arrow=ce('div','product-arrow');
-arrow.appendChild(svgI('M12 4v16m8-8H4','0.75rem','0.75rem'));
+arrow.appendChild(svgI('M12 4v16m8-8H4','.625rem','.625rem'));
 foot.appendChild(arrow);
 card.appendChild(foot);
 grid.insertBefore(card,noRes);
@@ -194,7 +199,7 @@ headRow.appendChild(orderModalTitleEl);
 head.appendChild(headRow);
 var closeBtn=ce('button','modal-close');
 closeBtn.setAttribute('type','button');
-closeBtn.appendChild(svgI('M6 18L18 6M6 6l12 12','1.25rem','1.25rem'));
+closeBtn.appendChild(svgI('M6 18L18 6M6 6l12 12','1rem','1rem'));
 closeBtn.addEventListener('click',closeOrderModal);
 head.appendChild(closeBtn);
 box.appendChild(head);
@@ -253,13 +258,13 @@ btnWrap.id='btn-container-'+pkgId;
 if(isSold){
 btnWrap.appendChild(ce('span','pkg-sold-label','Kosong'));
 }else{
-var addBtn=ce('button',cartQty>0?'btn btn-primary btn-sm':'btn btn-sm');
+var addBtn=ce('button','btn btn-sm');
 addBtn.setAttribute('type','button');
 addBtn.style.background=cartQty>0?'var(--choco-600)':'var(--w)';
 addBtn.style.color=cartQty>0?'var(--butter-100)':'var(--choco-600)';
 addBtn.style.border='1px solid '+(cartQty>0?'var(--choco-600)':'var(--blue-200)');
 addBtn.style.borderRadius='9999px';
-addBtn.style.padding='.375rem .75rem';
+addBtn.style.padding='.3rem .625rem';
 addBtn.style.fontSize='.625rem';
 addBtn.style.fontWeight='700';
 addBtn.textContent=cartQty>0?cartQty+' pcs ✓':'Tambah';
@@ -302,7 +307,7 @@ if(!storeClosedEl){
 storeClosedEl=ce('div','store-closed-overlay');
 var box=ce('div','store-closed-box');
 var icon=ce('div','store-closed-icon');
-icon.appendChild(svgI('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z','2rem','2rem'));
+icon.appendChild(svgI('M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z','1.75rem','1.75rem'));
 box.appendChild(icon);
 box.appendChild(ce('h3','font-logo','Ciccu Store Tutup 🌙'));
 var msgP=ce('p',null,storeClosedMessage);
