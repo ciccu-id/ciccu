@@ -195,3 +195,4 @@ if(bulkForm)bulkForm.addEventListener('submit',submitStockBulk);
 var tplForm=document.getElementById('templateForm');
 if(tplForm)tplForm.addEventListener('submit',saveTemplate);
 });
+
