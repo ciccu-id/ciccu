@@ -97,37 +97,17 @@
 <section id="section-reseller" class="section hidden">
 <div class="subtab-bar">
 <button id="subtab-rprice" class="subtab-btn active" type="button">Pricelist</button>
-<button id="subtab-rstock" class="subtab-btn" type="button">Stok/Data</button>
 <button id="subtab-rorders" class="subtab-btn" type="button">Pesanan</button>
 <button id="subtab-raccounts" class="subtab-btn" type="button">Manajemen Reseller</button>
 </div>
 <div id="rsub-rprice" class="section">
+<div id="lowStockStrip" class="stock-strip hidden"></div>
 <div class="toolbar-row">
 <button id="btnRefreshRPrice" type="button" class="tool-btn sky">↻ Muat Ulang</button>
 <span class="tool-sep"></span>
 <span class="field-hint">Harga kosong = varian tidak dijual ke reseller.</span>
 </div>
 <div id="rpriceAccordion" class="data-list"></div>
-</div>
-<div id="rsub-rstock" class="section hidden">
-<div class="card">
-<h2 class="card-title">📉 Stok Menipis</h2>
-<div id="lowStockList" class="data-list"></div>
-</div>
-<div class="card">
-<div class="card-header-row"><h2 class="card-title">📦 Manajer Stok Varian</h2><span id="stockAvailCount" class="item-count">0</span></div>
-<div class="field-row">
-<div class="field"><label for="stockVariantSelect">Varian</label><select id="stockVariantSelect" class="form-input"></select></div>
-<div class="field"><label for="btnLoadStock">&nbsp;</label><button id="btnLoadStock" type="button" class="submit-btn sky">Muat Stok</button></div>
-</div>
-<p id="stockTemplateInfo" class="field-hint"></p>
-<div class="toolbar-row">
-<button id="btnOpenTpl" type="button" class="tool-btn purple">🧩 Template Field</button>
-<button id="btnOpenAddStock" type="button" class="tool-btn green">＋ Tambah Stok</button>
-<button id="btnOpenBulk" type="button" class="tool-btn sky">⬆ Import Bulk</button>
-</div>
-<div id="stockList" class="data-list"></div>
-</div>
 </div>
 <div id="rsub-rorders" class="section hidden">
 <div class="card">
