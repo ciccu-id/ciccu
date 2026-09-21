@@ -288,3 +288,4 @@ textarea.form-input{resize:vertical}
 .sortable-ghost{opacity:.4;background:rgba(196,218,232,.2)!important;border-color:var(--blue-400)!important}
 .sortable-drag{cursor:grabbing!important}
 ::selection{background:var(--butter-200);color:var(--choco-600)}
+
