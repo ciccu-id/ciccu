@@ -189,3 +189,4 @@ var bx=netflixModalEl.querySelector('.modal-box');
 if(bd)bd.classList.remove('show');if(bx)bx.classList.remove('show');
 setTimeout(function(){netflixModalEl.classList.add('hidden')},300);
 }
+
