@@ -101,11 +101,9 @@
 <button id="subtab-raccounts" class="subtab-btn" type="button">Manajemen Reseller</button>
 </div>
 <div id="rsub-rprice" class="section">
-<div id="lowStockStrip" class="stock-strip hidden"></div>
 <div class="toolbar-row">
-<button id="btnRefreshRPrice" type="button" class="tool-btn sky">↻ Muat Ulang</button>
-<span class="tool-sep"></span>
-<span class="field-hint">Harga kosong = varian tidak dijual ke reseller.</span>
+<button id="btnAddVariant" type="button" class="tool-btn green">＋ Tambah Varian</button>
+<button id="btnImportPublic" type="button" class="tool-btn sky">⬆ Import dari Publik</button>
 </div>
 <div id="rpriceAccordion" class="data-list"></div>
 </div>
@@ -207,6 +205,30 @@
 <button id="btnAddField" type="button" class="add-field-btn">＋ Tambah Kolom</button>
 </div>
 <div class="modal-actions"><button id="formBuilderCancel" type="button" class="cancel-btn">Batal</button><button id="btnSaveForm" type="button" class="submit-btn">Simpan Form</button></div>
+</div>
+</div>
+<div id="addVariantModal" class="modal-overlay hidden">
+<div id="addVarBackdrop" class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Tambah Varian</h3><p class="modal-sub">Pilih varian publik untuk dijual ke reseller</p></div><button id="addVarClose" class="modal-close-btn" type="button">×</button></div>
+<div class="modal-body-scroll">
+<input id="addVarSearch" class="search-input" type="text" placeholder="Cari aplikasi / kategori..." style="margin-bottom:.5rem">
+<div id="addVarList" class="data-list"></div>
+</div>
+</div>
+</div>
+<div id="importPublicModal" class="modal-overlay hidden">
+<div id="importPubBackdrop" class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Import dari Publik</h3><p class="modal-sub">Salin varian publik ke pricelist reseller</p></div><button id="importPubClose" class="modal-close-btn" type="button">×</button></div>
+<div class="modal-body-scroll">
+<div class="field-row" style="margin-bottom:.5rem">
+<div class="field"><label for="importRule">Aturan Harga</label><select id="importRule" class="form-input"><option value="copy">Salin harga publik</option><option value="discount">Diskon %</option></select></div>
+<div class="field"><label for="importDiscount">Diskon (%)</label><input id="importDiscount" class="form-input" type="number" min="0" max="90" value="10"></div>
+</div>
+<div id="importPubList" class="data-list"></div>
+</div>
+<div class="modal-actions"><button id="importPubCancel" type="button" class="cancel-btn">Batal</button><button id="btnConfirmImport" type="button" class="submit-btn">Import Terpilih</button></div>
 </div>
 </div>
 <div id="credTemplateModal" class="modal-overlay hidden">
