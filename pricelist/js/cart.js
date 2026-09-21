@@ -375,3 +375,4 @@ text+=' ⑅ ౿ bisa bantu untuk prosesnya kak?  ♡ ๑ .. thank you  ౿ ⊹ (
 text+='https://ciccu.biz.id/qris';
 window.open('https://wa.me/6283877337798?text='+encodeURIComponent(text),'_blank');
 }
+
