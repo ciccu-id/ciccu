@@ -151,10 +151,7 @@ return(aF-bF)||(aA-bA)||(aP-bP)||(a.id-b.id);
 });
 if(countEl)countEl.textContent=flashItems.length+' item';
 while(list.firstChild)list.removeChild(list.firstChild);
-if(!flashItems.length){
-list.appendChild(ce('div','empty-state','Belum ada item Flash Sale 🥺'));
-return;
-}
+if(!flashItems.length){list.appendChild(ce('div','empty-state','Belum ada item Flash Sale 🥺'));return}
 flashItems.forEach(function(item){
 var row=ce('div','fs-item');
 row.setAttribute('data-id',item.id);
@@ -169,8 +166,7 @@ var info=ce('div','fs-item-info');
 info.appendChild(ce('p','fs-item-name',item.app_name+' • '+item.category+' • '+item.duration));
 var priceP=ce('p','fs-item-price');
 priceP.appendChild(ce('span',null,item.price+' → '));
-var flashSpan=ce('span','flash',item.flash_price);
-priceP.appendChild(flashSpan);
+priceP.appendChild(ce('span','flash',item.flash_price));
 if(item.status&&item.status.toLowerCase()!=='ready')priceP.appendChild(ce('span','sold-ind','(Sold)'));
 info.appendChild(priceP);
 row.appendChild(info);
@@ -178,18 +174,12 @@ var actions=ce('div','fs-item-actions');
 var editBtn=ce('button','fs-edit-btn','Edit');
 editBtn.setAttribute('type','button');
 editBtn.setAttribute('data-edit-fs-id',item.id);
-editBtn.addEventListener('click',function(){
-var id=parseInt(this.getAttribute('data-edit-fs-id'),10);
-if(!isNaN(id))editFlashSaleItem(id);
-});
+editBtn.addEventListener('click',function(){var id=parseInt(this.getAttribute('data-edit-fs-id'),10);if(!isNaN(id))editFlashSaleItem(id)});
 actions.appendChild(editBtn);
 var removeBtn=ce('button','fs-remove-btn','Hapus');
 removeBtn.setAttribute('type','button');
 removeBtn.setAttribute('data-remove-fs-id',item.id);
-removeBtn.addEventListener('click',function(){
-var id=parseInt(this.getAttribute('data-remove-fs-id'),10);
-if(!isNaN(id))removeFromFlashSale(id);
-});
+removeBtn.addEventListener('click',function(){var id=parseInt(this.getAttribute('data-remove-fs-id'),10);if(!isNaN(id))removeFromFlashSale(id)});
 actions.appendChild(removeBtn);
 row.appendChild(actions);
 list.appendChild(row);
@@ -206,10 +196,7 @@ onEnd:function(){
 var items=list.querySelectorAll('.fs-item');
 var newOrder=[];
 items.forEach(function(el,index){newOrder.push({id:parseInt(el.getAttribute('data-id'),10),flash_sort_order:index+1})});
-newOrder.forEach(function(o){
-var dataItem=globalAdminData.find(function(d){return d.id===o.id});
-if(dataItem)dataItem.flash_sort_order=o.flash_sort_order;
-});
+newOrder.forEach(function(o){var d=globalAdminData.find(function(x){return x.id===o.id});if(d)d.flash_sort_order=o.flash_sort_order});
 fetch('/api/admin/flashsale/reorder',{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({order:newOrder})})
 .then(handleResponseStatus)
 .then(function(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},2000)}})
@@ -236,11 +223,10 @@ var list=document.getElementById('adminTestimoniList');
 if(!list)return;
 while(list.firstChild)list.removeChild(list.firstChild);
 var loading=ce('div','loading-state');
-var loader=ce('div','loader');
-loading.appendChild(loader);
+loading.appendChild(ce('div','loader'));
 loading.appendChild(ce('p',null,'Memuat testimoni...'));
 list.appendChild(loading);
-fetch('/api/testimoni')
+fetch('/api/admin/testimoni',{headers:{'x-admin-password':sessionPass}})
 .then(function(r){return r.json()})
 .then(function(data){
 while(list.firstChild)list.removeChild(list.firstChild);
@@ -253,8 +239,7 @@ var testiItem=ce('div','testi-item');
 var header=ce('div','testi-header');
 var nameDiv=ce('div');
 var nameP=ce('p','testi-name',item.nama);
-var dateSpan=ce('span','testi-date',new Date(item.created_at).toLocaleDateString('id-ID'));
-nameP.appendChild(dateSpan);
+nameP.appendChild(ce('span','testi-date',new Date(item.created_at).toLocaleDateString('id-ID')));
 nameDiv.appendChild(nameP);
 nameDiv.appendChild(ce('p','testi-text',item.komentar));
 header.appendChild(nameDiv);
@@ -337,8 +322,7 @@ var passInput=document.getElementById('adminPasswordInput');
 if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter')loginAdmin()});
 var btnLogout=document.getElementById('btnLogout');
 if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
-var tabs=['produk','flashsale','testimoni','pengaturan'];
-tabs.forEach(function(t){
+['produk','flashsale','testimoni','pengaturan'].forEach(function(t){
 var tabBtn=document.getElementById('tab-'+t);
 if(tabBtn)tabBtn.addEventListener('click',function(){switchTab(t)});
 });
@@ -386,4 +370,3 @@ var replyForm=document.getElementById('replyTestimoniForm');
 if(replyForm)replyForm.addEventListener('submit',submitAdminReply);
 checkSession();
 });
-
