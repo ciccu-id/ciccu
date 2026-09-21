@@ -1,6 +1,6 @@
 var RES_SESSION=null;
 var RES_VIEW='store';
-var TURNSTILE_SITE_KEY='ISI_SITE_KEY_TURNSTILE_DISINI';
+var TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 var resTurnstileId=null;
 function ce(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined&&x!==null)e.textContent=x;return e}
 function svgI(d,w,h){var ns='http://www.w3.org/2000/svg',s=document.createElementNS(ns,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');if(w)s.style.width=w;if(h)s.style.height=h;var p=document.createElementNS(ns,'path');p.setAttribute('d',d);s.appendChild(p);return s}
