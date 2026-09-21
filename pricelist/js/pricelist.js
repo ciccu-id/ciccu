@@ -1,5 +1,6 @@
 var allApps={},orderedAppNames=[],currentCategory='all',isStoreClosed=false,storeClosedMessage='Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
 var searchTimeout=null,orderModalEl=null,orderModalListEl=null,orderModalTitleEl=null,orderModalLogoEl=null,storeClosedEl=null,currentOrderApp='';
+var BASE_URL='';
 var appCategoryMap={'netflix':'streaming','disney':'streaming','youtube':'streaming','viu':'streaming','iqiyi':'streaming','prime':'streaming','amazon':'streaming','hbo':'streaming','wetv':'streaming','we tv':'streaming','vidio':'streaming','crunchyroll':'streaming','loklok':'streaming','loktv':'streaming','gagaoolala':'streaming','dramabox':'streaming','apple tv':'streaming','bstation':'streaming','viki plus':'streaming','drakor id':'streaming','mango tv':'streaming','mangotv':'streaming','spotify':'music','apple music':'music','apple':'music','capcut':'editing','canva':'editing','alight motion':'editing','alight':'editing','turnitin':'study','cek turnitin':'study','cek ai':'study','chatgpt':'study','claude':'study','grok':'study','grokai':'study','ms365':'study','microsoft':'study','duolingo':'study','picsart':'editing','remini':'editing','wattpad':'study','pollar':'editing','ibis paint':'editing','quillbot':'study','meitu':'editing','camscanner':'study','grammarly':'study','viki rakuten':'streaming','wink':'editing','aio drama':'streaming','aiodrama':'streaming','aio':'streaming','ilovepdf':'study','wps office':'study','robux':'game','youku':'streaming','sushiroll':'streaming'};
 var logoMap={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'polarr.com','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
 function getAppCategory(name){var n=name.toLowerCase();for(var k in appCategoryMap){if(n.includes(k))return appCategoryMap[k]}return'lainnya'}
@@ -42,29 +43,16 @@ updateCartUI();
 if(typeof renderCurrentGrid==='function')renderCurrentGrid();
 if(orderModalEl&&!orderModalEl.classList.contains('hidden')&&currentOrderApp)openOrderModal(currentOrderApp);
 }
-var BASE_URL='';
 function renderPricelistView(container){
 while(container.firstChild)container.removeChild(container.firstChild);
+var toolbar=ce('div','toolbar');
+var headerBar=ce('div','header-bar');
 var backBtn=ce('button','btn-back');
 backBtn.setAttribute('type','button');
 backBtn.appendChild(svgI('M15 19l-7-7 7-7','0.875rem','0.875rem'));
 backBtn.appendChild(ce('span',null,'Kembali'));
 backBtn.addEventListener('click',function(){if(typeof showWelcome==='function')showWelcome()});
-container.appendChild(backBtn);
-var fsEl=FlashSale.render();
-if(fsEl)container.appendChild(fsEl);
-var toolbar=ce('div','toolbar');
-var catBar=ce('div','cat-bar');
-var cats=['all','streaming','music','editing','study','game'];
-var catLabels={all:'SEMUA',streaming:'STREAMING',music:'MUSIC',editing:'EDITING',study:'STUDY NEEDS',game:'GAME'};
-cats.forEach(function(c){
-var btn=ce('button','cat-btn'+(c===currentCategory?' active':''),catLabels[c]);
-btn.setAttribute('type','button');
-btn.setAttribute('data-cat',c);
-btn.addEventListener('click',function(){switchCategory(c)});
-catBar.appendChild(btn);
-});
-toolbar.appendChild(catBar);
+headerBar.appendChild(backBtn);
 var searchWrap=ce('div','search-wrap');
 var searchInput=ce('input','search-input');
 searchInput.setAttribute('type','text');
@@ -76,14 +64,27 @@ searchTimeout=setTimeout(function(){applyFilters()},300);
 });
 searchWrap.appendChild(searchInput);
 var searchIcon=ce('div','search-icon');
-searchIcon.appendChild(svgI('M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z','1.25rem','1.25rem'));
+searchIcon.appendChild(svgI('M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z','1.125rem','1.125rem'));
 searchWrap.appendChild(searchIcon);
-toolbar.appendChild(searchWrap);
+headerBar.appendChild(searchWrap);
+toolbar.appendChild(headerBar);
+var catBar=ce('div','cat-bar');
+var cats=['all','streaming','music','editing','study','game'];
+var catLabels={all:'SEMUA',streaming:'STREAMING',music:'MUSIC',editing:'EDITING',study:'STUDY NEEDS',game:'GAME'};
+cats.forEach(function(c){
+var btn=ce('button','cat-btn'+(c===currentCategory?' active':''),catLabels[c]);
+btn.setAttribute('type','button');
+btn.setAttribute('data-cat',c);
+btn.addEventListener('click',function(){switchCategory(c)});
+catBar.appendChild(btn);
+});
+toolbar.appendChild(catBar);
 container.appendChild(toolbar);
+var fsEl=FlashSale.render();
+if(fsEl)container.appendChild(fsEl);
 var statusMsg=ce('div','loading');
 statusMsg.id='statusMessage';
-var loader=ce('div','loader');
-statusMsg.appendChild(loader);
+statusMsg.appendChild(ce('div','loader'));
 statusMsg.appendChild(ce('p',null,'Menyiapkan etalase toko... ☁️🌸'));
 container.appendChild(statusMsg);
 var grid=ce('div','product-grid');
@@ -96,8 +97,7 @@ noResBox.appendChild(ce('p',null,'Aplikasi tidak ditemukan di kategori ini 🥺'
 noRes.appendChild(noResBox);
 grid.appendChild(noRes);
 container.appendChild(grid);
-var footer=ce('div','footer','© 2026 Ciccu Store. All Rights Reserved.');
-container.appendChild(footer);
+container.appendChild(ce('div','footer','© 2026 Ciccu Store. All Rights Reserved.'));
 applyFilters();
 var sm=document.getElementById('statusMessage');
 if(sm)sm.classList.add('hidden');
@@ -255,9 +255,9 @@ btnWrap.appendChild(ce('span','pkg-sold-label','Kosong'));
 }else{
 var addBtn=ce('button',cartQty>0?'btn btn-primary btn-sm':'btn btn-sm');
 addBtn.setAttribute('type','button');
-addBtn.style.background=cartQty>0?'var(--pk400)':'var(--w)';
-addBtn.style.color=cartQty>0?'var(--w)':'var(--pk400)';
-addBtn.style.border='1px solid '+(cartQty>0?'var(--pk400)':'var(--pk200)');
+addBtn.style.background=cartQty>0?'var(--choco-600)':'var(--w)';
+addBtn.style.color=cartQty>0?'var(--butter-100)':'var(--choco-600)';
+addBtn.style.border='1px solid '+(cartQty>0?'var(--choco-600)':'var(--blue-200)');
 addBtn.style.borderRadius='9999px';
 addBtn.style.padding='.375rem .75rem';
 addBtn.style.fontSize='.625rem';
@@ -269,9 +269,9 @@ addToCart(a,c,d,p);
 var qty=0;
 for(var i=0;i<cart.length;i++){if(cart[i].app===a&&cart[i].cat===c&&cart[i].dur===d){qty=cart[i].qty;break}}
 this.textContent=qty>0?qty+' pcs ✓':'Tambah';
-this.style.background=qty>0?'var(--pk400)':'var(--w)';
-this.style.color=qty>0?'var(--w)':'var(--pk400)';
-this.style.border='1px solid '+(qty>0?'var(--pk400)':'var(--pk200)');
+this.style.background=qty>0?'var(--choco-600)':'var(--w)';
+this.style.color=qty>0?'var(--butter-100)':'var(--choco-600)';
+this.style.border='1px solid '+(qty>0?'var(--choco-600)':'var(--blue-200)');
 var rowEl=document.getElementById('row-'+pid);
 if(rowEl){if(qty>0)rowEl.classList.add('in-cart');else rowEl.classList.remove('in-cart')}
 });
