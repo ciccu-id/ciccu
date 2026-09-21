@@ -35,8 +35,6 @@
 <nav class="tab-bar">
 <button id="tab-produk" class="tab-btn active" type="button">Produk</button>
 <button id="tab-flashsale" class="tab-btn" type="button">Flash Sale</button>
-<button id="tab-stok" class="tab-btn" type="button">Stok</button>
-<button id="tab-pesanan" class="tab-btn" type="button">Pesanan</button>
 <button id="tab-reseller" class="tab-btn" type="button">Reseller</button>
 <button id="tab-testimoni" class="tab-btn" type="button">Testimoni</button>
 <button id="tab-pengaturan" class="tab-btn" type="button">Pengaturan</button>
@@ -86,41 +84,42 @@
 <div id="flashSaleItemList" class="fs-item-list"></div>
 </div>
 </section>
-<section id="section-stok" class="section hidden">
+<section id="section-reseller" class="section hidden">
+<nav class="tab-bar">
+<button id="subtab-rprice" class="tab-btn active" type="button">Pricelist</button>
+<button id="subtab-rstock" class="tab-btn" type="button">Stok/Data</button>
+<button id="subtab-rorders" class="tab-btn" type="button">Pesanan</button>
+<button id="subtab-raccounts" class="tab-btn" type="button">Manajemen Reseller</button>
+</nav>
+<div id="rsub-rprice" class="section">
+<div class="toolbar-row">
+<button id="btnRefreshRPrice" type="button" class="tool-btn sky">↻ Muat Ulang</button>
+<span class="tool-sep"></span>
+<span class="field-hint">Harga kosong = varian tidak dijual ke reseller.</span>
+</div>
+<div id="rpriceAccordion" class="data-list"></div>
+</div>
+<div id="rsub-rstock" class="section hidden">
 <div class="card">
 <h2 class="card-title">📉 Stok Menipis</h2>
 <div id="lowStockList" class="data-list"></div>
 </div>
 <div class="card">
-<h2 class="card-title">🧩 Template Field Kredensial</h2>
-<form id="templateForm" class="settings-form">
-<div class="field"><label for="templateAppName">Aplikasi</label><input id="templateAppName" class="form-input" type="text" placeholder="mis. Netflix" required></div>
-<div class="field"><label for="templateFields">Field (pisahkan dengan koma)</label><input id="templateFields" class="form-input" type="text" placeholder="email, password, profile_pin"></div>
-<button id="btnSaveTemplate" type="submit" class="submit-btn sky">Simpan Template</button>
-</form>
-</div>
-<div class="card">
-<h2 class="card-title">📦 Manajer Stok Varian</h2>
+<div class="card-header-row"><h2 class="card-title">📦 Manajer Stok Varian</h2><span id="stockAvailCount" class="item-count">0</span></div>
 <div class="field-row">
 <div class="field"><label for="stockVariantSelect">Varian</label><select id="stockVariantSelect" class="form-input"></select></div>
 <div class="field"><label for="btnLoadStock">&nbsp;</label><button id="btnLoadStock" type="button" class="submit-btn sky">Muat Stok</button></div>
 </div>
 <p id="stockTemplateInfo" class="field-hint"></p>
-<div class="card-header-row"><span class="card-title">Stok Tersedia</span><span id="stockAvailCount" class="item-count">0</span></div>
-<div id="stockList" class="data-list"></div>
-<h3 class="pkg-section-label">Tambah Satuan</h3>
-<form id="stockAddForm" class="settings-form">
-<div id="stockAddFields" class="form-fields"></div>
-<button type="submit" class="submit-btn">Tambah Stok</button>
-</form>
-<h3 class="pkg-section-label">Import Massal (CSV per baris sesuai urutan template)</h3>
-<form id="stockBulkForm" class="settings-form">
-<textarea id="stockBulkText" class="form-input" rows="4" placeholder="nilai1, nilai2, nilai3"></textarea>
-<button type="submit" class="submit-btn amber">Import Bulk</button>
-</form>
+<div class="toolbar-row">
+<button id="btnOpenTpl" type="button" class="tool-btn purple">🧩 Template Field</button>
+<button id="btnOpenAddStock" type="button" class="tool-btn green">＋ Tambah Stok</button>
+<button id="btnOpenBulk" type="button" class="tool-btn sky">⬆ Import Bulk</button>
 </div>
-</section>
-<section id="section-pesanan" class="section hidden">
+<div id="stockList" class="data-list"></div>
+</div>
+</div>
+<div id="rsub-rorders" class="section hidden">
 <div class="card">
 <div class="card-header-row"><h2 class="card-title">🧾 Pesanan Reseller</h2></div>
 <div class="toolbar-row">
@@ -136,8 +135,8 @@
 </div>
 <div id="orderList" class="data-list"></div>
 </div>
-</section>
-<section id="section-reseller" class="section hidden">
+</div>
+<div id="rsub-raccounts" class="section hidden">
 <div class="card">
 <h2 class="card-title">➕ Tambah Reseller</h2>
 <form id="resellerForm" class="add-form">
@@ -150,6 +149,7 @@
 <div class="card">
 <h2 class="card-title">👥 Daftar Reseller</h2>
 <div id="resellerList" class="data-list"></div>
+</div>
 </div>
 </section>
 <section id="section-testimoni" class="section hidden">
@@ -217,6 +217,38 @@
 <div class="modal-actions"><button id="formBuilderCancel" type="button" class="cancel-btn">Batal</button><button id="btnSaveForm" type="button" class="submit-btn">Simpan Form</button></div>
 </div>
 </div>
+<div id="credTemplateModal" class="modal-overlay hidden">
+<div id="credTplBackdrop" class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Template Field Stok</h3><p id="credTplAppName" class="modal-sub"></p></div><button id="credTplClose" class="modal-close-btn" type="button">×</button></div>
+<div class="modal-body-scroll">
+<div id="credTplFieldsContainer" class="form-fields"></div>
+<button id="btnAddCredField" type="button" class="add-field-btn">＋ Tambah Field</button>
+</div>
+<div class="modal-actions"><button id="credTplCancel" type="button" class="cancel-btn">Batal</button><button id="btnSaveCredTemplate" type="button" class="submit-btn">Simpan Template</button></div>
+</div>
+</div>
+<div id="stockAddModal" class="modal-overlay hidden">
+<div id="stockAddBackdrop" class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Tambah Stok</h3><p id="stockAddVariantName" class="modal-sub"></p></div><button id="stockAddClose" class="modal-close-btn" type="button">×</button></div>
+<div class="modal-body-scroll">
+<div id="stockAddFieldsContainer" class="form-fields"></div>
+</div>
+<div class="modal-actions"><button id="stockAddCancel" type="button" class="cancel-btn">Batal</button><button id="btnSubmitStockAdd" type="button" class="submit-btn">Simpan Stok</button></div>
+</div>
+</div>
+<div id="stockBulkModal" class="modal-overlay hidden">
+<div id="stockBulkBackdrop" class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Import Bulk</h3><p id="stockBulkVariantName" class="modal-sub"></p></div><button id="stockBulkClose" class="modal-close-btn" type="button">×</button></div>
+<div class="modal-body-scroll">
+<p class="field-hint">Satu baris = satu item stok, kolom dipisah koma sesuai urutan template.</p>
+<textarea id="stockBulkText" class="form-input" rows="6" placeholder="nilai1, nilai2, nilai3"></textarea>
+</div>
+<div class="modal-actions"><button id="stockBulkCancel" type="button" class="cancel-btn">Batal</button><button id="btnSubmitStockBulk" type="button" class="submit-btn">Import</button></div>
+</div>
+</div>
 <div id="reorderModal" class="modal-overlay hidden">
 <div id="reorderBackdrop" class="modal-backdrop"></div>
 <div class="modal-box">
@@ -266,9 +298,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
 <script src="js/admin-modules.js" defer></script>
 <script src="js/admin.js" defer></script>
+<script src="js/admin-reseller-pricelist.js" defer></script>
 <script src="js/admin-stock.js" defer></script>
 <script src="js/admin-orders.js" defer></script>
 <script src="js/admin-resellers.js" defer></script>
 </body>
 </html>
-
