@@ -2,6 +2,7 @@ var sessionPass='',globalAdminData=[],globalFormsData={},testimoniDataCache={};
 var sortableFlashSale=null,currentReplyId=null;
 var TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 var adminTurnstileId=null;
+var RES_SUB='rprice';
 function escapeHTML(str){if(!str)return'';return String(str).replace(/[&<>'"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]})}
 function ce(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined&&x!==null)e.textContent=x;return e}
 function ensureTurnstile(cb){
@@ -19,11 +20,10 @@ if(adminTurnstileId!==null&&window.turnstile){try{turnstile.remove(adminTurnstil
 adminTurnstileId=turnstile.render('#turnstileWidget',{sitekey:TURNSTILE_SITE_KEY});
 }
 function getAdminTurnstileToken(){
-if(window.turnstile&&adminTurnstileId!==null){try{var t=turnstile.getResponse(adminTurnistleFix())||turnstile.getResponse(adminTurnstileId);if(t)return t}catch(e){}}
+if(window.turnstile&&adminTurnstileId!==null){try{var t=turnstile.getResponse(adminTurnstileId);if(t)return t}catch(e){}}
 var el=document.querySelector('[name="cf-turnstile-response"]');
 return el?el.value:'';
 }
-function adminTurnistleFix(){return adminTurnstileId}
 function handleResponseStatus(res){
 if(res.status===403){alert('Gagal memproses! Password admin Anda salah atau sesi berakhir.');logoutAdmin();throw new Error('Unauthorized')}
 if(!res.ok)throw new Error('Server response error: '+res.status);
@@ -60,8 +60,22 @@ else return res.json().then(function(d){alert(d.error||'Gagal login.');if(window
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function logoutAdmin(){sessionStorage.removeItem('ciccuAdminPass');location.reload()}
+function switchResellerSub(name){
+RES_SUB=name;
+var subs=['rprice','rstock','rorders','raccounts'];
+for(var i=0;i<subs.length;i++){
+var sec=document.getElementById('rsub-'+subs[i]);
+var btn=document.getElementById('subtab-'+subs[i]);
+if(sec){if(subs[i]===name)sec.classList.remove('hidden');else sec.classList.add('hidden')}
+if(btn){if(subs[i]===name)btn.classList.add('active');else btn.classList.remove('active')}
+}
+if(name==='rprice'){if(typeof loadResellerPricelist==='function')loadResellerPricelist()}
+else if(name==='rstock'){if(typeof loadStockTab==='function')loadStockTab()}
+else if(name==='rorders'){if(typeof loadOrders==='function')loadOrders()}
+else if(name==='raccounts'){if(typeof loadResellers==='function')loadResellers()}
+}
 function switchTab(tabName){
-var sections=['produk','flashsale','stok','pesanan','reseller','testimoni','pengaturan'];
+var sections=['produk','flashsale','reseller','testimoni','pengaturan'];
 for(var i=0;i<sections.length;i++){
 var sec=document.getElementById('section-'+sections[i]);
 var tab=document.getElementById('tab-'+sections[i]);
@@ -73,9 +87,7 @@ if(bulkBar)bulkBar.classList.remove('visible');
 if(tabName==='flashsale'){loadFlashSaleSettings();renderFlashSaleItems()}
 else if(tabName==='testimoni')loadAdminTestimoni();
 else if(tabName==='pengaturan')loadStoreSettings();
-else if(tabName==='stok'){if(typeof loadStockTab==='function')loadStockTab()}
-else if(tabName==='pesanan'){if(typeof loadOrders==='function')loadOrders()}
-else if(tabName==='reseller'){if(typeof loadResellers==='function')loadResellers()}
+else if(tabName==='reseller')switchResellerSub(RES_SUB);
 else if(tabName==='produk'&&typeof updateBulkUI==='function')updateBulkUI();
 }
 function loadStoreSettings(){
@@ -337,9 +349,13 @@ var passInput=document.getElementById('adminPasswordInput');
 if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter')loginAdmin()});
 var btnLogout=document.getElementById('btnLogout');
 if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
-['produk','flashsale','stok','pesanan','reseller','testimoni','pengaturan'].forEach(function(t){
+['produk','flashsale','reseller','testimoni','pengaturan'].forEach(function(t){
 var tabBtn=document.getElementById('tab-'+t);
 if(tabBtn)tabBtn.addEventListener('click',function(){switchTab(t)});
+});
+['rprice','rstock','rorders','raccounts'].forEach(function(s){
+var subBtn=document.getElementById('subtab-'+s);
+if(subBtn)subBtn.addEventListener('click',function(){switchResellerSub(s)});
 });
 var settingsForm=document.getElementById('settingsForm');
 if(settingsForm)settingsForm.addEventListener('submit',saveStoreSettings);
@@ -365,6 +381,24 @@ var formBuilderBackdrop=document.getElementById('formBuilderBackdrop');
 if(formBuilderBackdrop)formBuilderBackdrop.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
 var formBuilderCancel=document.getElementById('formBuilderCancel');
 if(formBuilderCancel)formBuilderCancel.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
+var credTplClose=document.getElementById('credTplClose');
+if(credTplClose)credTplClose.addEventListener('click',function(){var m=document.getElementById('credTemplateModal');if(m)m.classList.add('hidden')});
+var credTplBackdrop=document.getElementById('credTplBackdrop');
+if(credTplBackdrop)credTplBackdrop.addEventListener('click',function(){var m=document.getElementById('credTemplateModal');if(m)m.classList.add('hidden')});
+var credTplCancel=document.getElementById('credTplCancel');
+if(credTplCancel)credTplCancel.addEventListener('click',function(){var m=document.getElementById('credTemplateModal');if(m)m.classList.add('hidden')});
+var stockAddClose=document.getElementById('stockAddClose');
+if(stockAddClose)stockAddClose.addEventListener('click',function(){var m=document.getElementById('stockAddModal');if(m)m.classList.add('hidden')});
+var stockAddBackdrop=document.getElementById('stockAddBackdrop');
+if(stockAddBackdrop)stockAddBackdrop.addEventListener('click',function(){var m=document.getElementById('stockAddModal');if(m)m.classList.add('hidden')});
+var stockAddCancel=document.getElementById('stockAddCancel');
+if(stockAddCancel)stockAddCancel.addEventListener('click',function(){var m=document.getElementById('stockAddModal');if(m)m.classList.add('hidden')});
+var stockBulkClose=document.getElementById('stockBulkClose');
+if(stockBulkClose)stockBulkClose.addEventListener('click',function(){var m=document.getElementById('stockBulkModal');if(m)m.classList.add('hidden')});
+var stockBulkBackdrop=document.getElementById('stockBulkBackdrop');
+if(stockBulkBackdrop)stockBulkBackdrop.addEventListener('click',function(){var m=document.getElementById('stockBulkModal');if(m)m.classList.add('hidden')});
+var stockBulkCancel=document.getElementById('stockBulkCancel');
+if(stockBulkCancel)stockBulkCancel.addEventListener('click',function(){var m=document.getElementById('stockBulkModal');if(m)m.classList.add('hidden')});
 var reorderClose=document.getElementById('reorderClose');
 if(reorderClose)reorderClose.addEventListener('click',function(){if(typeof closeReorderModal==='function')closeReorderModal()});
 var reorderBackdrop=document.getElementById('reorderBackdrop');
@@ -385,6 +419,8 @@ var replyForm=document.getElementById('replyTestimoniForm');
 if(replyForm)replyForm.addEventListener('submit',submitAdminReply);
 var orderDetailClose=document.getElementById('orderDetailClose');
 if(orderDetailClose)orderDetailClose.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
+var orderDetailBackdrop=document.getElementById('orderDetailBackdrop');
+if(orderDetailBackdrop)orderDetailBackdrop.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
 checkSession();
 ensureTurnstile(renderAdminTurnstile);
 });
