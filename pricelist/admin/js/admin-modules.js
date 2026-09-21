@@ -63,7 +63,7 @@ else return res.json().then(function(d){alert(d.error||'Gagal login.');if(window
 function logoutAdmin(){sessionStorage.removeItem('ciccuAdminPass');location.reload()}
 function switchResellerSub(name){
 RES_SUB=name;
-var subs=['rprice','rstock','rorders','raccounts'];
+var subs=['rprice','rorders','raccounts'];
 for(var i=0;i<subs.length;i++){
 var sec=document.getElementById('rsub-'+subs[i]);
 var btn=document.getElementById('subtab-'+subs[i]);
@@ -71,7 +71,6 @@ if(sec){if(subs[i]===name)sec.classList.remove('hidden');else sec.classList.add(
 if(btn){if(subs[i]===name)btn.classList.add('active');else btn.classList.remove('active')}
 }
 if(name==='rprice'){if(typeof loadResellerPricelist==='function')loadResellerPricelist()}
-else if(name==='rstock'){if(typeof loadStockTab==='function')loadStockTab()}
 else if(name==='rorders'){if(typeof loadOrders==='function')loadOrders()}
 else if(name==='raccounts'){if(typeof loadResellers==='function')loadResellers()}
 }
@@ -358,7 +357,7 @@ if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
 var sbBtn=document.getElementById('sbtab-'+t);
 if(sbBtn)sbBtn.addEventListener('click',function(){switchTab(t)});
 });
-['rprice','rstock','rorders','raccounts'].forEach(function(s){
+['rprice','rorders','raccounts'].forEach(function(s){
 var subBtn=document.getElementById('subtab-'+s);
 if(subBtn)subBtn.addEventListener('click',function(){switchResellerSub(s)});
 });
