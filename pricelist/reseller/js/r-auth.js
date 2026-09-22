@@ -1,4 +1,5 @@
-import{RES,ce,resApi,resToast}from'./r-core.js';
+import{RES,resApi,resToast}from'./r-core.js';
+import{clearCart}from'./r-store.js';
 const RES_TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 let turnstileWidgetId=null;
 function ensureTurnstile(cb){
@@ -99,6 +100,7 @@ try{
 await resApi('/api/reseller/logout',{method:'POST'});
 }catch(e){}
 RES.session=null;
+clearCart();
 showLoginView();
 document.dispatchEvent(new CustomEvent('res:logged-out'));
 }
@@ -108,6 +110,8 @@ if(form)form.addEventListener('submit',handleLoginSubmit);
 const logoutBtn=document.getElementById('resLogoutBtn');
 if(logoutBtn)logoutBtn.addEventListener('click',handleLogout);
 document.addEventListener('res:session-expired',function(){
+RES.session=null;
+clearCart();
 showLoginView();
 resToast('Sesi berakhir. Silakan login ulang.');
 });
