@@ -1,129 +1,260 @@
-var RES_ORDER_LOADED={};
-function resMask(v){v=String(v==null?'':v);if(!v)return'';if(v.length<=4)return'•'.repeat(v.length);return v.slice(0,2)+'•'.repeat(Math.min(10,v.length-4))+v.slice(-2)}
-function resCopy(txt){
-if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){resToast('Disalin.')},function(){resCopyFallback(txt)});return}
-resCopyFallback(txt);
+import{RES,ce,svgI,resFmtIDR,resApi,resToast,relTime}from'./r-core.js';
+let ORDERS_TIMER=null;
+function fmtRemainRes(iso){
+if(!iso)return{text:'—',mod:'dead'};
+const t=Date.parse(String(iso).replace(' ','T')+'Z');
+if(isNaN(t))return{text:'—',mod:'dead'};
+const diff=t-Date.now();
+if(diff<=0)return{text:'Berakhir',mod:'dead'};
+let s=Math.floor(diff/1000);
+const d=Math.floor(s/86400);s-=d*86400;
+const h=Math.floor(s/3600);s-=h*3600;
+const m=Math.floor(s/60);s-=m*60;
+let txt;
+if(d>0)txt=d+'h '+h+'j '+m+'m';
+else if(h>0)txt=h+'j '+m+'m '+s+'d';
+else if(m>0)txt=m+'m '+s+'d';
+else txt=s+'d';
+let mod='ok';
+if(diff<86400000)mod='danger';
+else if(diff<604800000)mod='warn';
+return{text:txt,mod:mod};
 }
-function resCopyFallback(txt){
-var ta=ce('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
-try{document.execCommand('copy');resToast('Disalin.')}catch(e){resToast('Gagal menyalin.')}
-document.body.removeChild(ta);
+function startTicker(){
+if(ORDERS_TIMER)return;
+ORDERS_TIMER=setInterval(function(){
+const els=document.querySelectorAll('[data-cd]');
+if(!els.length)return;
+for(let i=0;i<els.length;i++){
+const el=els[i];
+const r=fmtRemainRes(el.getAttribute('data-cd'));
+if(el.textContent!==r.text)el.textContent=r.text;
+el.classList.remove('ok','warn','danger','dead');
+el.classList.add(r.mod);
 }
-function resOrderStatusClass(st){return'r-status '+String(st||'').replace(/[^a-z_]/g,'')}
-function renderOrderItems(holder,o){
-while(holder.firstChild)holder.removeChild(holder.firstChild);
-var wrap=ce('div','r-order-items');
-(o.items||[]).forEach(function(it){
-var row=ce('p','r-oi');
-row.appendChild(document.createTextNode(it.app_name+' • '+it.category+' • '+it.duration+' '));
-row.appendChild(ce('small',null,'qty '+it.qty+' × '+resFmt(it.unit_price)));
-wrap.appendChild(row);
-});
-if(o.status==='pending_payment')wrap.appendChild(ce('p','r-oi','⏳ Menunggu pembayaran / verifikasi.'));
-if(o.status==='needs_attention')wrap.appendChild(ce('p','r-oi','⚠️ Pesanan perlu perhatian admin (biasanya restok). Mohon tunggu.'));
-if(o.status==='delivered'){
-var btn=ce('button','r-mini-btn mint','🔑 Muat Data Akses');
-btn.setAttribute('type','button');
-btn.addEventListener('click',function(){btn.disabled=true;btn.textContent='Memuat...';revealOrder(o.id,wrap,btn)});
-wrap.appendChild(btn);
+},1000);
 }
-holder.appendChild(wrap);
+function orderStatusLabel(s){
+const m={
+'pending_payment':'Menunggu pembayaran',
+'delivered':'Terkirim',
+'needs_attention':'Perlu perhatian admin',
+'cancelled':'Dibatalkan',
+'refunded':'Direfund'
+};
+return m[s]||s;
 }
-function revealOrder(orderId,wrap,btn){
-resApi('/api/reseller/orders/'+orderId+'/reveal',{method:'POST'})
-.then(function(groups){
-if(groups&&groups.error){resToast(groups.error);if(btn){btn.disabled=false;btn.textContent='🔑 Muat Data Akses'}return}
-if(btn)btn.remove();
-(groups||[]).forEach(function(g){
-(g.credentials||[]).forEach(function(cr,ci){
-var fields=cr.fields||{};
-var keys=Object.keys(fields);
-var block=ce('div','r-cred');
-block.appendChild(ce('p','r-cred-title',g.app_name+' • '+g.category+' • '+g.duration+' — Akun #'+(ci+1)));
-var revealed=false;
-var rows=[];
-keys.forEach(function(k){
-var row=ce('div','r-cred-row');
-row.appendChild(ce('span',null,k));
-var val=ce('span','r-cred-val',resMask(fields[k]));
-row.appendChild(val);
-rows.push({val:val,real:fields[k]});
-block.appendChild(row);
-});
-var acts=ce('div','r-cred-actions');
-var see=ce('button','r-mini-btn','Lihat');
-see.setAttribute('type','button');
-see.addEventListener('click',function(){
-revealed=!revealed;
-rows.forEach(function(r){r.val.textContent=revealed?r.real:resMask(r.real)});
-see.textContent=revealed?'Tutup':'Lihat';
-});
-acts.appendChild(see);
-var copy=ce('button','r-mini-btn','Salin');
-copy.setAttribute('type','button');
-copy.addEventListener('click',function(){resCopy(keys.map(function(k){return k+': '+fields[k]}).join('\n'))});
-acts.appendChild(copy);
-block.appendChild(acts);
-wrap.appendChild(block);
-});
-});
-resToast('Data akses dimuat.');
-})
-.catch(function(e){if(e&&e.message==='unauthorized')return;if(btn){btn.disabled=false;btn.textContent='🔑 Muat Data Akses'}resToast('Gagal memuat data.')});
+function orderStatusPill(s){
+const map={
+delivered:'green',
+pending_payment:'amber',
+needs_attention:'amber',
+cancelled:'gray',
+refunded:'red'
+};
+return map[s]||'gray';
 }
-function renderOrderCard(o){
-var card=ce('div','r-order');
-var head=ce('div','r-order-head');
-head.appendChild(ce('span','r-order-id','Order #'+o.id));
-head.appendChild(ce('span',resOrderStatusClass(o.status),resStatusText(o.status)));
-card.appendChild(head);
-card.appendChild(ce('p','r-order-meta','Total '+resFmt(o.total_amount)+' • '+o.provider+' • '+o.created_at));
-var holder=ce('div');
-card.appendChild(holder);
-var toggle=ce('button','r-mini-btn','Detail');
-toggle.setAttribute('type','button');
-toggle.style.marginTop='.5rem';
-var open=false;
-toggle.addEventListener('click',function(){
-open=!open;
-if(open){
-if(RES_ORDER_LOADED[o.id]){renderOrderItems(holder,RES_ORDER_LOADED[o.id])}
-else{
-holder.appendChild(ce('div','r-loading','Memuat...'));
-resApi('/api/reseller/orders/'+o.id).then(function(d){
-if(d&&d.error){resToast(d.error);return}
-RES_ORDER_LOADED[o.id]=d;
-renderOrderItems(holder,d);
-}).catch(function(e){if(e&&e.message==='unauthorized')return;resToast('Gagal memuat detail.')});
-}
-toggle.textContent='Tutup';
-}else{
-while(holder.firstChild)holder.removeChild(holder.firstChild);
-toggle.textContent='Detail';
-}
-});
-card.appendChild(toggle);
-return card;
-}
-function resRenderOrders(container){
-var label=ce('p','r-section-label','Pesanan Saya');
-container.appendChild(label);
-var bar=ce('div','r-cat-bar');
-var ref=ce('button','r-cat-btn','↻ Refresh');
-ref.setAttribute('type','button');
-ref.addEventListener('click',function(){RES_ORDER_LOADED={};resRenderOrders(container)});
-bar.appendChild(ref);
-container.appendChild(bar);
-var list=ce('div');
-list.appendChild(ce('div','r-loading','Memuat pesanan...'));
-container.appendChild(list);
-resApi('/api/reseller/orders?limit=50').then(function(rows){
+export async function loadOrders(){
+const list=document.getElementById('resOrdersList');
+if(!list)return;
 while(list.firstChild)list.removeChild(list.firstChild);
-if(!rows||!rows.length){list.appendChild(ce('div','r-empty','Belum ada pesanan. Yuk belanja dulu di tab Toko.'));return}
-rows.forEach(function(o){list.appendChild(renderOrderCard(o))});
-}).catch(function(e){
-if(e&&e.message==='unauthorized')return;
+list.appendChild(ce('div','r-loading','Memuat pesanan...'));
+try{
+const rows=await resApi('/api/reseller/orders?limit=50');
+while(list.firstChild)list.removeChild(list.firstChild);
+if(!rows||!rows.length){
+list.appendChild(ce('div','r-empty','Belum ada pesanan.'));
+return;
+}
+rows.forEach(function(o){list.appendChild(renderOrderCard(o));});
+startTicker();
+setTimeout(function(){
+const els=document.querySelectorAll('[data-cd]');
+for(let i=0;i<els.length;i++){
+const el=els[i];
+const r=fmtRemainRes(el.getAttribute('data-cd'));
+el.textContent=r.text;
+el.classList.add(r.mod);
+}
+},20);
+}catch(e){
 while(list.firstChild)list.removeChild(list.firstChild);
 list.appendChild(ce('div','r-empty','Gagal memuat pesanan.'));
+}
+}
+function renderOrderCard(o){
+const card=ce('div','r-order-card');
+const head=ce('div','r-oc-head');
+const left=ce('div','r-oc-left');
+left.appendChild(ce('p','r-oc-id','Order #'+o.id));
+left.appendChild(ce('p','r-oc-time',relTime(o.created_at)));
+head.appendChild(left);
+const pill=ce('span','r-pill r-pill-'+orderStatusPill(o.status),orderStatusLabel(o.status));
+head.appendChild(pill);
+card.appendChild(head);
+const body=ce('div','r-oc-body');
+body.appendChild(ce('p','r-oc-total','Total '+resFmtIDR(o.total_amount)));
+if(o.status==='delivered'&&o.paid_at){
+body.appendChild(ce('p','r-oc-meta','Lunas '+relTime(o.paid_at)));
+}
+if(o.status==='delivered'&&o.delivered_at){
+body.appendChild(ce('p','r-oc-meta','Terkirim '+relTime(o.delivered_at)));
+}
+card.appendChild(body);
+if(o.status==='delivered'){
+const foot=ce('div','r-oc-foot');
+const det=ce('button','r-oc-btn sky','Detail');
+det.type='button';
+det.addEventListener('click',function(){viewOrderDetail(o.id);});
+foot.appendChild(det);
+const acc=ce('button','r-oc-btn green','🔑 Data Akses');
+acc.type='button';
+acc.addEventListener('click',function(){revealCredentials(o.id);});
+foot.appendChild(acc);
+card.appendChild(foot);
+}else{
+const foot=ce('div','r-oc-foot');
+const det=ce('button','r-oc-btn sky','Detail');
+det.type='button';
+det.addEventListener('click',function(){viewOrderDetail(o.id);});
+foot.appendChild(det);
+card.appendChild(foot);
+}
+return card;
+}
+async function viewOrderDetail(id){
+try{
+const o=await resApi('/api/reseller/orders/'+id);
+openModal('Detail Order #'+o.id,renderOrderDetailBody(o));
+}catch(e){
+resToast(e.message||'Gagal memuat detail.');
+}
+}
+function renderOrderDetailBody(o){
+const frag=document.createDocumentFragment();
+const stRow=ce('div','r-od-row');
+stRow.appendChild(ce('span','r-od-label','Status'));
+stRow.appendChild(ce('span','r-pill r-pill-'+orderStatusPill(o.status),orderStatusLabel(o.status)));
+frag.appendChild(stRow);
+frag.appendChild(ce('div','r-od-row',createPair('Total',resFmtIDR(o.total_amount))));
+frag.appendChild(ce('div','r-od-row',createPair('Dibuat',relTime(o.created_at))));
+if(o.paid_at)frag.appendChild(ce('div','r-od-row',createPair('Lunas',relTime(o.paid_at))));
+if(o.delivered_at)frag.appendChild(ce('div','r-od-row',createPair('Terkirim',relTime(o.delivered_at))));
+frag.appendChild(ce('p','r-od-sub','Item Pesanan'));
+(o.items||[]).forEach(function(it){
+const row=ce('div','r-od-item');
+row.appendChild(ce('p','r-od-item-name',it.app_name+' • '+it.category+' • '+it.duration));
+row.appendChild(ce('p','r-od-item-meta','qty '+it.qty+' × '+resFmtIDR(it.unit_price)+' = '+resFmtIDR(it.line_total)));
+frag.appendChild(row);
+});
+return frag;
+}
+function createPair(label,value){
+const wrap=document.createDocumentFragment();
+const p=ce('p','r-od-pair');
+p.appendChild(ce('span','r-od-label',label));
+p.appendChild(ce('span','r-od-value',value));
+return p;
+}
+async function revealCredentials(id){
+try{
+const rows=await resApi('/api/reseller/orders/'+id+'/reveal',{method:'POST'});
+openModal('Data Akses Order #'+id,renderCredentialsBody(rows));
+}catch(e){
+resToast(e.message||'Gagal memuat data akses.');
+}
+}
+function renderCredentialsBody(rows){
+const frag=document.createDocumentFragment();
+if(!rows||!rows.length){
+frag.appendChild(ce('p','r-empty','Data akses belum tersedia.'));
+return frag;
+}
+rows.forEach(function(g){
+const group=ce('div','r-cred-group');
+group.appendChild(ce('p','r-cred-title',g.app_name+' • '+g.category+' • '+g.duration+' (qty '+g.qty+')'));
+if(!g.credentials||!g.credentials.length){
+group.appendChild(ce('p','r-cred-empty','Belum ada kredensial untuk item ini.'));
+frag.appendChild(group);
+return;
+}
+g.credentials.forEach(function(cr,idx){
+const card=ce('div','r-cred-card');
+card.appendChild(ce('p','r-cred-card-title','Kredensial #'+(idx+1)));
+const fields=cr.fields||{};
+Object.keys(fields).forEach(function(k){
+const row=ce('div','r-cred-row');
+row.appendChild(ce('span','r-cred-key',k));
+const valWrap=ce('span','r-cred-val-wrap');
+valWrap.appendChild(ce('span','r-cred-val',String(fields[k])));
+const cp=ce('button','r-cred-copy');
+cp.type='button';
+cp.title='Salin';
+cp.appendChild(svgI('M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10','.75rem','.75rem'));
+cp.addEventListener('click',function(){copyText(String(fields[k]),cp);});
+valWrap.appendChild(cp);
+row.appendChild(valWrap);
+card.appendChild(row);
+});
+group.appendChild(card);
+});
+frag.appendChild(group);
+});
+return frag;
+}
+function copyText(text,btn){
+if(navigator.clipboard&&navigator.clipboard.writeText){
+navigator.clipboard.writeText(text).then(function(){
+flashCopied(btn);
+}).catch(function(){fallbackCopy(text,btn);});
+}else{
+fallbackCopy(text,btn);
+}
+}
+function fallbackCopy(text,btn){
+const ta=document.createElement('textarea');
+ta.value=text;
+ta.style.position='fixed';
+ta.style.opacity='0';
+document.body.appendChild(ta);
+ta.select();
+try{document.execCommand('copy');flashCopied(btn);}catch(e){}
+document.body.removeChild(ta);
+}
+function flashCopied(btn){
+const old=btn.innerHTML;
+btn.textContent='✓';
+setTimeout(function(){btn.innerHTML=old;},900);
+resToast('Disalin.');
+}
+function openModal(title,bodyNode){
+let overlay=document.getElementById('resGenericModal');
+if(overlay)overlay.remove();
+overlay=ce('div','r-modal-overlay');
+overlay.id='resGenericModal';
+const box=ce('div','r-modal-box');
+const head=ce('div','r-modal-head');
+head.appendChild(ce('h3',null,title));
+const close=ce('button','r-modal-close','×');
+close.type='button';
+close.addEventListener('click',function(){overlay.remove();});
+head.appendChild(close);
+box.appendChild(head);
+const body=ce('div','r-modal-body');
+body.appendChild(bodyNode);
+box.appendChild(body);
+overlay.appendChild(box);
+overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+document.body.appendChild(overlay);
+}
+export function initOrders(){
+document.addEventListener('res:logged-in',function(){
+if(RES.view==='orders')loadOrders();
+});
+document.addEventListener('res:view-changed',function(e){
+if(e.detail&&e.detail.view==='orders')loadOrders();
+});
+document.addEventListener('res:checkout-success',function(){
+if(RES.view==='orders')loadOrders();
 });
 }
