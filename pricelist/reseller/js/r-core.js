@@ -79,7 +79,7 @@ else t.style.background='';
 clearTimeout(t._tm);
 t._tm=setTimeout(function(){t.classList.remove('show')},isErr?5000:2200);
 }
-const PUBLIC_ENDPOINTS=['/api/reseller/login','/api/reseller/register','/api/reseller/whoami','/api/reseller/ping'];
+const PUBLIC_ENDPOINTS=['/api/reseller/login','/api/reseller/register'];
 export async function resApi(url,opts){
 opts=opts||{};
 var headers=opts.headers||{};
@@ -101,7 +101,6 @@ if(res.status===401){
 var had=!!RES.session;
 RES.session=null;
 setResToken(null);
-try{resToast('⚠ 401 di '+url+(had?' (sesi aktif)':'(tanpa sesi)'),true);}catch(e){}
 if(had)document.dispatchEvent(new CustomEvent('res:session-expired'));
 }
 throw new Error((data&&data.error)||('HTTP '+res.status));
