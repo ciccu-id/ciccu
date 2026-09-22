@@ -1,6 +1,16 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
 import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
+const SESSION_COOKIE='rsl_sid';
+function parseCookiesSafe(request){
+const out={};
+const header=request.headers.get('cookie')||'';
+header.split(';').forEach(function(part){
+const i=part.indexOf('=');
+if(i>0)out[part.slice(0,i).trim()]=decodeURIComponent(part.slice(i+1).trim());
+});
+return out;
+}
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
@@ -42,7 +52,15 @@ const m=request.method;
 const p=new URL(request.url).pathname.replace(/^\/api\/reseller/,'')||'/';
 if(m==='OPTIONS')return new Response(null,{status:405});
 const ip=request.headers.get('cf-connecting-ip')||'';
-if(p==='/ping'&&m==='GET')return json({ok:true,route:'reseller',v:'res-3-debug'});
+if(p==='/ping'&&m==='GET')return json({ok:true,route:'reseller',v:'res-4-whoami'});
+if(p==='/whoami'&&m==='GET'){
+const token=parseCookiesSafe(request)[SESSION_COOKIE];
+if(!token)return json({cookie:false,session:false,reason:'cookie-tidak-ada'});
+const th=await sha256hex(token);
+const row=await env.DB.prepare('SELECT s.id AS sid,s.expires_at,s.revoked_at,r.id AS rid,r.username,r.status FROM rsl_sessions s JOIN rsl_resellers r ON r.id=s.reseller_id WHERE s.token_hash=?').bind(th).first();
+if(!row)return json({cookie:true,session:false,reason:'baris-sesi-tidak-ketemu'});
+return json({cookie:true,session:true,username:row.username,status:row.status,revoked_at:row.revoked_at,expires_at:row.expires_at,now:nowStr()});
+}
 try{
 if(p==='/register'&&m==='POST'){
 const b=await body(request)||{};
@@ -170,9 +188,6 @@ return json(Object.keys(groups).map(k=>groups[k]));
 return err('Endpoint tidak ditemukan',404);
 }catch(e){
 console.error('Reseller API error:',e);
-if(p==='/register'){
-return json({error:'[debug-register] '+(e&&e.message?e.message:String(e))},500);
-}
 return err('Terjadi kesalahan di server.',500);
 }
 }
