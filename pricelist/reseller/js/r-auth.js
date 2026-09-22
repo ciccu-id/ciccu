@@ -1,4 +1,4 @@
-import{RES,resApi,resToast}from'./r-core.js';
+import{RES,resApi,resToast,setResToken}from'./r-core.js';
 import{clearCart}from'./r-store.js';
 const RES_TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 let turnstileWidgetId=null;
@@ -38,8 +38,9 @@ try{turnstile.reset(turnstileWidgetId);}catch(e){}
 export async function checkSession(){
 try{
 const me=await resApi('/api/reseller/me');
-RES.session=me;
-return true;
+if(me){RES.session=me;return true;}
+RES.session=null;
+return false;
 }catch(e){
 RES.session=null;
 return false;
@@ -97,6 +98,7 @@ const loginRes=await resApi('/api/reseller/login',{
 method:'POST',
 body:{username:username,password:password,turnstileResponse:token}
 });
+if(loginRes&&loginRes.token)setResToken(loginRes.token);
 if(loginRes&&loginRes.user){
 RES.session=loginRes.user;
 }else{
@@ -162,6 +164,7 @@ try{
 await resApi('/api/reseller/logout',{method:'POST'});
 }catch(e){}
 RES.session=null;
+setResToken(null);
 clearCart();
 showLoginView();
 document.dispatchEvent(new CustomEvent('res:logged-out'));
@@ -177,6 +180,7 @@ const logoutBtn=document.getElementById('resLogoutBtn');
 if(logoutBtn)logoutBtn.addEventListener('click',handleLogout);
 document.addEventListener('res:session-expired',function(){
 RES.session=null;
+setResToken(null);
 clearCart();
 showLoginView();
 resToast('Sesi berakhir. Silakan login ulang.');
