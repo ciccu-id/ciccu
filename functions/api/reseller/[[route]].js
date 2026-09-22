@@ -23,7 +23,7 @@ if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('
 const r=await env.DB.prepare('SELECT * FROM rsl_resellers WHERE username=?').bind(username).first();
 if(!r){await audit(env,'reseller',null,'login.fail',null,null,{username},ip);return err('Username atau password salah',401)}
 if(isLocked(r))return err('Akun terkunci sementara. Coba lagi nanti',423);
-const ok=await verifyPassword(password,r);
+const ok=await verifyPassword(password,r,env.RES_PEPPER||'');
 if(!ok){await recordFailure(env,r.id);await audit(env,'reseller',r.id,'login.fail',null,null,{username},ip);return err('Username atau password salah',401)}
 await resetFailures(env,r.id);
 const token=await createSession(env,r,request);
@@ -40,7 +40,7 @@ if(!session)return err('Sesi tidak valid. Silakan login',401);
 if(p==='/me'&&m==='GET')return json({id:session.id,username:session.username,display_name:session.display_name});
 if(p==='/catalog'&&m==='GET'){
 const rows=await listCatalog(env);
-return json(rows.filter(r=>r.reseller_price!==''));
+return json(rows);
 }
 if(p==='/checkout'&&m==='POST'){
 const b=await body(request)||{};
@@ -52,10 +52,8 @@ const vid=parseInt(it.variant_id,10);const qty=parseInt(it.qty,10);
 if(isNaN(vid)||isNaN(qty)||qty<1||qty>99)return err('Qty tidak valid',400);
 const v=await getVariant(env,vid);
 if(!v||String(v.status).toLowerCase()!=='ready')return err('Varian tidak tersedia',400);
-const pr=await env.DB.prepare('SELECT reseller_price FROM rsl_prices WHERE variant_id=?').bind(vid).first();
-if(!pr)return err('Harga reseller belum diatur untuk '+v.app_name,400);
-const unit=parsePrice(pr.reseller_price);
-if(unit<=0)return err('Harga reseller tidak valid',400);
+const unit=parsePrice(v.price);
+if(unit<=0)return err('Harga tidak valid',400);
 const avail=await countAvailable(env,vid);
 if(avail<qty)return err('Stok tidak cukup untuk '+v.app_name+' '+v.category+' '+v.duration,400);
 lines.push({variant_id:vid,app_name:v.app_name,category:v.category,duration:v.duration,qty,unit_price:unit});
@@ -107,4 +105,3 @@ console.error('Reseller API error:',e);
 return err('Terjadi kesalahan di server.',500);
 }
 }
-
