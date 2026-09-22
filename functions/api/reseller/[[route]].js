@@ -8,6 +8,14 @@ async function sha256hex(s){
 const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
 return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
+function safeAudit(){
+try{
+return Promise.resolve(audit.apply(null,arguments)).catch(function(e){console.error('audit failed:',e)});
+}catch(e){
+console.error('audit failed:',e);
+return Promise.resolve();
+}
+}
 function durationMs(str){
 if(!str)return 0;
 const s=String(str).toLowerCase();
@@ -34,6 +42,7 @@ const m=request.method;
 const p=new URL(request.url).pathname.replace(/^\/api\/reseller/,'')||'/';
 if(m==='OPTIONS')return new Response(null,{status:405});
 const ip=request.headers.get('cf-connecting-ip')||'';
+if(p==='/ping'&&m==='GET')return json({ok:true,route:'reseller',v:'res-3-debug'});
 try{
 if(p==='/register'&&m==='POST'){
 const b=await body(request)||{};
@@ -55,7 +64,7 @@ const h=await hashNewPassword(password);
 const ins=await env.DB.prepare("INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name,status) VALUES(?,?,?,?,?,'pending')").bind(username,h.hash,h.salt,h.iter,dn||username).run();
 await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(row.id).run();
 const newId=ins.meta?ins.meta.last_row_id:null;
-await audit(env,'guest',newId,'reseller.register','reseller',newId,{username:username},ip);
+await safeAudit(env,'guest',newId,'reseller.register','reseller',newId,{username:username},ip);
 return json({success:true,status:'pending',message:'Pendaftaran berhasil. Akun menunggu konfirmasi admin.'},201);
 }
 if(p==='/login'&&m==='POST'){
@@ -65,20 +74,20 @@ const password=String(b.password||'').slice(0,200);
 if(!username||!password)return err('Username dan password wajib diisi',400);
 if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
 const r=await env.DB.prepare('SELECT * FROM rsl_resellers WHERE username=?').bind(username).first();
-if(!r){await audit(env,'reseller',null,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
+if(!r){await safeAudit(env,'reseller',null,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 if(isLocked(r))return err('Akun terkunci sementara. Coba lagi nanti',423);
 const ok=await verifyPassword(password,r);
-if(!ok){await recordFailure(env,r.id);await audit(env,'reseller',r.id,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
+if(!ok){await recordFailure(env,r.id);await safeAudit(env,'reseller',r.id,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 await resetFailures(env,r.id);
-if(r.status==='pending'){await audit(env,'reseller',r.id,'login.pending',null,null,{},ip);return err('Akun Anda masih menunggu konfirmasi admin.',403)}
-if(r.status==='suspended'){await audit(env,'reseller',r.id,'login.suspended',null,null,{},ip);return err('Akun Anda dinonaktifkan. Hubungi admin.',403)}
+if(r.status==='pending'){await safeAudit(env,'reseller',r.id,'login.pending',null,null,{},ip);return err('Akun Anda masih menunggu konfirmasi admin.',403)}
+if(r.status==='suspended'){await safeAudit(env,'reseller',r.id,'login.suspended',null,null,{},ip);return err('Akun Anda dinonaktifkan. Hubungi admin.',403)}
 const token=await createSession(env,r,request);
-await audit(env,'reseller',r.id,'login.ok',null,null,{},ip);
+await safeAudit(env,'reseller',r.id,'login.ok',null,null,{},ip);
 return json({success:true},200,{'Set-Cookie':sessionCookieValue(token,isSecure(request))});
 }
 const session=await getSession(env,request);
 if(p==='/logout'&&m==='POST'){
-if(session)await audit(env,'reseller',session.id,'logout',null,null,{},ip);
+if(session)await safeAudit(env,'reseller',session.id,'logout',null,null,{},ip);
 await revokeSession(env,request);
 return json({success:true},200,{'Set-Cookie':clearCookieValue(isSecure(request))});
 }
@@ -112,7 +121,7 @@ const prov=getProvider(env);
 const orderId=await createOrder(env,session.id,lines,total,prov.name,idem);
 await appendPayment(env,orderId,prov.name,'','pending',total,'created');
 const cr=await prov.createPayment(env,{id:orderId,total_amount:total},lines);
-await audit(env,'reseller',session.id,'checkout','order',orderId,{total:total,items:lines.length},ip);
+await safeAudit(env,'reseller',session.id,'checkout','order',orderId,{total:total,items:lines.length},ip);
 return json({order_id:orderId,total:total,provider:prov.name,instruction:cr.instruction||null},201);
 }
 if(p==='/orders'&&m==='GET'){
@@ -155,12 +164,15 @@ rows.forEach(r=>{
 if(!groups[r.order_item_id])groups[r.order_item_id]={order_item_id:r.order_item_id,app_name:r.app_name,category:r.category,duration:r.duration,qty:r.qty,credentials:[]};
 if(r.stock_id&&r.fields)groups[r.order_item_id].credentials.push({stock_id:r.stock_id,fields:parseFields(r.fields)});
 });
-await audit(env,'reseller',session.id,'credentials.reveal','order',id,{items:Object.keys(groups).length},ip);
+await safeAudit(env,'reseller',session.id,'credentials.reveal','order',id,{items:Object.keys(groups).length},ip);
 return json(Object.keys(groups).map(k=>groups[k]));
 }
 return err('Endpoint tidak ditemukan',404);
 }catch(e){
 console.error('Reseller API error:',e);
+if(p==='/register'){
+return json({error:'[debug-register] '+(e&&e.message?e.message:String(e))},500);
+}
 return err('Terjadi kesalahan di server.',500);
 }
 }
