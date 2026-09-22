@@ -52,14 +52,14 @@ const m=request.method;
 const p=new URL(request.url).pathname.replace(/^\/api\/reseller/,'')||'/';
 if(m==='OPTIONS')return new Response(null,{status:405});
 const ip=request.headers.get('cf-connecting-ip')||'';
-if(p==='/ping'&&m==='GET')return json({ok:true,route:'reseller',v:'res-4-whoami'});
+if(p==='/ping'&&m==='GET')return json({ok:true,route:'reseller',v:'res-5-loginuser'});
 if(p==='/whoami'&&m==='GET'){
 const token=parseCookiesSafe(request)[SESSION_COOKIE];
 if(!token)return json({cookie:false,session:false,reason:'cookie-tidak-ada'});
 const th=await sha256hex(token);
-const row=await env.DB.prepare('SELECT s.id AS sid,s.expires_at,s.revoked_at,r.id AS rid,r.username,r.status FROM rsl_sessions s JOIN rsl_resellers r ON r.id=s.reseller_id WHERE s.token_hash=?').bind(th).first();
+const row=await env.DB.prepare('SELECT s.id AS sid,s.expires_at,s.revoked_at,r.id AS rid,r.username,r.display_name,r.status FROM rsl_sessions s JOIN rsl_resellers r ON r.id=s.reseller_id WHERE s.token_hash=?').bind(th).first();
 if(!row)return json({cookie:true,session:false,reason:'baris-sesi-tidak-ketemu'});
-return json({cookie:true,session:true,username:row.username,status:row.status,revoked_at:row.revoked_at,expires_at:row.expires_at,now:nowStr()});
+return json({cookie:true,session:true,username:row.username,display_name:row.display_name,status:row.status,revoked_at:row.revoked_at,expires_at:row.expires_at,now:nowStr()});
 }
 try{
 if(p==='/register'&&m==='POST'){
@@ -101,7 +101,7 @@ if(r.status==='pending'){await safeAudit(env,'reseller',r.id,'login.pending',nul
 if(r.status==='suspended'){await safeAudit(env,'reseller',r.id,'login.suspended',null,null,{},ip);return err('Akun Anda dinonaktifkan. Hubungi admin.',403)}
 const token=await createSession(env,r,request);
 await safeAudit(env,'reseller',r.id,'login.ok',null,null,{},ip);
-return json({success:true},200,{'Set-Cookie':sessionCookieValue(token,isSecure(request))});
+return json({success:true,user:{id:r.id,username:r.username,display_name:r.display_name}},200,{'Set-Cookie':sessionCookieValue(token,isSecure(request))});
 }
 const session=await getSession(env,request);
 if(p==='/logout'&&m==='POST'){
