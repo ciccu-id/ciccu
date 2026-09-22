@@ -1,129 +1,130 @@
-var RES_CHECKOUT_KEY='',resPollTimer=null,resCheckoutModal=null,resCheckoutOrderId=null;
-function stopResPoll(){if(resPollTimer){clearInterval(resPollTimer);resPollTimer=null}}
-function resStatusText(st){var m={'pending_payment':'Menunggu pembayaran','delivered':'Terkirim','needs_attention':'Perlu perhatian admin','cancelled':'Dibatalkan','refunded':'Direfund'};return m[st]||st}
-function createResCheckoutModal(){
-if(resCheckoutModal)return resCheckoutModal;
-var ov=ce('div','r-modal');ov.id='resCheckoutModal';ov.classList.add('hidden');
-var bd=ce('div','r-modal-bd');
-bd.addEventListener('click',closeResCheckout);
-ov.appendChild(bd);
-var box=ce('div','r-modal-box');
-var head=ce('div','r-modal-head');
-head.appendChild(ce('h3',null,'Pembayaran'));
-var close=ce('button','r-modal-close');
-close.setAttribute('type','button');
-close.appendChild(svgI('M6 18L18 6M6 6l12 12','1rem','1rem'));
-close.addEventListener('click',closeResCheckout);
+import{RES,ce,resFmtIDR,resApi,resToast,cartTotal}from'./r-core.js';
+import{clearCart}from'./r-store.js';
+function openCheckoutModal(){
+if(!RES.cart.length){
+resToast('Keranjang masih kosong.');
+return;
+}
+let overlay=document.getElementById('resCheckoutModal');
+if(overlay)overlay.remove();
+overlay=ce('div','r-modal-overlay');
+overlay.id='resCheckoutModal';
+const box=ce('div','r-modal-box');
+const head=ce('div','r-modal-head');
+head.appendChild(ce('h3',null,'Checkout'));
+const close=ce('button','r-modal-close','×');
+close.type='button';
+close.addEventListener('click',function(){overlay.remove();});
 head.appendChild(close);
 box.appendChild(head);
-var body=ce('div','r-modal-body');body.id='resCheckoutBody';
-box.appendChild(body);
-ov.appendChild(box);
-document.body.appendChild(ov);
-resCheckoutModal=ov;
-return ov;
-}
-function closeResCheckout(){
-stopResPoll();
-if(resCheckoutModal){
-var bd=resCheckoutModal.querySelector('.r-modal-bd');
-var bx=resCheckoutModal.querySelector('.r-modal-box');
-if(bd)bd.classList.remove('show');
-if(bx)bx.classList.remove('show');
-setTimeout(function(){resCheckoutModal.classList.add('hidden')},300);
-}
-}
-function openResCheckoutModal(){
-var ov=createResCheckoutModal();
-ov.classList.remove('hidden');
-var bd=ov.querySelector('.r-modal-bd');
-var bx=ov.querySelector('.r-modal-box');
-setTimeout(function(){if(bd)bd.classList.add('show');if(bx)bx.classList.add('show')},10);
-}
-function renderCheckoutBody(html){
-var body=document.getElementById('resCheckoutBody');
-if(!body)return;
-while(body.firstChild)body.removeChild(body.firstChild);
-return body;
-}
-function showCheckoutError(msg){
-var body=renderCheckoutBody();
-body.appendChild(ce('div','r-empty',msg));
-}
-function showInstruction(orderId,total,instruction){
-var body=renderCheckoutBody();
-var qr=ce('div','r-qr');
-if(instruction&&instruction.type==='qris'){
-if(instruction.qr_image){var img=ce('img');img.setAttribute('src',instruction.qr_image);img.style.margin='0 auto';img.style.maxWidth='14rem';qr.appendChild(img)}
-else if(instruction.qr_string){qr.appendChild(ce('p','r-qr-msg','Scan QR berikut untuk membayar:'));qr.appendChild(ce('pre','r-qr-code',instruction.qr_string))}
-else qr.appendChild(ce('p','r-qr-msg','Instruksi QR tidak tersedia.'));
-}else{
-qr.appendChild(ce('p','r-qr-msg',(instruction&&instruction.message)||'Pesanan dibuat. Tunggu verifikasi pembayaran.'));
-}
-qr.appendChild(ce('p','r-qr-total','Rp '+resFmt(total)));
-qr.appendChild(ce('p','r-qr-id','Order #'+orderId));
-if(instruction&&instruction.expires_at)qr.appendChild(ce('p','r-qr-id','Batas bayar: '+instruction.expires_at));
-body.appendChild(qr);
-var st=ce('p','r-order-meta');st.id='resPayStatus';st.style.textAlign='center';st.style.marginTop='.75rem';
-st.textContent='Status: memeriksa...';
-body.appendChild(st);
-startResPoll(orderId);
-}
-function startResPoll(orderId){
-stopResPoll();
-var n=0;
-resPollTimer=setInterval(function(){
-n++;
-if(n>100){stopResPoll();var s=document.getElementById('resPayStatus');if(s)s.textContent='Status: waktu polling habis. Cek halaman Pesanan.';return}
-fetch('/api/reseller/orders/'+orderId+'/status',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
-var el=document.getElementById('resPayStatus');
-if(el)el.textContent='Status: '+resStatusText(d.status);
-if(d.status==='delivered'){
-stopResPoll();
-onCheckoutDelivered(orderId);
-}else if(d.status==='cancelled'||d.status==='refunded'){
-stopResPoll();
-}
-}).catch(function(){});
-},3000);
-}
-function onCheckoutDelivered(orderId){
-var body=renderCheckoutBody();
-var ok=ce('div','r-qr');
-ok.appendChild(ce('p','r-qr-msg','✅ Pembayaran terverifikasi & data terkirim!'));
-ok.appendChild(ce('p','r-qr-id','Order #'+orderId));
-body.appendChild(ok);
-var btn=ce('button','r-btn r-btn-mint');
-btn.setAttribute('type','button');
-btn.style.width='100%';
-btn.style.marginTop='.75rem';
-btn.textContent='Lihat Data Saya';
-btn.addEventListener('click',function(){
-closeResCheckout();
-RES_CART=[];
-updateResCartUI();
-resShowView('orders');
+const body=ce('div','r-modal-body');
+RES.cart.forEach(function(item){
+const row=ce('div','r-co-item');
+row.appendChild(ce('span','r-co-name',item.app_name+' • '+item.category+' • '+item.duration+' ×'+item.qty));
+row.appendChild(ce('span','r-co-price',resFmtIDR(item.unit*item.qty)));
+body.appendChild(row);
 });
-body.appendChild(btn);
-RES_CART=[];
-updateResCartUI();
+const totRow=ce('div','r-co-total');
+totRow.appendChild(ce('span',null,'Total'));
+totRow.appendChild(ce('span','r-co-total-val',resFmtIDR(cartTotal())));
+body.appendChild(totRow);
+box.appendChild(body);
+const foot=ce('div','r-modal-foot');
+const submit=ce('button','r-co-submit','Buat Pesanan');
+submit.type='button';
+submit.addEventListener('click',function(){submitCheckout(submit);});
+foot.appendChild(submit);
+box.appendChild(foot);
+overlay.appendChild(box);
+overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+document.body.appendChild(overlay);
 }
-function resOpenCheckout(){
-if(!RES_CART.length)return resToast('Keranjang kosong.');
-RES_CHECKOUT_KEY='rsl-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
-var items=RES_CART.map(function(i){return{variant_id:i.variant_id,qty:i.qty}});
-openResCheckoutModal();
-var body=renderCheckoutBody();
-body.appendChild(ce('div','r-loading','Membuat pesanan...'));
-resApi('/api/reseller/checkout',{method:'POST',body:JSON.stringify({items:items,idempotency_key:RES_CHECKOUT_KEY})})
-.then(function(d){
-if(d.error)return showCheckoutError(d.error);
-resCheckoutOrderId=d.order_id;
-if(d.reused){showInstruction(d.order_id,d.total,null);return}
-showInstruction(d.order_id,d.total,d.instruction);
-})
-.catch(function(e){
-if(e&&e.message==='unauthorized')return;
-showCheckoutError('Gagal membuat pesanan. Coba lagi.');
+async function submitCheckout(btn){
+if(!RES.cart.length){resToast('Keranjang masih kosong.');return;}
+const items=RES.cart.map(function(i){return{variant_id:i.variant_id,qty:i.qty};});
+const idem='res_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+btn.disabled=true;
+btn.textContent='Memproses...';
+try{
+const data=await resApi('/api/reseller/checkout',{
+method:'POST',
+body:{items:items,idempotency_key:idem}
+});
+const m=document.getElementById('resCheckoutModal');
+if(m)m.remove();
+clearCart();
+showPaymentInstruction(data);
+document.dispatchEvent(new CustomEvent('res:checkout-success',{detail:data}));
+}catch(e){
+resToast(e.message||'Checkout gagal.');
+btn.disabled=false;
+btn.textContent='Buat Pesanan';
+}
+}
+function showPaymentInstruction(data){
+let overlay=document.getElementById('resPaymentModal');
+if(overlay)overlay.remove();
+overlay=ce('div','r-modal-overlay');
+overlay.id='resPaymentModal';
+const box=ce('div','r-modal-box');
+const head=ce('div','r-modal-head');
+head.appendChild(ce('h3',null,'Pesanan Dibuat'));
+const close=ce('button','r-modal-close','×');
+close.type='button';
+close.addEventListener('click',function(){overlay.remove();});
+head.appendChild(close);
+box.appendChild(head);
+const body=ce('div','r-modal-body');
+body.appendChild(ce('p','r-pay-info','Order #'+data.order_id+' • Total '+resFmtIDR(data.total)));
+body.appendChild(ce('p','r-pay-info','Metode: '+(data.provider||'-')));
+if(data.instruction){
+body.appendChild(renderInstruction(data.instruction));
+}else{
+body.appendChild(ce('p','r-pay-info','Menunggu pembayaran. Cek halaman Pesanan untuk status terbaru.'));
+}
+box.appendChild(body);
+const foot=ce('div','r-modal-foot');
+const okBtn=ce('button','r-co-submit','Mengerti');
+okBtn.type='button';
+okBtn.addEventListener('click',function(){overlay.remove();});
+foot.appendChild(okBtn);
+box.appendChild(foot);
+overlay.appendChild(box);
+overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+document.body.appendChild(overlay);
+}
+function renderInstruction(instr){
+const wrap=ce('div','r-pay-instr');
+if(typeof instr==='string'){
+wrap.appendChild(ce('p','r-pay-text',instr));
+return wrap;
+}
+if(typeof instr!=='object'||instr===null)return wrap;
+if(instr.type==='qris'&&instr.qr_url){
+const img=document.createElement('img');
+img.src=instr.qr_url;
+img.className='r-pay-qr';
+img.alt='QRIS';
+wrap.appendChild(img);
+}
+if(instr.redirect_url){
+const a=document.createElement('a');
+a.href=instr.redirect_url;
+a.target='_blank';
+a.rel='noopener';
+a.className='r-pay-link';
+a.textContent='Lanjut ke Pembayaran →';
+wrap.appendChild(a);
+}
+if(instr.bank)wrap.appendChild(ce('p','r-pay-text','Bank: '+instr.bank));
+if(instr.account)wrap.appendChild(ce('p','r-pay-text','No. Rekening: '+instr.account));
+if(instr.account_name)wrap.appendChild(ce('p','r-pay-text','Atas Nama: '+instr.account_name));
+if(instr.amount)wrap.appendChild(ce('p','r-pay-text','Jumlah: '+resFmtIDR(instr.amount)));
+if(instr.notes)wrap.appendChild(ce('p','r-pay-note',instr.notes));
+return wrap;
+}
+export function initCheckout(){
+document.addEventListener('res:open-checkout',function(){
+openCheckoutModal();
 });
 }
