@@ -3,8 +3,18 @@ function maskVal(v){v=String(v==null?'':v);if(!v)return'';if(v.length<=4)return'
 function stockHeaders(){return{'Content-Type':'application/json','x-admin-password':sessionPass}}
 function openModal(id){var m=document.getElementById(id);if(!m)return;m.classList.remove('hidden');var bd=m.querySelector('.modal-backdrop');var bx=m.querySelector('.modal-box');setTimeout(function(){if(bd)bd.classList.add('show');if(bx)bx.classList.add('show')},10)}
 function closeModal(id){var m=document.getElementById(id);if(!m)return;var bd=m.querySelector('.modal-backdrop');var bx=m.querySelector('.modal-box');if(bd)bd.classList.remove('show');if(bx)bx.classList.remove('show');setTimeout(function(){m.classList.add('hidden')},300)}
-function loadTemplates(){fetch('/api/admin/cred-templates',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).then(function(rows){stockTemplates=rows||[]}).catch(function(){})}
-function currentTemplateFields(appName){var t=stockTemplates.find(function(x){return x.app_name.toLowerCase()===String(appName||'').toLowerCase()});if(!t)return[];try{var a=JSON.parse(t.fields);return Array.isArray(a)?a:[]}catch(e){return[]}}
+function loadTemplates(){
+fetch('/api/admin/cred-templates',{headers:{'x-admin-password':sessionPass}})
+.then(function(r){return r.json()})
+.then(function(rows){stockTemplates=Array.isArray(rows)?rows:[]})
+.catch(function(){stockTemplates=[]});
+}
+function currentTemplateFields(appName){
+if(!Array.isArray(stockTemplates))stockTemplates=[];
+var t=stockTemplates.find(function(x){return x.app_name.toLowerCase()===String(appName||'').toLowerCase()});
+if(!t)return[];
+try{var a=JSON.parse(t.fields);return Array.isArray(a)?a:[]}catch(e){return[]}
+}
 function stockOpenManager(variant){
 stockMgrVariant=variant;
 var sub=document.getElementById('stockMgrSub');
