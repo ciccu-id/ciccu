@@ -6,7 +6,8 @@ function pad2(n){return String(n).padStart(2,'0')}
 function relTime(s){
 var t=Date.parse(String(s||'').replace(' ','T')+'Z');
 if(isNaN(t))return'-';
-var diff=Date.now()-t;if(diff<0)diff=0;
+var diff=Date.now()-t;
+if(diff<0)diff=0;
 var m=Math.floor(diff/60000);
 if(m<1)return'baru';
 if(m<60)return m+' mnt';
@@ -22,8 +23,7 @@ if(isNaN(d))return s;
 return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' • '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
 }
 function goRes(sub){
-if(typeof switchTab==='function')switchTab('reseller');
-if(typeof switchResellerSub==='function')switchResellerSub(sub);
+if(typeof switchTab==='function')switchTab(sub);
 }
 function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v}
 function loadDashboard(){
@@ -146,7 +146,6 @@ tick();
 DASH_TIMER=setInterval(tick,1000);
 }
 document.addEventListener('DOMContentLoaded',function(){
-if(sessionPass)loadDashboard();
 var binds={
 'dashOrdersAll':function(){goRes('rorders')},
 'dashStockAll':function(){goRes('rprice')},
