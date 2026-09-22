@@ -51,7 +51,7 @@ const row=await env.DB.prepare('SELECT id,expires_at FROM rsl_reg_tokens WHERE t
 if(!row||row.expires_at<=nowStr())return err('Token tidak valid atau telah kedaluwarsa',404);
 const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
 if(ex)return err('Username sudah dipakai',400);
-const h=await hashNewPassword(password,env.RES_PEPPER||'');
+const h=await hashNewPassword(password);
 const ins=await env.DB.prepare("INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name,status) VALUES(?,?,?,?,?,'pending')").bind(username,h.hash,h.salt,h.iter,dn||username).run();
 await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(row.id).run();
 const newId=ins.meta?ins.meta.last_row_id:null;
@@ -67,7 +67,7 @@ if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('
 const r=await env.DB.prepare('SELECT * FROM rsl_resellers WHERE username=?').bind(username).first();
 if(!r){await audit(env,'reseller',null,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 if(isLocked(r))return err('Akun terkunci sementara. Coba lagi nanti',423);
-const ok=await verifyPassword(password,r,env.RES_PEPPER||'');
+const ok=await verifyPassword(password,r);
 if(!ok){await recordFailure(env,r.id);await audit(env,'reseller',r.id,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 await resetFailures(env,r.id);
 if(r.status==='pending'){await audit(env,'reseller',r.id,'login.pending',null,null,{},ip);return err('Akun Anda masih menunggu konfirmasi admin.',403)}
@@ -139,7 +139,9 @@ return json({status:o.status,paid_at:o.paid_at,delivered_at:o.delivered_at});
 if(om&&m==='GET'&&!om[3]){
 const o=await getOrder(env,parseInt(om[1],10),session.id);
 if(!o)return err('Order tidak ditemukan',404);
-if(o.delivered_at&&o.items)o.items.forEach(it=>{const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});
+if(o.delivered_at&&o.items){
+o.items.forEach(function(it){const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});
+}
 return json(o);
 }
 if(om&&m==='POST'&&om[3]==='reveal'){
@@ -159,9 +161,6 @@ return json(Object.keys(groups).map(k=>groups[k]));
 return err('Endpoint tidak ditemukan',404);
 }catch(e){
 console.error('Reseller API error:',e);
-if(p==='/register'){
-return json({error:'[debug-register] '+(e&&e.message?e.message:String(e))},500);
-}
 return err('Terjadi kesalahan di server.',500);
 }
 }
