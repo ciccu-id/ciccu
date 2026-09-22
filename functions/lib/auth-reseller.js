@@ -2,7 +2,7 @@ export const SESSION_COOKIE='rsl_sid';
 export const SESSION_HOURS=12;
 export const MAX_FAILED=5;
 export const LOCK_MINUTES=15;
-export const DEFAULT_ITER=150000;
+export const DEFAULT_ITER=100000;
 function toHex(buf){return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
 function hexToBytes(hex){const out=new Uint8Array(hex.length/2);for(let i=0;i<out.length;i++)out[i]=parseInt(hex.substr(i*2,2),16);return out}
 export function nowStr(){return new Date().toISOString().replace('T',' ').slice(0,19)}
@@ -14,7 +14,7 @@ export async function pbkdf2hex(password,saltHex,iter){const key=await crypto.su
 export async function hashNewPassword(password,iter=DEFAULT_ITER){const salt=randomHex(16);const hash=await pbkdf2hex(password,salt,iter);return{salt,hash,iter}}
 function timingSafe(a,b){if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0}
 export async function verifyPassword(password,reseller){const h=await pbkdf2hex(password,reseller.pass_salt,reseller.pass_iter);return timingSafe(h,reseller.pass_hash)}
-export function parseCookies(header){const out={};(header||'').split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)out[p.slice(0,i).trim()]=decodeURIComponent(p.slice(i+1).trim())});return out}
+export function parseCookies(header){const out={};(header||'').split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)out[p.slice(i).trim()]=decodeURIComponent(p.slice(i+1).trim())});return out}
 export function isSecure(request){return new URL(request.url).protocol==='https:'}
 export function sessionCookieValue(token,secure){return SESSION_COOKIE+'='+token+'; Path=/; HttpOnly; SameSite=Lax'+(secure?'; Secure':'')+'; Max-Age='+(SESSION_HOURS*3600)}
 export function clearCookieValue(secure){return SESSION_COOKIE+'=; Path=/; HttpOnly; SameSite=Lax'+(secure?'; Secure':'')+'; Max-Age=0'}
@@ -24,4 +24,3 @@ export async function revokeSession(env,request){const token=parseCookies(reques
 export function isLocked(r){return!!(r&&r.locked_until&&r.locked_until>nowStr())}
 export async function recordFailure(env,id){const r=await env.DB.prepare('SELECT failed_attempts FROM rsl_resellers WHERE id=?').bind(id).first();const n=(r?r.failed_attempts:0)+1;if(n>=MAX_FAILED)await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=0,locked_until=? WHERE id=?').bind(addMinutes(LOCK_MINUTES),id).run();else await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=? WHERE id=?').bind(n,id).run()}
 export async function resetFailures(env,id){await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=0,locked_until=NULL,last_login_at=? WHERE id=?').bind(nowStr(),id).run()}
-
