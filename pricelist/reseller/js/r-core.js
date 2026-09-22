@@ -1,4 +1,15 @@
-export const RES={session:null,catalog:[],cart:[],appFilter:'all',search:'',view:'store'};
+export const RES={session:null,token:null,catalog:[],cart:[],appFilter:'all',search:'',view:'store'};
+try{
+var _t=localStorage.getItem('res_tok');
+if(_t)RES.token=_t;
+}catch(e){}
+export function setResToken(t){
+RES.token=t||null;
+try{
+if(t)localStorage.setItem('res_tok',t);
+else localStorage.removeItem('res_tok');
+}catch(e){}
+}
 export function ce(tag,cls,text){
 var e=document.createElement(tag);
 if(cls)e.className=cls;
@@ -68,6 +79,7 @@ else t.style.background='';
 clearTimeout(t._tm);
 t._tm=setTimeout(function(){t.classList.remove('show')},isErr?5000:2200);
 }
+const PUBLIC_ENDPOINTS=['/api/reseller/login','/api/reseller/register','/api/reseller/whoami','/api/reseller/ping'];
 export async function resApi(url,opts){
 opts=opts||{};
 var headers=opts.headers||{};
@@ -75,8 +87,12 @@ if(opts.body&&typeof opts.body!=='string'){
 headers['Content-Type']='application/json';
 opts.body=JSON.stringify(opts.body);
 }
+if(RES.token)headers['x-reseller-token']=RES.token;
 opts.headers=headers;
 opts.credentials='include';
+if(!RES.session&&!RES.token&&url.indexOf('/api/reseller/')===0&&PUBLIC_ENDPOINTS.indexOf(url)<0){
+return null;
+}
 var res=await fetch(url,opts);
 var data=null;
 try{data=await res.json();}catch(e){}
@@ -84,6 +100,7 @@ if(!res.ok){
 if(res.status===401){
 var had=!!RES.session;
 RES.session=null;
+setResToken(null);
 try{resToast('⚠ 401 di '+url+(had?' (sesi aktif)':'(tanpa sesi)'),true);}catch(e){}
 if(had)document.dispatchEvent(new CustomEvent('res:session-expired'));
 }
