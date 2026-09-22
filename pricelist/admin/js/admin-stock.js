@@ -9,7 +9,6 @@ function stockOpenManager(variant){
 stockMgrVariant=variant;
 var sub=document.getElementById('stockMgrSub');
 if(sub&&variant)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration;
-setupStockHandlers();
 openModal('stockManagerModal');
 stockRenderManager();
 }
@@ -79,9 +78,15 @@ list.appendChild(box);
 });
 }
 function stockAfterChange(){stockRenderManager();if(typeof loadResellerPricelist==='function')loadResellerPricelist()}
-function stockOpenAdd(variant){
+function ensureTemplateThen(variant,next){
 var fields=currentTemplateFields(variant.app_name);
-if(!fields.length)return uiAlert('Buat template field dulu lewat tombol 🧩 Template pada aplikasi '+variant.app_name+'.','Template Belum Ada');
+if(fields.length){next(fields);return;}
+uiConfirm('Template field untuk '+variant.app_name+' belum ada.\nBuat dulu sekarang?','Template Belum Ada',function(){
+stockOpenTemplate(variant.app_name);
+},{okText:'Buat Template'});
+}
+function stockOpenAdd(variant){
+ensureTemplateThen(variant,function(fields){
 stockCtxVariant=variant;
 var sub=document.getElementById('stockAddVariantName');
 if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration;
@@ -93,6 +98,7 @@ var inp=ce('input','form-input');inp.setAttribute('type','text');inp.setAttribut
 field.appendChild(inp);wrap.appendChild(field);
 });
 openModal('stockAddModal');
+});
 }
 function submitStockAdd(){
 if(!stockCtxVariant)return;
@@ -109,14 +115,14 @@ fetch('/api/admin/stock/'+stockCtxVariant.id,{method:'POST',headers:stockHeaders
 .finally(function(){if(btn){btn.disabled=false;btn.textContent='Simpan Stok'}});
 }
 function stockOpenBulk(variant){
-var fields=currentTemplateFields(variant.app_name);
-if(!fields.length)return uiAlert('Buat template field dulu lewat tombol 🧩 Template pada aplikasi '+variant.app_name+'.','Template Belum Ada');
+ensureTemplateThen(variant,function(fields){
 stockCtxVariant=variant;
 var sub=document.getElementById('stockBulkVariantName');
 if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration+' (urutan: '+fields.join(', ')+')';
 var ta=document.getElementById('stockBulkText');
 if(ta)ta.value='';
 openModal('stockBulkModal');
+});
 }
 function submitStockBulk(){
 if(!stockCtxVariant)return;
@@ -170,41 +176,62 @@ fetch('/api/admin/cred-templates/'+encodeURIComponent(credTplApp),{method:'PUT',
 .then(function(){closeModal('credTemplateModal');uiToast('Template disimpan.');loadTemplates()})
 .catch(function(){uiAlert('Gagal menyimpan template.','Kesalahan')});
 }
-function setupStockHandlers(){
-var map={
-'btnMgrAdd':function(){if(stockMgrVariant)stockOpenAdd(stockMgrVariant)},
-'btnMgrBulk':function(){if(stockMgrVariant)stockOpenBulk(stockMgrVariant)},
-'btnMgrTpl':function(){if(stockMgrVariant)stockOpenTemplate(stockMgrVariant.app_name)},
-'btnAddCredField':function(){credTplFields.push('');renderCredTplFields()},
-'btnSaveCredTemplate':saveCredTemplate,
-'btnSubmitStockAdd':submitStockAdd,
-'btnSubmitStockBulk':submitStockBulk,
-'stockMgrClose':function(){closeModal('stockManagerModal')},
-'stockMgrBackdrop':function(){closeModal('stockManagerModal')},
-'credTplClose':function(){closeModal('credTemplateModal')},
-'credTplBackdrop':function(){closeModal('credTemplateModal')},
-'credTplCancel':function(){closeModal('credTemplateModal')},
-'stockAddClose':function(){closeModal('stockAddModal')},
-'stockAddBackdrop':function(){closeModal('stockAddModal')},
-'stockAddCancel':function(){closeModal('stockAddModal')},
-'stockBulkClose':function(){closeModal('stockBulkModal')},
-'stockBulkBackdrop':function(){closeModal('stockBulkModal')},
-'stockBulkCancel':function(){closeModal('stockBulkModal')}
+function healthCheck(){
+var checks={
+'uiAlert':typeof uiAlert==='function',
+'uiConfirm':typeof uiConfirm==='function',
+'uiToast':typeof uiToast==='function',
+'uiAct':typeof uiAct==='function',
+'uiTag':typeof uiTag==='function',
+'admSvg':typeof admSvg==='function',
+'ce':typeof ce==='function',
+'sessionPass':typeof sessionPass==='string'
 };
-Object.keys(map).forEach(function(id){
-var el=document.getElementById(id);
-if(el&&!el._bound){el._bound=true;el.addEventListener('click',function(e){e.preventDefault();map[id]()})}
-});
+var missing=[];
+for(var k in checks){if(!checks[k])missing.push(k)}
+if(!missing.length){
+try{uiToast('✓ Modul siap ['+window.uiVersion+']')}catch(e){}
+}else{
+try{uiToast('✗ Hilang: '+missing.join(', ')+' ['+window.uiVersion+']',true)}catch(e){}
+}
 }
 (function(){
 loadTemplates();
-if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',setupStockHandlers)}
-else{setupStockHandlers()}
-var pollCount=0;
-var poll=setInterval(function(){
-pollCount++;if(pollCount>50){clearInterval(poll);return}
-setupStockHandlers();
-var btn=document.getElementById('btnMgrAdd');
-if(btn&&btn._bound)clearInterval(poll);
-},100);
+function bindAll(){
+if(typeof uiTag==='function'){
+uiTag('btnMgrAdd','mgr:add');
+uiTag('btnMgrBulk','mgr:bulk');
+uiTag('btnMgrTpl','mgr:tpl');
+uiTag('btnAddCredField','tpl:add');
+uiTag('btnSaveCredTemplate','tpl:save');
+uiTag('btnSubmitStockAdd','add:submit');
+uiTag('btnSubmitStockBulk','bulk:submit');
+uiTag('stockMgrClose','close:stockMgr');
+uiTag('stockMgrBackdrop','close:stockMgr');
+uiTag('credTplClose','close:credTpl');
+uiTag('credTplBackdrop','close:credTpl');
+uiTag('credTplCancel','close:credTpl');
+uiTag('stockAddClose','close:stockAdd');
+uiTag('stockAddBackdrop','close:stockAdd');
+uiTag('stockAddCancel','close:stockAdd');
+uiTag('stockBulkClose','close:stockBulk');
+uiTag('stockBulkBackdrop','close:stockBulk');
+uiTag('stockBulkCancel','close:stockBulk');
+}
+if(typeof uiAct==='function'){
+uiAct('mgr:add',function(){if(stockMgrVariant)stockOpenAdd(stockMgrVariant)});
+uiAct('mgr:bulk',function(){if(stockMgrVariant)stockOpenBulk(stockMgrVariant)});
+uiAct('mgr:tpl',function(){if(stockMgrVariant)stockOpenTemplate(stockMgrVariant.app_name)});
+uiAct('tpl:add',function(){credTplFields.push('');renderCredTplFields()});
+uiAct('tpl:save',saveCredTemplate);
+uiAct('add:submit',submitStockAdd);
+uiAct('bulk:submit',submitStockBulk);
+uiAct('close:stockMgr',function(){closeModal('stockManagerModal')});
+uiAct('close:credTpl',function(){closeModal('credTemplateModal')});
+uiAct('close:stockAdd',function(){closeModal('stockAddModal')});
+uiAct('close:stockBulk',function(){closeModal('stockBulkModal')});
+}
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){bindAll();setTimeout(healthCheck,1000)})}
+else{bindAll();setTimeout(healthCheck,1000)}
 })();
