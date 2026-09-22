@@ -4,6 +4,10 @@ import{getProvider}from'../../lib/payment/provider.js';
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
+async function sha256hex(s){
+const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 function safeAudit(){
 try{
 return Promise.resolve(audit.apply(null,arguments)).catch(function(e){console.error('audit failed:',e)});
@@ -41,22 +45,27 @@ const ip=request.headers.get('cf-connecting-ip')||'';
 try{
 if(p==='/register'&&m==='POST'){
 const b=await body(request)||{};
-const username=String(b.username||'').trim().toLowerCase().slice(0,50);
-const password=String(b.password||'').slice(0,200);
-const dn=String(b.display_name||'').trim().slice(0,100);
+const name=String(b.name||b.display_name||'').trim().slice(0,40);
+const username=String(b.username||'').trim().toLowerCase().slice(0,40);
+const wa=String(b.whatsapp||'').trim().slice(0,30);
+const xuser=String(b.x_username||'').trim().replace(/^@+/,'').slice(0,30);
+const password=String(b.password||'').slice(0,60);
 const token=String(b.token||'').trim().toUpperCase();
-if(!/^[a-z0-9_.-]{3,50}$/.test(username))return err('Username tidak valid (3-50 karakter: a-z, angka, _ . -)',400);
-if(password.length<8)return err('Password minimal 8 karakter',400);
+if(!name||name.length>30)return err('Nama wajib diisi (maksimal 30 karakter)',400);
+if(!/^[a-z0-9_.-]{5,30}$/.test(username))return err('Username wajib 5-30 karakter (a-z, angka, _ . -)',400);
+if(!/^08\d{8,18}$/.test(wa))return err('WhatsApp wajib angka diawali 08 (maksimal 20 digit)',400);
+if(!/^[A-Za-z0-9_]{1,15}$/.test(xuser))return err('Akun X wajib 1-15 karakter tanpa tanda @',400);
+if(password.length<8||password.length>30)return err('Password wajib 8-30 karakter',400);
 if(!token)return err('Token pendaftaran wajib diisi',400);
 if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
 await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(nowStr()).run();
-const hash=await sha256Local(token);
+const hash=await sha256hex(token);
 const row=await env.DB.prepare('SELECT id,expires_at FROM rsl_reg_tokens WHERE token_hash=?').bind(hash).first();
 if(!row||row.expires_at<=nowStr())return err('Token tidak valid atau telah kedaluwarsa',404);
 const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
 if(ex)return err('Username sudah dipakai',400);
 const h=await hashNewPassword(password);
-const ins=await env.DB.prepare("INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name,status) VALUES(?,?,?,?,?,'pending')").bind(username,h.hash,h.salt,h.iter,dn||username).run();
+const ins=await env.DB.prepare("INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name,whatsapp,x_username,status) VALUES(?,?,?,?,?,?,?,'pending')").bind(username,h.hash,h.salt,h.iter,name,wa,xuser).run();
 await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(row.id).run();
 const newId=ins.meta?ins.meta.last_row_id:null;
 await safeAudit(env,'guest',newId,'reseller.register','reseller',newId,{username:username},ip);
@@ -167,8 +176,4 @@ return err('Endpoint tidak ditemukan',404);
 console.error('Reseller API error:',e);
 return err('Terjadi kesalahan di server.',500);
 }
-}
-async function sha256Local(s){
-const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
-return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
