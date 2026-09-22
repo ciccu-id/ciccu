@@ -174,3 +174,4 @@ if(form)form.addEventListener('submit',submitRvarEdit);
 [cfg[1],cfg[2],cfg[3]].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',function(){closeModal(cfg[0])})});
 });
 });
+
