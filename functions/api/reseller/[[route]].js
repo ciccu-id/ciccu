@@ -1,9 +1,13 @@
-import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex}from'../../lib/auth-reseller.js';
+import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
 import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
+async function sha256hex(s){
+const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 function durationMs(str){
 if(!str)return 0;
 const s=String(str).toLowerCase();
@@ -31,6 +35,29 @@ const p=new URL(request.url).pathname.replace(/^\/api\/reseller/,'')||'/';
 if(m==='OPTIONS')return new Response(null,{status:405});
 const ip=request.headers.get('cf-connecting-ip')||'';
 try{
+if(p==='/register'&&m==='POST'){
+const b=await body(request)||{};
+const username=String(b.username||'').trim().toLowerCase().slice(0,50);
+const password=String(b.password||'').slice(0,200);
+const dn=String(b.display_name||'').trim().slice(0,100);
+const token=String(b.token||'').trim().toUpperCase();
+if(!/^[a-z0-9_.-]{3,50}$/.test(username))return err('Username tidak valid (3-50 karakter: a-z, angka, _ . -)',400);
+if(password.length<8)return err('Password minimal 8 karakter',400);
+if(!token)return err('Token pendaftaran wajib diisi',400);
+if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
+await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(nowStr()).run();
+const hash=await sha256hex(token);
+const row=await env.DB.prepare('SELECT id,expires_at FROM rsl_reg_tokens WHERE token_hash=?').bind(hash).first();
+if(!row||row.expires_at<=nowStr())return err('Token tidak valid atau telah kedaluwarsa',404);
+const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
+if(ex)return err('Username sudah dipakai',400);
+const h=await hashNewPassword(password,env.RES_PEPPER||'');
+const ins=await env.DB.prepare("INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name,status) VALUES(?,?,?,?,?,'pending')").bind(username,h.hash,h.salt,h.iter,dn||username).run();
+await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(row.id).run();
+const newId=ins.meta?ins.meta.last_row_id:null;
+await audit(env,'guest',newId,'reseller.register','reseller',newId,{username:username},ip);
+return json({success:true,status:'pending',message:'Pendaftaran berhasil. Akun menunggu konfirmasi admin.'},201);
+}
 if(p==='/login'&&m==='POST'){
 const b=await body(request)||{};
 const username=String(b.username||'').trim().slice(0,50);
@@ -38,11 +65,13 @@ const password=String(b.password||'').slice(0,200);
 if(!username||!password)return err('Username dan password wajib diisi',400);
 if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
 const r=await env.DB.prepare('SELECT * FROM rsl_resellers WHERE username=?').bind(username).first();
-if(!r){await audit(env,'reseller',null,'login.fail',null,null,{username},ip);return err('Username atau password salah',401)}
+if(!r){await audit(env,'reseller',null,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 if(isLocked(r))return err('Akun terkunci sementara. Coba lagi nanti',423);
 const ok=await verifyPassword(password,r,env.RES_PEPPER||'');
-if(!ok){await recordFailure(env,r.id);await audit(env,'reseller',r.id,'login.fail',null,null,{username},ip);return err('Username atau password salah',401)}
+if(!ok){await recordFailure(env,r.id);await audit(env,'reseller',r.id,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 await resetFailures(env,r.id);
+if(r.status==='pending'){await audit(env,'reseller',r.id,'login.pending',null,null,{},ip);return err('Akun Anda masih menunggu konfirmasi admin.',403)}
+if(r.status==='suspended'){await audit(env,'reseller',r.id,'login.suspended',null,null,{},ip);return err('Akun Anda dinonaktifkan. Hubungi admin.',403)}
 const token=await createSession(env,r,request);
 await audit(env,'reseller',r.id,'login.ok',null,null,{},ip);
 return json({success:true},200,{'Set-Cookie':sessionCookieValue(token,isSecure(request))});
@@ -73,7 +102,7 @@ const unit=parsePrice(v.price);
 if(unit<=0)return err('Harga tidak valid',400);
 const avail=await countAvailable(env,vid);
 if(avail<qty)return err('Stok tidak cukup untuk '+v.app_name+' '+v.category+' '+v.duration,400);
-lines.push({variant_id:vid,app_name:v.app_name,category:v.category,duration:v.duration,qty,unit_price:unit});
+lines.push({variant_id:vid,app_name:v.app_name,category:v.category,duration:v.duration,qty:qty,unit_price:unit});
 total+=unit*qty;
 }
 const idem=String(b.idempotency_key||'').slice(0,128)||randomHex(16);
@@ -83,8 +112,8 @@ const prov=getProvider(env);
 const orderId=await createOrder(env,session.id,lines,total,prov.name,idem);
 await appendPayment(env,orderId,prov.name,'','pending',total,'created');
 const cr=await prov.createPayment(env,{id:orderId,total_amount:total},lines);
-await audit(env,'reseller',session.id,'checkout','order',orderId,{total,items:lines.length},ip);
-return json({order_id:orderId,total,provider:prov.name,instruction:cr.instruction||null},201);
+await audit(env,'reseller',session.id,'checkout','order',orderId,{total:total,items:lines.length},ip);
+return json({order_id:orderId,total:total,provider:prov.name,instruction:cr.instruction||null},201);
 }
 if(p==='/orders'&&m==='GET'){
 const u=new URL(request.url);
