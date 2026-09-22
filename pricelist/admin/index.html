@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/admin.css?v=2">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -64,7 +64,7 @@
 <section id="section-dashboard" class="section">
 <div class="dash-header">
 <div><h2 class="dash-title">Dashboard</h2><p class="dash-sub">Overview toko hari ini</p></div>
-<div class="dash-header-right"><a href="../" target="_blank" class="dash-link">↗ Lihat Toko</a><span id="dashDate" class="dash-date"></span></div>
+<div class="dash-header-right"><a href="../" target="_blank" rel="noopener" class="dash-link">↗ Lihat Toko</a><span id="dashDate" class="dash-date"></span></div>
 </div>
 <div class="card dash-welcome"><p class="dash-welcome-title">Selamat datang, Admin.</p><p class="dash-welcome-sub">Berikut ringkasan aktivitas toko Anda.</p></div>
 <div class="stat-grid">
@@ -173,14 +173,18 @@
 <div class="card">
 <div class="card-header-row"><h2 class="card-title">🧾 Pesanan Reseller</h2></div>
 <div class="toolbar-row">
-<select id="orderStatusFilter" class="form-input" style="width:auto">
-<option value="">Semua Status</option>
-<option value="pending_payment">Pending Payment</option>
-<option value="delivered">Delivered</option>
-<option value="needs_attention">Needs Attention</option>
-<option value="cancelled">Cancelled</option>
-<option value="refunded">Refunded</option>
-</select>
+<div class="dd" id="orderStatusDD">
+<input type="hidden" id="orderStatusFilter" value="">
+<button type="button" class="dd-btn"><span id="orderStatusDDLabel">Semua Status</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item active" data-value=""><span>Semua Status</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="pending_payment"><span>Pending Payment</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="delivered"><span>Delivered</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="needs_attention"><span>Needs Attention</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="cancelled"><span>Cancelled</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="refunded"><span>Refunded</span><span class="dd-check"></span></div>
+</div>
+</div>
 <button id="btnRefreshOrders" type="button" class="tool-btn sky">Refresh</button>
 </div>
 <div id="orderList" class="data-list"></div>
@@ -233,7 +237,6 @@
 <button id="bnav-produk" class="bnav-item" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span>Katalog</span></button>
 <button id="bnav-rprice" class="bnav-item" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Reseller</span></button>
 <button id="bnav-rorders" class="bnav-item" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><span>Order</span></button>
-<label for="navToggle" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Lainnya</span></label>
 </nav>
 </div>
 <div id="editModal" class="modal-overlay hidden">
@@ -385,14 +388,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js" defer></script>
-<script src="js/admin-modules.js" defer></script>
-<script src="js/admin.js" defer></script>
-<script src="js/admin-reseller-pricelist.js" defer></script>
-<script src="js/admin-stock.js" defer></script>
-<script src="js/admin-orders.js" defer></script>
-<script src="js/admin-resellers.js" defer></script>
-<script src="js/admin-dashboard.js" defer></script>
-<script src="js/admin-activity.js" defer></script>
+<script src="js/admin-ui.js?v=2" defer></script>
+<script src="js/admin-modules.js?v=2" defer></script>
+<script src="js/admin.js?v=2" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=2" defer></script>
+<script src="js/admin-stock.js?v=2" defer></script>
+<script src="js/admin-orders.js?v=2" defer></script>
+<script src="js/admin-resellers.js?v=2" defer></script>
+<script src="js/admin-dashboard.js?v=2" defer></script>
+<script src="js/admin-activity.js?v=2" defer></script>
 </body>
 </html>
