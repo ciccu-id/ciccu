@@ -4,6 +4,23 @@ import{getProvider}from'../../lib/payment/provider.js';
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
+function durationMs(str){
+if(!str)return 0;
+const s=String(str).toLowerCase();
+const m=s.match(/(\d+)\s*(hari|day|hr|d|minggu|week|mgg|w|bulan|month|bln|tahun|year|thn|y|jam|hour)?/);
+if(!m)return 0;
+const n=parseInt(m[1],10);
+if(isNaN(n)||n<=0)return 0;
+const u=m[2]||'hari';
+const DAY=86400000;
+if(u==='jam'||u==='hour')return n*3600000;
+if(u==='minggu'||u==='week'||u==='mgg'||u==='w')return n*7*DAY;
+if(u==='bulan'||u==='month'||u==='bln')return n*30*DAY;
+if(u==='tahun'||u==='year'||u==='thn'||u==='y')return n*365*DAY;
+return n*DAY;
+}
+function isoToUTC(s){if(!s)return null;const t=Date.parse(String(s).replace(' ','T')+'Z');return isNaN(t)?null:t}
+function addMsToIso(iso,ms){const base=isoToUTC(iso);if(base===null)return null;return new Date(base+ms).toISOString().replace('T',' ').slice(0,19)}
 const json=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...h}});
 const err=(m,s=500)=>json({error:m},s);
 async function body(request){const cl=parseInt(request.headers.get('content-length')||'0',10);if(cl>200000)return null;try{return await request.json()}catch(e){return null}}
@@ -72,6 +89,16 @@ return json({order_id:orderId,total,provider:prov.name,instruction:cr.instructio
 if(p==='/orders'&&m==='GET'){
 const u=new URL(request.url);
 const rows=await listOrders(env,session.id,u.searchParams.get('limit'),u.searchParams.get('offset'));
+if(rows&&rows.length){
+const ids=rows.map(o=>o.id);
+const it=await env.DB.prepare(`SELECT order_id,duration FROM rsl_order_items WHERE order_id IN (${ids.map(()=>'?').join(',')})`).bind(...ids).all();
+const minMs={};
+it.results.forEach(r=>{const ms=durationMs(r.duration);if(ms>0&&(minMs[r.order_id]===undefined||ms<minMs[r.order_id]))minMs[r.order_id]=ms});
+rows.forEach(o=>{
+if(o.status==='delivered'&&o.delivered_at&&minMs[o.id]!==undefined)o.expires_at=addMsToIso(o.delivered_at,minMs[o.id]);
+else o.expires_at=null;
+});
+}
 return json(rows);
 }
 const om=p.match(/^\/orders\/(\d+)(\/(reveal|status))?$/);
@@ -83,6 +110,7 @@ return json({status:o.status,paid_at:o.paid_at,delivered_at:o.delivered_at});
 if(om&&m==='GET'&&!om[3]){
 const o=await getOrder(env,parseInt(om[1],10),session.id);
 if(!o)return err('Order tidak ditemukan',404);
+if(o.delivered_at&&o.items)o.items.forEach(it=>{const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});
 return json(o);
 }
 if(om&&m==='POST'&&om[3]==='reveal'){
