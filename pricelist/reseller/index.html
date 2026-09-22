@@ -4,21 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Ciccu Reseller</title>
-<meta name="description" content="Portal reseller Ciccu Store - harga wholesale, order otomatis, pengiriman data instan.">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#1e2a44">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#101a2e">
 <link rel="stylesheet" href="css/reseller.css">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-<div id="app" class="r-container"></div>
-<noscript><p style="text-align:center;padding:2rem;font-family:sans-serif">Aktifkan JavaScript untuk menggunakan portal reseller.</p></noscript>
-<script src="js/r-auth.js" defer></script>
-<script src="js/r-store.js" defer></script>
-<script src="js/r-checkout.js" defer></script>
-<script src="js/r-orders.js" defer></script>
+<div id="resLoginView" class="r-login">
+<div class="r-login-box">
+<h1 class="r-login-title">Ciccu Reseller</h1>
+<p class="r-login-sub">Masuk untuk mengelola toko Anda</p>
+<form id="resLoginForm" class="r-login-form">
+<input id="resUsername" class="r-login-input" type="text" placeholder="Username" autocomplete="username" required>
+<input id="resPassword" class="r-login-input" type="password" placeholder="Password" autocomplete="current-password" required>
+<div id="resTurnstile" class="r-turnstile"></div>
+<button id="resLoginBtn" class="r-login-btn" type="submit">Masuk</button>
+</form>
+</div>
+</div>
+<div id="resMainView" class="r-main hidden">
+<header class="r-header">
+<div class="r-header-left">
+<h1 class="r-brand">Ciccu Reseller</h1>
+</div>
+<div class="r-header-right">
+<span id="resUserGreeting" class="r-user-greet">Halo</span>
+<button id="resLogoutBtn" class="r-logout-btn" type="button">Keluar</button>
+</div>
+</header>
+<nav class="r-nav">
+<button id="resNavStore" class="r-nav-btn active" type="button">Toko</button>
+<button id="resNavOrders" class="r-nav-btn" type="button">Pesanan</button>
+</nav>
+<main class="r-content">
+<div id="resStoreView" class="r-view"></div>
+<div id="resOrdersView" class="r-view hidden">
+<div class="r-orders-head">
+<h2 class="r-section-label">Pesanan Saya</h2>
+</div>
+<div id="resOrdersList" class="r-orders-list"></div>
+</div>
+</main>
+</div>
+<script type="module" src="js/r-main.js"></script>
 </body>
 </html>
