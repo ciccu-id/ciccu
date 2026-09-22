@@ -18,6 +18,24 @@ n++;
 }
 return out;
 }
+async function sha256hex(s){
+const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomToken(){
+const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const arr=new Uint8Array(20);
+crypto.getRandomValues(arr);
+let out='';
+for(let i=0;i<arr.length;i++){
+out+=alphabet[arr[i]%alphabet.length];
+if(i===3||i===7||i===11||i===15)out+='-';
+}
+return 'CICCU-'+out;
+}
+async function purgeExpiredTokens(env){
+await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(nowStr()).run();
+}
 function durationMs(str){
 if(!str)return 0;
 const s=String(str).toLowerCase();
@@ -284,6 +302,8 @@ return json({success:true},201);
 const rm=q.match(/^\/resellers\/(\d+)$/);
 if(rm&&m==='PUT'){
 const id=num(rm[1]);
+const old=await env.DB.prepare('SELECT status FROM rsl_resellers WHERE id=?').bind(id).first();
+if(!old)return err('Reseller tidak ditemukan',404);
 const sets=[];const args=[];
 if(b.display_name!==undefined){sets.push('display_name=?');args.push(String(b.display_name).slice(0,100))}
 if(b.status!==undefined){const st=String(b.status);if(st!=='active'&&st!=='suspended')return err('Status tidak valid',400);sets.push('status=?');args.push(st)}
@@ -291,7 +311,43 @@ if(b.password){const pw=String(b.password).slice(0,200);if(pw.length<8)return er
 if(!sets.length)return err('Tidak ada perubahan',400);
 args.push(id);
 await env.DB.prepare('UPDATE rsl_resellers SET '+sets.join(',')+' WHERE id=?').bind(...args).run();
-await audit(env,'admin',null,'reseller.update','reseller',id,{},ip);
+if(b.status!==undefined&&old.status==='pending'&&b.status==='active')await audit(env,'admin',null,'reseller.approve','reseller',id,{},ip);
+else await audit(env,'admin',null,'reseller.update','reseller',id,{},ip);
+return json({success:true});
+}
+if(rm&&m==='DELETE'){
+const id=num(rm[1]);
+const old=await env.DB.prepare('SELECT username,status FROM rsl_resellers WHERE id=?').bind(id).first();
+if(!old)return err('Reseller tidak ditemukan',404);
+await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE reseller_id=? AND revoked_at IS NULL').bind(nowStr(),id).run();
+await env.DB.prepare('DELETE FROM rsl_resellers WHERE id=?').bind(id).run();
+await audit(env,'admin',null,old.status==='pending'?'reseller.reject':'reseller.delete','reseller',id,{username:old.username},ip);
+return json({success:true});
+}
+if(q==='/reg-tokens'&&m==='GET'){
+await purgeExpiredTokens(env);
+const r=await env.DB.prepare('SELECT id,token_prefix,label,duration_hours,created_at,expires_at FROM rsl_reg_tokens ORDER BY id DESC').all();
+return json(r.results);
+}
+if(q==='/reg-tokens'&&m==='POST'){
+const dh=num(b.duration_hours);
+if([24,168,720].indexOf(dh)<0)return err('Durasi tidak valid',400);
+const label=truncate(b.label||'',100);
+const token=randomToken();
+const hash=await sha256hex(token);
+const now=nowStr();
+const base=Date.parse(now.replace(' ','T')+'Z');
+const expires=new Date(base+dh*3600000).toISOString().replace('T',' ').slice(0,19);
+await env.DB.prepare('INSERT INTO rsl_reg_tokens(token_hash,token_prefix,label,duration_hours,created_at,expires_at) VALUES(?,?,?,?,?,?)').bind(hash,token.slice(0,10),label,dh,now,expires).run();
+await audit(env,'admin',null,'reg.token.create','token',null,{label:label,duration_hours:dh},ip);
+return json({success:true,token:token,expires_at:expires},201);
+}
+const rtm=q.match(/^\/reg-tokens\/(\d+)$/);
+if(rtm&&m==='DELETE'){
+const id=num(rtm[1]);
+const del=await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(id).run();
+if(!del.meta||!del.meta.changes)return err('Token tidak ditemukan',404);
+await audit(env,'admin',null,'reg.token.revoke','token',id,{},ip);
 return json({success:true});
 }
 return err('Endpoint tidak ditemukan',404);
