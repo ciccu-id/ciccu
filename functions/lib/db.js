@@ -91,3 +91,4 @@ export async function lowStock(env,threshold){
 const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,COUNT(s.id) AS avail FROM rsl_pricelist p LEFT JOIN rsl_stock_items s ON s.variant_id=p.id AND s.status='available' GROUP BY p.id HAVING avail<=? ORDER BY avail ASC,p.app_name").bind(clampInt(threshold,5,1000)).all();
 return r.results;
 }
+
