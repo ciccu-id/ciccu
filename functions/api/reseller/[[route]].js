@@ -159,6 +159,9 @@ return json(Object.keys(groups).map(k=>groups[k]));
 return err('Endpoint tidak ditemukan',404);
 }catch(e){
 console.error('Reseller API error:',e);
+if(p==='/register'){
+return json({error:'[debug-register] '+(e&&e.message?e.message:String(e))},500);
+}
 return err('Terjadi kesalahan di server.',500);
 }
 }
