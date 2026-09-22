@@ -93,11 +93,20 @@ const btn=document.getElementById('resLoginBtn');
 const oldText=btn?btn.textContent:'';
 if(btn){btn.textContent='Memverifikasi...';btn.disabled=true;}
 try{
-await resApi('/api/reseller/login',{
+const loginRes=await resApi('/api/reseller/login',{
 method:'POST',
 body:{username:username,password:password,turnstileResponse:token}
 });
+if(loginRes&&loginRes.user){
+RES.session=loginRes.user;
+}else{
 await checkSession();
+}
+if(!RES.session){
+resToast('Login gagal: sesi tidak tersedia.');
+resetTurnstile();
+return;
+}
 showMainView();
 resToast('Login berhasil.');
 document.dispatchEvent(new CustomEvent('res:logged-in'));
