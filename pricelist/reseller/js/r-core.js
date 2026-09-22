@@ -53,7 +53,7 @@ var d=Math.floor(h/24);
 if(d<7)return d+' hari lalu';
 return new Date(t).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
 }
-export function resToast(msg){
+export function resToast(msg,isErr){
 var t=document.getElementById('resToast');
 if(!t){
 t=document.createElement('div');
@@ -63,8 +63,10 @@ document.body.appendChild(t);
 }
 t.textContent=msg;
 t.classList.add('show');
+if(isErr)t.style.background='#a85555';
+else t.style.background='';
 clearTimeout(t._tm);
-t._tm=setTimeout(function(){t.classList.remove('show');},2200);
+t._tm=setTimeout(function(){t.classList.remove('show')},isErr?5000:2200);
 }
 export async function resApi(url,opts){
 opts=opts||{};
@@ -74,13 +76,16 @@ headers['Content-Type']='application/json';
 opts.body=JSON.stringify(opts.body);
 }
 opts.headers=headers;
+opts.credentials='include';
 var res=await fetch(url,opts);
 var data=null;
 try{data=await res.json();}catch(e){}
 if(!res.ok){
 if(res.status===401){
+var had=!!RES.session;
 RES.session=null;
-document.dispatchEvent(new CustomEvent('res:session-expired'));
+try{resToast('⚠ 401 di '+url+(had?' (sesi aktif)':'(tanpa sesi)'),true);}catch(e){}
+if(had)document.dispatchEvent(new CustomEvent('res:session-expired'));
 }
 throw new Error((data&&data.error)||('HTTP '+res.status));
 }
