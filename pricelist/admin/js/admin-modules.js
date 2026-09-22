@@ -3,33 +3,13 @@ var sortableFlashSale=null,currentReplyId=null;
 var TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 var adminTurnstileId=null;
 var RES_SUB='rprice';
-var ADM_TITLES={produk:'Produk & Paket',flashsale:'Flash Sale',reseller:'Manajemen Reseller',testimoni:'Testimoni',pengaturan:'Pengaturan Toko'};
+var ADM_TITLES={dashboard:'Dashboard',produk:'Katalog Publik',rprice:'Pricelist & Stok',rorders:'Order Reseller',raccounts:'Akun Reseller',flashsale:'Flash Sale',testimoni:'Testimoni',pengaturan:'Pengaturan',activity:'Aktivitas Admin'};
 function escapeHTML(str){if(!str)return'';return String(str).replace(/[&<>'"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]})}
 function ce(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined&&x!==null)e.textContent=x;return e}
-function ensureTurnstile(cb){
-if(window.turnstile)return cb();
-var n=0;
-var iv=setInterval(function(){
-n++;
-if(window.turnstile){clearInterval(iv);cb()}
-else if(n>40){clearInterval(iv)}
-},250);
-}
-function renderAdminTurnstile(){
-if(!document.getElementById('turnstileWidget'))return;
-if(adminTurnstileId!==null&&window.turnstile){try{turnstile.remove(adminTurnstileId)}catch(e){}}
-adminTurnstileId=turnstile.render('#turnstileWidget',{sitekey:TURNSTILE_SITE_KEY});
-}
-function getAdminTurnstileToken(){
-if(window.turnstile&&adminTurnstileId!==null){try{var t=turnstile.getResponse(adminTurnstileId);if(t)return t}catch(e){}}
-var el=document.querySelector('[name="cf-turnstile-response"]');
-return el?el.value:'';
-}
-function handleResponseStatus(res){
-if(res.status===403){alert('Gagal memproses! Password admin Anda salah atau sesi berakhir.');logoutAdmin();throw new Error('Unauthorized')}
-if(!res.ok)throw new Error('Server response error: '+res.status);
-return res.json();
-}
+function ensureTurnstile(cb){if(window.turnstile)return cb();var n=0;var iv=setInterval(function(){n++;if(window.turnstile){clearInterval(iv);cb()}else if(n>40){clearInterval(iv)}},250)}
+function renderAdminTurnstile(){if(!document.getElementById('turnstileWidget'))return;if(adminTurnstileId!==null&&window.turnstile){try{turnstile.remove(adminTurnstileId)}catch(e){}}adminTurnstileId=turnstile.render('#turnstileWidget',{sitekey:TURNSTILE_SITE_KEY})}
+function getAdminTurnstileToken(){if(window.turnstile&&adminTurnstileId!==null){try{var t=turnstile.getResponse(adminTurnstileId);if(t)return t}catch(e){}}var el=document.querySelector('[name="cf-turnstile-response"]');return el?el.value:''}
+function handleResponseStatus(res){if(res.status===403){uiAlert('Password admin Anda salah atau sesi berakhir.','Sesi Berakhir');logoutAdmin();throw new Error('Unauthorized')}if(!res.ok)throw new Error('Server response error: '+res.status);return res.json()}
 function checkSession(){
 sessionPass=sessionStorage.getItem('ciccuAdminPass')||'';
 var overlay=document.getElementById('loginOverlay');
@@ -38,6 +18,7 @@ if(sessionPass){
 if(overlay)overlay.style.display='none';
 if(main)main.style.display='flex';
 if(typeof loadData==='function')loadData();
+switchTab('dashboard');
 }else{
 if(overlay)overlay.style.display='flex';
 if(main)main.style.display='none';
@@ -46,21 +27,31 @@ ensureTurnstile(renderAdminTurnstile);
 }
 function loginAdmin(){
 var input=document.getElementById('adminPasswordInput');
-if(!input||!input.value)return alert('Isi passwordnya dulu ya!');
+if(!input||!input.value)return uiAlert('Isi passwordnya dulu ya!','Password Kosong');
 var token=getAdminTurnstileToken();
-if(!token)return alert('Mohon tunggu dan selesaikan verifikasi keamanan Captcha terlebih dahulu ya!');
+if(!token)return uiAlert('Mohon selesaikan verifikasi keamanan Captcha terlebih dahulu.','Verifikasi Diperlukan');
 var btn=document.getElementById('btnLogin');
 var oldText=btn?btn.textContent:'';
 if(btn){btn.textContent='Memverifikasi...';btn.disabled=true}
 fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:input.value,turnstileResponse:token})})
 .then(function(res){
 if(res.ok){sessionStorage.setItem('ciccuAdminPass',input.value);if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId);checkSession()}
-else return res.json().then(function(d){alert(d.error||'Gagal login.');if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId);throw new Error('login failed')});
+else return res.json().then(function(d){uiAlert(d.error||'Gagal login.','Login Gagal');if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId);throw new Error('login failed')});
 })
-.catch(function(e){if(e.message!=='login failed')alert('Terjadi kesalahan jaringan.');if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId)})
+.catch(function(e){if(e.message!=='login failed')uiAlert('Terjadi kesalahan jaringan.','Kesalahan');if(window.turnstile&&adminTurnstileId!==null)turnstile.reset(adminTurnstileId)})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function logoutAdmin(){sessionStorage.removeItem('ciccuAdminPass');location.reload()}
+function setActiveNav(name){
+var sbMap={dashboard:'sbtab-dashboard',produk:'sbtab-produk',rprice:'sbtab-rprice',rorders:'sbtab-rorders',raccounts:'sbtab-raccounts',flashsale:'sbtab-flashsale',testimoni:'sbtab-testimoni',pengaturan:'sbtab-pengaturan',activity:'sbtab-activity'};
+['sbtab-dashboard','sbtab-produk','sbtab-rprice','sbtab-rorders','sbtab-raccounts','sbtab-flashsale','sbtab-testimoni','sbtab-pengaturan','sbtab-activity'].forEach(function(id){
+var el=document.getElementById(id);if(el)el.classList.toggle('active',id===sbMap[name]);
+});
+var bnMap={dashboard:'bnav-dashboard',produk:'bnav-produk',rprice:'bnav-rprice',rorders:'bnav-rorders',raccounts:'bnav-rprice'};
+['bnav-dashboard','bnav-produk','bnav-rprice','bnav-rorders'].forEach(function(id){
+var el=document.getElementById(id);if(el)el.classList.toggle('active',id===bnMap[name]);
+});
+}
 function switchResellerSub(name){
 RES_SUB=name;
 var subs=['rprice','rorders','raccounts'];
@@ -74,41 +65,38 @@ if(name==='rprice'){if(typeof loadResellerPricelist==='function')loadResellerPri
 else if(name==='rorders'){if(typeof loadOrders==='function')loadOrders()}
 else if(name==='raccounts'){if(typeof loadResellers==='function')loadResellers()}
 }
-function switchTab(tabName){
-var sections=['produk','flashsale','reseller','testimoni','pengaturan'];
-for(var i=0;i<sections.length;i++){
-var sec=document.getElementById('section-'+sections[i]);
-var sb=document.getElementById('sbtab-'+sections[i]);
-if(sec){if(sections[i]===tabName)sec.classList.remove('hidden');else sec.classList.add('hidden')}
-if(sb){if(sections[i]===tabName)sb.classList.add('active');else sb.classList.remove('active')}
+function switchTab(name){
+var secMap={dashboard:'section-dashboard',produk:'section-produk',rprice:'section-reseller',rorders:'section-reseller',raccounts:'section-reseller',flashsale:'section-flashsale',testimoni:'section-testimoni',pengaturan:'section-pengaturan',activity:'section-activity'};
+var allSec=['section-dashboard','section-produk','section-reseller','section-flashsale','section-testimoni','section-pengaturan','section-activity'];
+for(var i=0;i<allSec.length;i++){
+var el=document.getElementById(allSec[i]);
+if(el){if(allSec[i]===secMap[name])el.classList.remove('hidden');else el.classList.add('hidden')}
 }
-var title=document.getElementById('admTopbarTitle');
-if(title)title.textContent=ADM_TITLES[tabName]||'Admin';
+setActiveNav(name);
+var t=document.getElementById('admTopbarTitle');
+if(t)t.textContent=ADM_TITLES[name]||'Admin';
 var nav=document.getElementById('navToggle');
 if(nav)nav.checked=false;
 var bulkBar=document.getElementById('bulkActionBar');
 if(bulkBar)bulkBar.classList.remove('visible');
-if(tabName==='flashsale'){loadFlashSaleSettings();renderFlashSaleItems()}
-else if(tabName==='testimoni')loadAdminTestimoni();
-else if(tabName==='pengaturan')loadStoreSettings();
-else if(tabName==='reseller')switchResellerSub(RES_SUB);
-else if(tabName==='produk'&&typeof updateBulkUI==='function')updateBulkUI();
+if(name==='dashboard'){if(typeof loadDashboard==='function')loadDashboard()}
+else if(name==='rprice'||name==='rorders'||name==='raccounts'){switchResellerSub(name)}
+else if(name==='flashsale'){loadFlashSaleSettings();renderFlashSaleItems()}
+else if(name==='testimoni'){loadAdminTestimoni()}
+else if(name==='pengaturan'){loadStoreSettings()}
+else if(name==='activity'){if(typeof loadActivity==='function')loadActivity()}
+else if(name==='produk'){if(typeof updateBulkUI==='function')updateBulkUI()}
 }
 function loadStoreSettings(){
 if(!sessionPass)return;
 fetch('/api/admin/settings',{headers:{'x-admin-password':sessionPass}})
 .then(function(r){return r.json()})
 .then(function(data){
-var toggle=document.getElementById('storeClosedToggle');
-if(toggle)toggle.checked=data.is_manual_closed||false;
-var autoToggle=document.getElementById('autoScheduleToggle');
-if(autoToggle){autoToggle.checked=data.auto_schedule||false;toggleAutoScheduleUI(data.auto_schedule||false)}
-var openInput=document.getElementById('openTimeInput');
-if(openInput)openInput.value=data.open_time||'05:00';
-var closeInput=document.getElementById('closeTimeInput');
-if(closeInput)closeInput.value=data.close_time||'23:00';
-var msgInput=document.getElementById('closeMessageInput');
-if(msgInput)msgInput.value=data.message||'Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
+var toggle=document.getElementById('storeClosedToggle');if(toggle)toggle.checked=data.is_manual_closed||false;
+var autoToggle=document.getElementById('autoScheduleToggle');if(autoToggle){autoToggle.checked=data.auto_schedule||false;toggleAutoScheduleUI(data.auto_schedule||false)}
+var openInput=document.getElementById('openTimeInput');if(openInput)openInput.value=data.open_time||'05:00';
+var closeInput=document.getElementById('closeTimeInput');if(closeInput)closeInput.value=data.close_time||'23:00';
+var msgInput=document.getElementById('closeMessageInput');if(msgInput)msgInput.value=data.message||'Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
 }).catch(function(e){console.error('Gagal memuat pengaturan toko',e)});
 }
 function toggleAutoScheduleUI(isChecked){
@@ -131,8 +119,8 @@ close_message:document.getElementById('closeMessageInput').value
 };
 fetch('/api/admin/settings',{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)})
 .then(handleResponseStatus)
-.then(function(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},2000)}})
-.catch(function(){alert('Gagal menyimpan pengaturan toko.')})
+.then(function(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},2000)};uiToast('Pengaturan toko disimpan.')})
+.catch(function(){uiAlert('Gagal menyimpan pengaturan toko.','Kesalahan')})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function loadFlashSaleSettings(){
@@ -140,14 +128,10 @@ if(!sessionPass)return;
 fetch('/api/admin/settings',{headers:{'x-admin-password':sessionPass}})
 .then(function(r){return r.json()})
 .then(function(data){
-var nameInput=document.getElementById('fsNameInput');
-if(nameInput)nameInput.value=data.flash_sale_name||'Flash Sale';
-var descInput=document.getElementById('fsDescInput');
-if(descInput)descInput.value=data.flash_sale_description||'';
-var startInput=document.getElementById('fsStartInput');
-if(startInput)startInput.value=data.flash_sale_start||'';
-var endInput=document.getElementById('fsEndInput');
-if(endInput)endInput.value=data.flash_sale_end||'';
+var nameInput=document.getElementById('fsNameInput');if(nameInput)nameInput.value=data.flash_sale_name||'Flash Sale';
+var descInput=document.getElementById('fsDescInput');if(descInput)descInput.value=data.flash_sale_description||'';
+var startInput=document.getElementById('fsStartInput');if(startInput)startInput.value=data.flash_sale_start||'';
+var endInput=document.getElementById('fsEndInput');if(endInput)endInput.value=data.flash_sale_end||'';
 }).catch(function(e){console.error('Gagal memuat pengaturan flash sale',e)});
 }
 function saveFlashSaleSettings(e){
@@ -172,8 +156,8 @@ flash_sale_description:document.getElementById('fsDescInput').value
 return fetch('/api/admin/settings',{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)});
 })
 .then(handleResponseStatus)
-.then(function(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},2000)}})
-.catch(function(){alert('Gagal menyimpan pengaturan Flash Sale.')})
+.then(function(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},2000)};uiToast('Pengaturan Flash Sale disimpan.')})
+.catch(function(){uiAlert('Gagal menyimpan pengaturan Flash Sale.','Kesalahan')})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function renderFlashSaleItems(){
@@ -196,9 +180,7 @@ if(!flashItems.length){list.appendChild(ce('div','empty-state','Belum ada item F
 flashItems.forEach(function(item){
 var row=ce('div','fs-item');
 row.setAttribute('data-id',item.id);
-var drag=ce('div','fs-drag');
-drag.appendChild(admSvg('M4 8h16M4 16h16','1rem','1rem'));
-row.appendChild(drag);
+var drag=ce('div','fs-drag');drag.appendChild(admSvg('M4 8h16M4 16h16','1rem','1rem'));row.appendChild(drag);
 var info=ce('div','fs-item-info');
 info.appendChild(ce('p','fs-item-name',item.app_name+' • '+item.category+' • '+item.duration));
 var priceP=ce('p','fs-item-price');
@@ -208,12 +190,10 @@ if(item.status&&item.status.toLowerCase()!=='ready')priceP.appendChild(ce('span'
 info.appendChild(priceP);
 row.appendChild(info);
 var actions=ce('div','fs-item-actions');
-var editBtn=ce('button','fs-edit-btn','Edit');
-editBtn.setAttribute('type','button');
+var editBtn=ce('button','fs-edit-btn','Edit');editBtn.setAttribute('type','button');
 editBtn.addEventListener('click',function(){editFlashSaleItem(item.id)});
 actions.appendChild(editBtn);
-var removeBtn=ce('button','fs-remove-btn','Hapus');
-removeBtn.setAttribute('type','button');
+var removeBtn=ce('button','fs-remove-btn','Hapus');removeBtn.setAttribute('type','button');
 removeBtn.addEventListener('click',function(){removeFromFlashSale(item.id)});
 actions.appendChild(removeBtn);
 row.appendChild(actions);
@@ -239,18 +219,16 @@ fetch('/api/admin/flashsale/reorder',{method:'PUT',headers:{'Content-Type':'appl
 }
 });
 }
-function editFlashSaleItem(id){
-switchTab('produk');
-setTimeout(function(){if(typeof editPackage==='function')editPackage(id)},100);
-}
+function editFlashSaleItem(id){switchTab('produk');setTimeout(function(){if(typeof editPackage==='function')editPackage(id)},100)}
 function removeFromFlashSale(id){
-if(!confirm('Hapus item ini dari Flash Sale? Item tetap ada di daftar produk.'))return;
+uiConfirm('Hapus item ini dari Flash Sale? Item tetap ada di daftar produk.','Hapus dari Flash Sale',function(){
 var item=globalAdminData.find(function(d){return d.id===id});
 if(!item)return;
 fetch('/api/admin/pricelist/'+id,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({app_name:item.app_name,category:item.category,duration:item.duration,price:item.price,status:item.status,notes:item.notes||'',flash_price:''})})
 .then(handleResponseStatus)
-.then(function(){item.flash_price='';renderFlashSaleItems()})
-.catch(function(){alert('Gagal menghapus item dari Flash Sale.')});
+.then(function(){item.flash_price='';renderFlashSaleItems();uiToast('Item dihapus dari Flash Sale.')})
+.catch(function(){uiAlert('Gagal menghapus item dari Flash Sale.','Kesalahan')});
+},{danger:true,okText:'Hapus'});
 }
 function loadAdminTestimoni(){
 if(!sessionPass)return;
@@ -278,8 +256,7 @@ nameP.appendChild(ce('span','testi-date',new Date(item.created_at).toLocaleDateS
 nameDiv.appendChild(nameP);
 nameDiv.appendChild(ce('p','testi-text',item.komentar));
 header.appendChild(nameDiv);
-var delBtn=ce('button','testi-del-btn');
-delBtn.setAttribute('type','button');
+var delBtn=ce('button','testi-del-btn');delBtn.setAttribute('type','button');
 delBtn.appendChild(admSvg('M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16','1rem','1rem'));
 delBtn.addEventListener('click',function(){deleteAdminTestimoni(item.id)});
 header.appendChild(delBtn);
@@ -289,16 +266,14 @@ var replyDiv=ce('div','testi-reply');
 replyDiv.appendChild(ce('p','testi-reply-label','↳ Balasan Admin:'));
 replyDiv.appendChild(ce('p','testi-reply-text',item.balasan_admin));
 var replyActions=ce('div','testi-reply-actions');
-var editReplyBtn=ce('button','testi-edit-reply','Edit Balasan');
-editReplyBtn.setAttribute('type','button');
+var editReplyBtn=ce('button','testi-edit-reply','Edit Balasan');editReplyBtn.setAttribute('type','button');
 editReplyBtn.addEventListener('click',function(){openAdminReplyModal(item.id,item.nama,item.komentar,item.balasan_admin||'')});
 replyActions.appendChild(editReplyBtn);
 replyDiv.appendChild(replyActions);
 testiItem.appendChild(replyDiv);
 }else{
 var replyWrap=ce('div','testi-reply-wrap');
-var replyBtn=ce('button','testi-reply-btn','Balas');
-replyBtn.setAttribute('type','button');
+var replyBtn=ce('button','testi-reply-btn','Balas');replyBtn.setAttribute('type','button');
 replyBtn.addEventListener('click',function(){openAdminReplyModal(item.id,item.nama,item.komentar,'')});
 replyWrap.appendChild(replyBtn);
 testiItem.appendChild(replyWrap);
@@ -312,19 +287,12 @@ list.appendChild(ce('div','empty-state','Gagal memuat testimoni.'));
 }
 function openAdminReplyModal(id,nama,komentar,balasan){
 currentReplyId=id;
-var nameEl=document.getElementById('replyTargetName');
-if(nameEl)nameEl.textContent=nama;
-var commentEl=document.getElementById('replyTargetComment');
-if(commentEl)commentEl.textContent='"'+komentar+'"';
-var textEl=document.getElementById('replyText');
-if(textEl)textEl.value=balasan;
-var modal=document.getElementById('replyTestimoniModal');
-if(modal)modal.classList.remove('hidden');
+var nameEl=document.getElementById('replyTargetName');if(nameEl)nameEl.textContent=nama;
+var commentEl=document.getElementById('replyTargetComment');if(commentEl)commentEl.textContent='"'+komentar+'"';
+var textEl=document.getElementById('replyText');if(textEl)textEl.value=balasan;
+var modal=document.getElementById('replyTestimoniModal');if(modal)modal.classList.remove('hidden');
 }
-function closeAdminReplyModal(){
-var modal=document.getElementById('replyTestimoniModal');
-if(modal)modal.classList.add('hidden');
-}
+function closeAdminReplyModal(){var modal=document.getElementById('replyTestimoniModal');if(modal)modal.classList.add('hidden')}
 function submitAdminReply(e){
 e.preventDefault();
 if(!currentReplyId)return;
@@ -335,96 +303,58 @@ var oldText=btn?btn.textContent:'';
 if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
 fetch('/api/admin/testimoni/'+currentReplyId,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({balasan_admin:replyText.value})})
 .then(handleResponseStatus)
-.then(function(){closeAdminReplyModal();loadAdminTestimoni()})
-.catch(function(){alert('Gagal menyimpan balasan.')})
+.then(function(){closeAdminReplyModal();loadAdminTestimoni();uiToast('Balasan tersimpan.')})
+.catch(function(){uiAlert('Gagal menyimpan balasan.','Kesalahan')})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function deleteAdminTestimoni(id){
-if(!confirm('Yakin ingin menghapus testimoni ini secara permanen?'))return;
+uiConfirm('Yakin ingin menghapus testimoni ini secara permanen?','Hapus Testimoni',function(){
 fetch('/api/admin/testimoni/'+id,{method:'DELETE',headers:{'x-admin-password':sessionPass}})
 .then(handleResponseStatus)
-.then(function(){loadAdminTestimoni()})
-.catch(function(){alert('Gagal menghapus testimoni.')});
+.then(function(){loadAdminTestimoni();uiToast('Testimoni dihapus.')})
+.catch(function(){uiAlert('Gagal menghapus testimoni.','Kesalahan')});
+},{danger:true,okText:'Hapus'});
 }
 document.addEventListener('DOMContentLoaded',function(){
-var btnLogin=document.getElementById('btnLogin');
-if(btnLogin)btnLogin.addEventListener('click',loginAdmin);
-var passInput=document.getElementById('adminPasswordInput');
-if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter')loginAdmin()});
-var btnLogout=document.getElementById('btnLogout');
-if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
-['produk','flashsale','reseller','testimoni','pengaturan'].forEach(function(t){
-var sbBtn=document.getElementById('sbtab-'+t);
-if(sbBtn)sbBtn.addEventListener('click',function(){switchTab(t)});
+var btnLogin=document.getElementById('btnLogin');if(btnLogin)btnLogin.addEventListener('click',loginAdmin);
+var passInput=document.getElementById('adminPasswordInput');if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter')loginAdmin()});
+var btnLogout=document.getElementById('btnLogout');if(btnLogout)btnLogout.addEventListener('click',logoutAdmin);
+var navMap={
+'sbtab-dashboard':'dashboard','sbtab-produk':'produk','sbtab-rprice':'rprice','sbtab-rorders':'rorders','sbtab-raccounts':'raccounts','sbtab-flashsale':'flashsale','sbtab-testimoni':'testimoni','sbtab-pengaturan':'pengaturan','sbtab-activity':'activity'
+};
+Object.keys(navMap).forEach(function(id){
+var el=document.getElementById(id);if(el)el.addEventListener('click',function(){switchTab(navMap[id])});
+});
+var bnavMap={'bnav-dashboard':'dashboard','bnav-produk':'produk','bnav-rprice':'rprice','bnav-rorders':'rorders'};
+Object.keys(bnavMap).forEach(function(id){
+var el=document.getElementById(id);if(el)el.addEventListener('click',function(){switchTab(bnavMap[id])});
 });
 ['rprice','rorders','raccounts'].forEach(function(s){
-var subBtn=document.getElementById('subtab-'+s);
-if(subBtn)subBtn.addEventListener('click',function(){switchResellerSub(s)});
+var subBtn=document.getElementById('subtab-'+s);if(subBtn)subBtn.addEventListener('click',function(){switchResellerSub(s)});
 });
-var settingsForm=document.getElementById('settingsForm');
-if(settingsForm)settingsForm.addEventListener('submit',saveStoreSettings);
-var fsForm=document.getElementById('flashSaleSettingsForm');
-if(fsForm)fsForm.addEventListener('submit',saveFlashSaleSettings);
-var autoToggle=document.getElementById('autoScheduleToggle');
-if(autoToggle)autoToggle.addEventListener('change',function(){toggleAutoScheduleUI(this.checked)});
-var editModalClose=document.getElementById('editModalClose');
-if(editModalClose)editModalClose.addEventListener('click',function(){if(typeof closeEditModal==='function')closeEditModal()});
-var editModalBackdrop=document.getElementById('editModalBackdrop');
-if(editModalBackdrop)editModalBackdrop.addEventListener('click',function(){if(typeof closeEditModal==='function')closeEditModal()});
-var editCancelBtn=document.getElementById('editCancelBtn');
-if(editCancelBtn)editCancelBtn.addEventListener('click',function(){if(typeof closeEditModal==='function')closeEditModal()});
-var addPkgClose=document.getElementById('addPkgClose');
-if(addPkgClose)addPkgClose.addEventListener('click',function(){if(typeof closeAddPackageModal==='function')closeAddPackageModal()});
-var addPkgBackdrop=document.getElementById('addPkgBackdrop');
-if(addPkgBackdrop)addPkgBackdrop.addEventListener('click',function(){if(typeof closeAddPackageModal==='function')closeAddPackageModal()});
-var addPkgCancelBtn=document.getElementById('addPkgCancelBtn');
-if(addPkgCancelBtn)addPkgCancelBtn.addEventListener('click',function(){if(typeof closeAddPackageModal==='function')closeAddPackageModal()});
-var formBuilderClose=document.getElementById('formBuilderClose');
-if(formBuilderClose)formBuilderClose.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
-var formBuilderBackdrop=document.getElementById('formBuilderBackdrop');
-if(formBuilderBackdrop)formBuilderBackdrop.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
-var formBuilderCancel=document.getElementById('formBuilderCancel');
-if(formBuilderCancel)formBuilderCancel.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
-var credTplClose=document.getElementById('credTplClose');
-if(credTplClose)credTplClose.addEventListener('click',function(){var m=document.getElementById('credTemplateModal');if(m)m.classList.add('hidden')});
-var credTplBackdrop=document.getElementById('credTplBackdrop');
-if(credTplBackdrop)credTplBackdrop.addEventListener('click',function(){var m=document.getElementById('credTemplateModal');if(m)m.classList.add('hidden')});
-var credTplCancel=document.getElementById('credTplCancel');
-if(credTplCancel)credTplCancel.addEventListener('click',function(){var m=document.getElementById('credTemplateModal');if(m)m.classList.add('hidden')});
-var stockAddClose=document.getElementById('stockAddClose');
-if(stockAddClose)stockAddClose.addEventListener('click',function(){var m=document.getElementById('stockAddModal');if(m)m.classList.add('hidden')});
-var stockAddBackdrop=document.getElementById('stockAddBackdrop');
-if(stockAddBackdrop)stockAddBackdrop.addEventListener('click',function(){var m=document.getElementById('stockAddModal');if(m)m.classList.add('hidden')});
-var stockAddCancel=document.getElementById('stockAddCancel');
-if(stockAddCancel)stockAddCancel.addEventListener('click',function(){var m=document.getElementById('stockAddModal');if(m)m.classList.add('hidden')});
-var stockBulkClose=document.getElementById('stockBulkClose');
-if(stockBulkClose)stockBulkClose.addEventListener('click',function(){var m=document.getElementById('stockBulkModal');if(m)m.classList.add('hidden')});
-var stockBulkBackdrop=document.getElementById('stockBulkBackdrop');
-if(stockBulkBackdrop)stockBulkBackdrop.addEventListener('click',function(){var m=document.getElementById('stockBulkModal');if(m)m.classList.add('hidden')});
-var stockBulkCancel=document.getElementById('stockBulkCancel');
-if(stockBulkCancel)stockBulkCancel.addEventListener('click',function(){var m=document.getElementById('stockBulkModal');if(m)m.classList.add('hidden')});
-var reorderClose=document.getElementById('reorderClose');
-if(reorderClose)reorderClose.addEventListener('click',function(){if(typeof closeReorderModal==='function')closeReorderModal()});
-var reorderBackdrop=document.getElementById('reorderBackdrop');
-if(reorderBackdrop)reorderBackdrop.addEventListener('click',function(){if(typeof closeReorderModal==='function')closeReorderModal()});
-var importClose=document.getElementById('importClose');
-if(importClose)importClose.addEventListener('click',function(){if(typeof closeImportModal==='function')closeImportModal()});
-var importBackdrop=document.getElementById('importBackdrop');
-if(importBackdrop)importBackdrop.addEventListener('click',function(){if(typeof closeImportModal==='function')closeImportModal()});
-var importCancelBtn=document.getElementById('importCancelBtn');
-if(importCancelBtn)importCancelBtn.addEventListener('click',function(){if(typeof closeImportModal==='function')closeImportModal()});
-var replyTestiClose=document.getElementById('replyTestiClose');
-if(replyTestiClose)replyTestiClose.addEventListener('click',closeAdminReplyModal);
-var replyTestiBackdrop=document.getElementById('replyTestiBackdrop');
-if(replyTestiBackdrop)replyTestiBackdrop.addEventListener('click',closeAdminReplyModal);
-var replyCancelBtn=document.getElementById('replyCancelBtn');
-if(replyCancelBtn)replyCancelBtn.addEventListener('click',closeAdminReplyModal);
-var replyForm=document.getElementById('replyTestimoniForm');
-if(replyForm)replyForm.addEventListener('submit',submitAdminReply);
-var orderDetailClose=document.getElementById('orderDetailClose');
-if(orderDetailClose)orderDetailClose.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
-var orderDetailBackdrop=document.getElementById('orderDetailBackdrop');
-if(orderDetailBackdrop)orderDetailBackdrop.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
+var settingsForm=document.getElementById('settingsForm');if(settingsForm)settingsForm.addEventListener('submit',saveStoreSettings);
+var fsForm=document.getElementById('flashSaleSettingsForm');if(fsForm)fsForm.addEventListener('submit',saveFlashSaleSettings);
+var autoToggle=document.getElementById('autoScheduleToggle');if(autoToggle)autoToggle.addEventListener('change',function(){toggleAutoScheduleUI(this.checked)});
+var editModalClose=document.getElementById('editModalClose');if(editModalClose)editModalClose.addEventListener('click',function(){if(typeof closeEditModal==='function')closeEditModal()});
+var editModalBackdrop=document.getElementById('editModalBackdrop');if(editModalBackdrop)editModalBackdrop.addEventListener('click',function(){if(typeof closeEditModal==='function')closeEditModal()});
+var editCancelBtn=document.getElementById('editCancelBtn');if(editCancelBtn)editCancelBtn.addEventListener('click',function(){if(typeof closeEditModal==='function')closeEditModal()});
+var addPkgClose=document.getElementById('addPkgClose');if(addPkgClose)addPkgClose.addEventListener('click',function(){if(typeof closeAddPackageModal==='function')closeAddPackageModal()});
+var addPkgBackdrop=document.getElementById('addPkgBackdrop');if(addPkgBackdrop)addPkgBackdrop.addEventListener('click',function(){if(typeof closeAddPackageModal==='function')closeAddPackageModal()});
+var addPkgCancelBtn=document.getElementById('addPkgCancelBtn');if(addPkgCancelBtn)addPkgCancelBtn.addEventListener('click',function(){if(typeof closeAddPackageModal==='function')closeAddPackageModal()});
+var formBuilderClose=document.getElementById('formBuilderClose');if(formBuilderClose)formBuilderClose.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
+var formBuilderBackdrop=document.getElementById('formBuilderBackdrop');if(formBuilderBackdrop)formBuilderBackdrop.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
+var formBuilderCancel=document.getElementById('formBuilderCancel');if(formBuilderCancel)formBuilderCancel.addEventListener('click',function(){if(typeof closeFormModal==='function')closeFormModal()});
+var reorderClose=document.getElementById('reorderClose');if(reorderClose)reorderClose.addEventListener('click',function(){if(typeof closeReorderModal==='function')closeReorderModal()});
+var reorderBackdrop=document.getElementById('reorderBackdrop');if(reorderBackdrop)reorderBackdrop.addEventListener('click',function(){if(typeof closeReorderModal==='function')closeReorderModal()});
+var importClose=document.getElementById('importClose');if(importClose)importClose.addEventListener('click',function(){if(typeof closeImportModal==='function')closeImportModal()});
+var importBackdrop=document.getElementById('importBackdrop');if(importBackdrop)importBackdrop.addEventListener('click',function(){if(typeof closeImportModal==='function')closeImportModal()});
+var importCancelBtn=document.getElementById('importCancelBtn');if(importCancelBtn)importCancelBtn.addEventListener('click',function(){if(typeof closeImportModal==='function')closeImportModal()});
+var replyTestiClose=document.getElementById('replyTestiClose');if(replyTestiClose)replyTestiClose.addEventListener('click',closeAdminReplyModal);
+var replyTestiBackdrop=document.getElementById('replyTestiBackdrop');if(replyTestiBackdrop)replyTestiBackdrop.addEventListener('click',closeAdminReplyModal);
+var replyCancelBtn=document.getElementById('replyCancelBtn');if(replyCancelBtn)replyCancelBtn.addEventListener('click',closeAdminReplyModal);
+var replyForm=document.getElementById('replyTestimoniForm');if(replyForm)replyForm.addEventListener('submit',submitAdminReply);
+var orderDetailClose=document.getElementById('orderDetailClose');if(orderDetailClose)orderDetailClose.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
+var orderDetailBackdrop=document.getElementById('orderDetailBackdrop');if(orderDetailBackdrop)orderDetailBackdrop.addEventListener('click',function(){if(typeof closeOrderDetail==='function')closeOrderDetail()});
 checkSession();
 ensureTurnstile(renderAdminTurnstile);
 });
