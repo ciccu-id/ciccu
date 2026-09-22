@@ -1,23 +1,9 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
 import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
-const SESSION_COOKIE='rsl_sid';
-function parseCookiesSafe(request){
-const out={};
-const header=request.headers.get('cookie')||'';
-header.split(';').forEach(function(part){
-const i=part.indexOf('=');
-if(i>0)out[part.slice(0,i).trim()]=decodeURIComponent(part.slice(i+1).trim());
-});
-return out;
-}
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
-async function sha256hex(s){
-const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
-return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 function safeAudit(){
 try{
 return Promise.resolve(audit.apply(null,arguments)).catch(function(e){console.error('audit failed:',e)});
@@ -52,17 +38,6 @@ const m=request.method;
 const p=new URL(request.url).pathname.replace(/^\/api\/reseller/,'')||'/';
 if(m==='OPTIONS')return new Response(null,{status:405});
 const ip=request.headers.get('cf-connecting-ip')||'';
-if(p==='/ping'&&m==='GET')return json({ok:true,route:'reseller',v:'res-6-headertoken'});
-if(p==='/whoami'&&m==='GET'){
-const viaHeader=!!(request.headers.get('x-reseller-token')||'');
-const viaCookie=!!parseCookiesSafe(request)[SESSION_COOKIE];
-const token=(request.headers.get('x-reseller-token')||'')||parseCookiesSafe(request)[SESSION_COOKIE];
-if(!token)return json({cookie:viaCookie,header:viaHeader,session:false,reason:'token-tidak-ada'});
-const th=await sha256hex(token);
-const row=await env.DB.prepare('SELECT s.id AS sid,s.expires_at,s.revoked_at,r.id AS rid,r.username,r.display_name,r.status FROM rsl_sessions s JOIN rsl_resellers r ON r.id=s.reseller_id WHERE s.token_hash=?').bind(th).first();
-if(!row)return json({cookie:viaCookie,header:viaHeader,session:false,reason:'baris-sesi-tidak-ketemu'});
-return json({cookie:viaCookie,header:viaHeader,session:true,username:row.username,display_name:row.display_name,status:row.status,revoked_at:row.revoked_at,expires_at:row.expires_at,now:nowStr()});
-}
 try{
 if(p==='/register'&&m==='POST'){
 const b=await body(request)||{};
@@ -75,7 +50,7 @@ if(password.length<8)return err('Password minimal 8 karakter',400);
 if(!token)return err('Token pendaftaran wajib diisi',400);
 if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
 await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(nowStr()).run();
-const hash=await sha256hex(token);
+const hash=await sha256Local(token);
 const row=await env.DB.prepare('SELECT id,expires_at FROM rsl_reg_tokens WHERE token_hash=?').bind(hash).first();
 if(!row||row.expires_at<=nowStr())return err('Token tidak valid atau telah kedaluwarsa',404);
 const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
@@ -192,4 +167,8 @@ return err('Endpoint tidak ditemukan',404);
 console.error('Reseller API error:',e);
 return err('Terjadi kesalahan di server.',500);
 }
+}
+async function sha256Local(s){
+const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
