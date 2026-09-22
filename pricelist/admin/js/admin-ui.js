@@ -20,20 +20,19 @@ overlay.appendChild(box);
 document.body.appendChild(overlay);
 toastEl=document.createElement('div');toastEl.className='ui-toast';
 document.body.appendChild(toastEl);
-cancelBtn.addEventListener('click',function(){closeDialog(null)});
-overlay.addEventListener('click',function(e){if(e.target===overlay)closeDialog(null)});
+cancelBtn.addEventListener('click',function(){closeDialog()});
+overlay.addEventListener('click',function(e){if(e.target===overlay)closeDialog()});
 okBtn.addEventListener('click',function(){
 var cb=okBtn._cb;
 var val=inputEl.value;
-closeDialog(null);
+closeDialog();
 if(cb)cb(val);
 });
 }
-var pendingOk=null;
 function closeDialog(){
 if(!overlay)return;
 overlay.classList.remove('show');
-okBtn._cb=null;
+if(okBtn)okBtn._cb=null;
 }
 function openDialog(opt){
 build();
@@ -66,4 +65,40 @@ if(id&&UI_REG[id]){e.preventDefault();UI_REG[id](e,node);return}
 node=node.parentNode;
 }
 },true);
+})();
+(function(){
+window.fmtRemain=function(iso){
+if(!iso)return{text:'—',mod:'dead'};
+var t=Date.parse(String(iso).replace(' ','T')+'Z');
+if(isNaN(t))return{text:'—',mod:'dead'};
+var diff=t-Date.now();
+if(diff<=0)return{text:'Berakhir',mod:'dead'};
+var s=Math.floor(diff/1000);
+var d=Math.floor(s/86400);s-=d*86400;
+var h=Math.floor(s/3600);s-=h*3600;
+var m=Math.floor(s/60);s-=m*60;
+var txt;
+if(d>0)txt=d+'h '+h+'j '+m+'m';
+else if(h>0)txt=h+'j '+m+'m '+s+'d';
+else if(m>0)txt=m+'m '+s+'d';
+else txt=s+'d';
+var mod='ok';
+if(diff<86400000)mod='danger';
+else if(diff<604800000)mod='warn';
+return{text:txt,mod:mod};
+};
+window.uiTickCountdowns=function(){
+var els=document.querySelectorAll('[data-cd]');
+if(!els.length)return;
+for(var i=0;i<els.length;i++){
+var el=els[i];
+var r=window.fmtRemain(el.getAttribute('data-cd'));
+if(el.textContent!==r.text)el.textContent=r.text;
+el.classList.remove('ok','warn','danger','dead');
+el.classList.add(r.mod);
+}
+};
+setInterval(function(){
+if(document.querySelectorAll('[data-cd]').length)window.uiTickCountdowns();
+},1000);
 })();
