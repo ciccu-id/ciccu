@@ -1,4 +1,4 @@
-var stockTemplates=[],stockCtxVariant=null,credTplFields=[],credTplApp='';
+var stockTemplates=[],stockCtxVariant=null,stockMgrVariant=null,credTplFields=[],credTplApp='';
 function maskVal(v){v=String(v==null?'':v);if(!v)return'';if(v.length<=4)return'•'.repeat(v.length);return v.slice(0,2)+'•'.repeat(Math.min(8,v.length-4))+v.slice(-2)}
 function stockHeaders(){return{'Content-Type':'application/json','x-admin-password':sessionPass}}
 function openModal(id){var m=document.getElementById(id);if(!m)return;m.classList.remove('hidden');var bd=m.querySelector('.modal-backdrop');var bx=m.querySelector('.modal-box');setTimeout(function(){if(bd)bd.classList.add('show');if(bx)bx.classList.add('show')},10)}
@@ -11,27 +11,23 @@ var t=stockTemplates.find(function(x){return x.app_name.toLowerCase()===String(a
 if(!t)return[];
 try{var a=JSON.parse(t.fields);return Array.isArray(a)?a:[]}catch(e){return[]}
 }
-function findVariant(id){return(RPRICE_DATA||[]).find(function(x){return x.id===id})}
-function stockCardEls(variantId){
-var card=document.querySelector('.rp-card[data-variant="'+variantId+'"]');
-if(!card)return null;
-return{card:card,badge:card.querySelector('.rp-stockbadge'),count:card.querySelector('.rp-stockcount'),list:card.querySelector('.rp-list'),panel:card.querySelector('.rp-panel')};
+function stockOpenManager(variant){
+stockMgrVariant=variant;
+var sub=document.getElementById('stockMgrSub');
+if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration;
+openModal('stockManagerModal');
+stockRenderManager();
 }
-function stockUpdateBadge(variantId,avail){
-var els=stockCardEls(variantId);
-if(!els)return;
-if(els.badge){els.badge.textContent='Stok '+avail;els.badge.className='status-badge rp-stockbadge '+(avail>0?(avail<=4?'sold':'ready'):'sold')}
-if(els.count)els.count.textContent='('+avail+')';
-var v=findVariant(variantId);
-if(v)v.stock_available=avail;
-}
-function stockRenderList(variant,listEl){
-while(listEl.firstChild)listEl.removeChild(listEl.firstChild);
-listEl.appendChild(ce('div','loading-state','Memuat stok...'));
-fetch('/api/admin/stock/'+variant.id+'?limit=100',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).then(function(data){
-while(listEl.firstChild)listEl.removeChild(listEl.firstChild);
-stockUpdateBadge(variant.id,data.available);
-if(!data.items.length){listEl.appendChild(ce('div','empty-state','Belum ada stok untuk varian ini.'));return}
+function stockRenderManager(){
+var list=document.getElementById('stockMgrList');
+if(!list||!stockMgrVariant)return;
+while(list.firstChild)list.removeChild(list.firstChild);
+list.appendChild(ce('div','loading-state','Memuat stok...'));
+fetch('/api/admin/stock/'+stockMgrVariant.id+'?limit=100',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).then(function(data){
+while(list.firstChild)list.removeChild(list.firstChild);
+var sub=document.getElementById('stockMgrSub');
+if(sub&&stockMgrVariant)sub.textContent=stockMgrVariant.app_name+' • '+stockMgrVariant.category+' • '+stockMgrVariant.duration+' — '+data.available+' tersedia';
+if(!data.items.length){list.appendChild(ce('div','empty-state','Belum ada stok untuk varian ini.'));return}
 data.items.forEach(function(it){
 var row=ce('div','fs-item');
 var info=ce('div','fs-item-info');
@@ -48,32 +44,25 @@ act.appendChild(viewBtn);
 if(it.status==='available'){
 var disBtn=ce('button','fs-edit-btn','Nonaktif');
 disBtn.setAttribute('type','button');
-disBtn.addEventListener('click',function(){if(!confirm('Nonaktifkan stok #'+it.id+'?'))return;fetch('/api/admin/stock/'+it.id+'/disable',{method:'POST',headers:stockHeaders()}).then(handleResponseStatus).then(function(){stockRefresh(variant.id)}).catch(function(){})});
+disBtn.addEventListener('click',function(){if(!confirm('Nonaktifkan stok #'+it.id+'?'))return;fetch('/api/admin/stock/'+it.id+'/disable',{method:'POST',headers:stockHeaders()}).then(handleResponseStatus).then(function(){stockAfterChange()}).catch(function(){})});
 act.appendChild(disBtn);
 var delBtn=ce('button','fs-remove-btn','Hapus');
 delBtn.setAttribute('type','button');
-delBtn.addEventListener('click',function(){if(!confirm('Hapus stok #'+it.id+'?'))return;fetch('/api/admin/stock/'+it.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(handleResponseStatus).then(function(){stockRefresh(variant.id)}).catch(function(){})});
+delBtn.addEventListener('click',function(){if(!confirm('Hapus stok #'+it.id+'?'))return;fetch('/api/admin/stock/'+it.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(handleResponseStatus).then(function(){stockAfterChange()}).catch(function(){})});
 act.appendChild(delBtn);
 }
 row.appendChild(act);
-listEl.appendChild(row);
+list.appendChild(row);
 });
-}).catch(function(){while(listEl.firstChild)listEl.removeChild(listEl.firstChild);listEl.appendChild(ce('div','empty-state','Gagal memuat stok.'))});
+}).catch(function(){while(list.firstChild)list.removeChild(list.firstChild);list.appendChild(ce('div','empty-state','Gagal memuat stok.'))});
 }
-function stockLoadListFor(variant,listEl,cardEl){stockRenderList(variant,listEl)}
-function stockRefresh(variantId){
-var els=stockCardEls(variantId);
-var v=findVariant(variantId);
-if(!v)return;
-if(els&&els.panel&&!els.panel.classList.contains('hidden')){stockRenderList(v,els.list)}
-else{
-fetch('/api/admin/stock/'+variantId+'?limit=1',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).then(function(d){stockUpdateBadge(variantId,d.available)}).catch(function(){});
-}
-if(typeof loadLowStock==='function')loadLowStock();
+function stockAfterChange(){
+stockRenderManager();
+if(typeof loadResellerPricelist==='function')loadResellerPricelist();
 }
 function stockOpenAdd(variant){
 var fields=currentTemplateFields(variant.app_name);
-if(!fields.length)return alert('Buat template field dulu lewat tombol 🧩 Template pada header aplikasi '+variant.app_name+'.');
+if(!fields.length)return alert('Buat template field dulu lewat tombol 🧩 pada header aplikasi '+variant.app_name+'.');
 stockCtxVariant=variant;
 var sub=document.getElementById('stockAddVariantName');
 if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration;
@@ -106,13 +95,13 @@ var btn=document.getElementById('btnSubmitStockAdd');
 if(btn){btn.disabled=true;btn.textContent='Menyimpan...'}
 fetch('/api/admin/stock/'+stockCtxVariant.id,{method:'POST',headers:stockHeaders(),body:JSON.stringify({fields:obj})})
 .then(handleResponseStatus)
-.then(function(){closeModal('stockAddModal');stockRefresh(stockCtxVariant.id)})
+.then(function(){closeModal('stockAddModal');stockAfterChange()})
 .catch(function(){alert('Gagal menambah stok.')})
 .finally(function(){if(btn){btn.disabled=false;btn.textContent='Simpan Stok'}});
 }
 function stockOpenBulk(variant){
 var fields=currentTemplateFields(variant.app_name);
-if(!fields.length)return alert('Buat template field dulu lewat tombol 🧩 Template pada header aplikasi '+variant.app_name+'.');
+if(!fields.length)return alert('Buat template field dulu lewat tombol 🧩 pada header aplikasi '+variant.app_name+'.');
 stockCtxVariant=variant;
 var sub=document.getElementById('stockBulkVariantName');
 if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration+' (urutan: '+fields.join(', ')+')';
@@ -141,7 +130,7 @@ var btn=document.getElementById('btnSubmitStockBulk');
 if(btn){btn.disabled=true;btn.textContent='Mengimport...'}
 fetch('/api/admin/stock/'+stockCtxVariant.id+'/bulk',{method:'POST',headers:stockHeaders(),body:JSON.stringify({items:items})})
 .then(handleResponseStatus)
-.then(function(){closeModal('stockBulkModal');stockRefresh(stockCtxVariant.id)})
+.then(function(){closeModal('stockBulkModal');stockAfterChange()})
 .catch(function(){alert('Gagal import bulk.')})
 .finally(function(){if(btn){btn.disabled=false;btn.textContent='Import'}});
 }
@@ -184,6 +173,12 @@ fetch('/api/admin/cred-templates/'+encodeURIComponent(credTplApp),{method:'PUT',
 }
 document.addEventListener('DOMContentLoaded',function(){
 loadTemplates();
+var bMgrAdd=document.getElementById('btnMgrAdd');
+if(bMgrAdd)bMgrAdd.addEventListener('click',function(){if(stockMgrVariant)stockOpenAdd(stockMgrVariant)});
+var bMgrBulk=document.getElementById('btnMgrBulk');
+if(bMgrBulk)bMgrBulk.addEventListener('click',function(){if(stockMgrVariant)stockOpenBulk(stockMgrVariant)});
+var bMgrTpl=document.getElementById('btnMgrTpl');
+if(bMgrTpl)bMgrTpl.addEventListener('click',function(){if(stockMgrVariant)stockOpenTemplate(stockMgrVariant.app_name)});
 var bAddF=document.getElementById('btnAddCredField');
 if(bAddF)bAddF.addEventListener('click',function(){credTplFields.push('');renderCredTplFields()});
 var bSaveTpl=document.getElementById('btnSaveCredTemplate');
@@ -192,7 +187,7 @@ var bSubmitAdd=document.getElementById('btnSubmitStockAdd');
 if(bSubmitAdd)bSubmitAdd.addEventListener('click',submitStockAdd);
 var bSubmitBulk=document.getElementById('btnSubmitStockBulk');
 if(bSubmitBulk)bSubmitBulk.addEventListener('click',submitStockBulk);
-[['credTemplateModal','credTplClose','credTplBackdrop','credTplCancel'],['stockAddModal','stockAddClose','stockAddBackdrop','stockAddCancel'],['stockBulkModal','stockBulkClose','stockBulkBackdrop','stockBulkCancel']].forEach(function(cfg){
-[cfg[1],cfg[2],cfg[3]].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',function(){closeModal(cfg[0])})});
+[['credTemplateModal','credTplClose','credTplBackdrop','credTplCancel'],['stockAddModal','stockAddClose','stockAddBackdrop','stockAddCancel'],['stockBulkModal','stockBulkClose','stockBulkBackdrop','stockBulkCancel'],['stockManagerModal','stockMgrClose','stockMgrBackdrop',null]].forEach(function(cfg){
+[cfg[1],cfg[2],cfg[3]].forEach(function(id){if(!id)return;var el=document.getElementById(id);if(el)el.addEventListener('click',function(){closeModal(cfg[0])})});
 });
 });
