@@ -102,3 +102,48 @@ setInterval(function(){
 if(document.querySelectorAll('[data-cd]').length)window.uiTickCountdowns();
 },1000);
 })();
+(function(){
+function ddParent(node){
+var n=node;
+while(n&&n!==document){
+if(n.classList&&n.classList.contains('dd'))return n;
+n=n.parentNode;
+}
+return null;
+}
+function closeAllDD(except){
+var dds=document.querySelectorAll('.dd.open');
+for(var i=0;i<dds.length;i++){if(dds[i]!==except)dds[i].classList.remove('open')}
+}
+document.addEventListener('click',function(e){
+var t=e.target;
+var btn=t.closest?t.closest('.dd-btn'):null;
+if(btn){
+var dd=ddParent(btn);
+if(dd){e.preventDefault();closeAllDD(dd);dd.classList.toggle('open');}
+return;
+}
+var item=t.closest?t.closest('.dd-item'):null;
+if(item){
+e.preventDefault();
+var dd2=ddParent(item);
+if(!dd2)return;
+var val=item.getAttribute('data-value')||'';
+var hid=dd2.querySelector('input[type="hidden"]');
+if(hid){
+hid.value=val;
+var ev=new Event('change',{bubbles:true});
+hid.dispatchEvent(ev);
+}
+var lbl=dd2.querySelector('.dd-btn span');
+var txt=item.querySelector('span');
+if(lbl&&txt)lbl.textContent=txt.textContent;
+var items=dd2.querySelectorAll('.dd-item');
+for(var i=0;i<items.length;i++){items[i].classList.toggle('active',items[i]===item)}
+dd2.classList.remove('open');
+return;
+}
+var inside=t.closest?t.closest('.dd'):null;
+if(!inside)closeAllDD(null);
+},true);
+})();
