@@ -6,6 +6,23 @@ function truncate(s,m){return s?String(s).slice(0,m):''}
 function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
 const num=s=>parseInt(s,10);
+function durationMs(str){
+if(!str)return 0;
+const s=String(str).toLowerCase();
+const m=s.match(/(\d+)\s*(hari|day|hr|d|minggu|week|mgg|w|bulan|month|bln|tahun|year|thn|y|jam|hour)?/);
+if(!m)return 0;
+const n=parseInt(m[1],10);
+if(isNaN(n)||n<=0)return 0;
+const u=m[2]||'hari';
+const DAY=86400000;
+if(u==='jam'||u==='hour')return n*3600000;
+if(u==='minggu'||u==='week'||u==='mgg'||u==='w')return n*7*DAY;
+if(u==='bulan'||u==='month'||u==='bln')return n*30*DAY;
+if(u==='tahun'||u==='year'||u==='thn'||u==='y')return n*365*DAY;
+return n*DAY;
+}
+function isoToUTC(s){if(!s)return null;const t=Date.parse(String(s).replace(' ','T')+'Z');return isNaN(t)?null:t}
+function addMsToIso(iso,ms){const base=isoToUTC(iso);if(base===null)return null;return new Date(base+ms).toISOString().replace('T',' ').slice(0,19)}
 export async function onRequest(context){
 const{request,env}=context;
 const url=new URL(request.url);const p=url.pathname;const m=request.method;
@@ -22,6 +39,25 @@ const{results}=await env.DB.prepare('SELECT * FROM store_settings WHERE id=1').a
 if(!results||!results.length)return json({});
 const s=results[0];
 return json({is_manual_closed:s.is_closed===1,auto_schedule:s.auto_schedule===1,open_time:s.open_time,close_time:s.close_time,message:s.close_message||'',flash_sale_start:s.flash_sale_start||'',flash_sale_end:s.flash_sale_end||'',flash_sale_name:s.flash_sale_name||'Flash Sale',flash_sale_description:s.flash_sale_description||''});
+}
+if(q==='/stats'&&m==='GET'){
+const oc=await env.DB.prepare('SELECT COUNT(*) AS c FROM rsl_orders').first();
+const dv=await env.DB.prepare("SELECT COUNT(*) AS c, COALESCE(SUM(total_amount),0) AS rev FROM rsl_orders WHERE status='delivered'").first();
+const pd=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_orders WHERE status='pending_payment'").first();
+const sa=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_stock_items WHERE status='available'").first();
+const ls=await env.DB.prepare("SELECT COUNT(*) AS c FROM (SELECT p.id FROM rsl_pricelist p LEFT JOIN rsl_stock_items s ON s.variant_id=p.id AND s.status='available' GROUP BY p.id HAVING COUNT(s.id)<=5)").first();
+const ro=await env.DB.prepare("SELECT o.id,o.total_amount,o.status,o.created_at,COALESCE(r.username,'') AS username FROM rsl_orders o LEFT JOIN rsl_resellers r ON r.id=o.reseller_id ORDER BY o.id DESC LIMIT 5").all();
+const lsl=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,COUNT(s.id) AS avail FROM rsl_pricelist p LEFT JOIN rsl_stock_items s ON s.variant_id=p.id AND s.status='available' GROUP BY p.id HAVING avail<=5 ORDER BY avail ASC,p.app_name LIMIT 5").all();
+const st=await env.DB.prepare('SELECT flash_sale_name,flash_sale_start,flash_sale_end FROM store_settings WHERE id=1').first();
+const fi=await env.DB.prepare("SELECT COUNT(*) AS c FROM pricelist WHERE flash_price IS NOT NULL AND flash_price<>''").first();
+let flash={name:'',start:'',end:'',active:false,items:0};
+if(st){
+const norm=x=>String(x||'').replace('T',' ').slice(0,16);
+const nnow=nowStr().slice(0,16);
+const ns=norm(st.flash_sale_start),ne=norm(st.flash_sale_end);
+flash={name:st.flash_sale_name||'Flash Sale',start:st.flash_sale_start||'',end:st.flash_sale_end||'',active:!!(ns&&ne&&ns<=nnow&&nnow<=ne),items:fi?fi.c:0};
+}
+return json({orders:{total:oc?oc.c:0,delivered:dv?dv.c:0,pending:pd?pd.c:0},revenue:dv?dv.rev:0,stock:{available:sa?sa.c:0,low:ls?ls.c:0},recent_orders:ro.results,low_stock:lsl.results,flash_sale:flash});
 }
 if(q==='/pricelist'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM pricelist').all();return json(results)}
 if(q==='/forms'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM app_forms').all();return json(results)}
@@ -168,12 +204,23 @@ const st=url.searchParams.get('status')||'';
 const lim=Math.min(num(url.searchParams.get('limit'))||20,100);
 const off=Math.max(num(url.searchParams.get('offset'))||0,0);
 const r=await env.DB.prepare("SELECT o.id,o.reseller_id,o.status,o.total_amount,o.provider,o.created_at,o.paid_at,o.delivered_at,COALESCE(r.username,'') AS username FROM rsl_orders o LEFT JOIN rsl_resellers r ON r.id=o.reseller_id WHERE (?='' OR o.status=?) ORDER BY o.id DESC LIMIT ? OFFSET ?").bind(st,st,lim,off).all();
-return json(r.results);
+const orders=r.results;
+if(orders.length){
+const ids=orders.map(o=>o.id);
+const it=await env.DB.prepare(`SELECT order_id,duration FROM rsl_order_items WHERE order_id IN (${ids.map(()=>'?').join(',')})`).bind(...ids).all();
+const minMs={};
+it.results.forEach(row=>{const ms=durationMs(row.duration);if(ms>0&&(minMs[row.order_id]===undefined||ms<minMs[row.order_id]))minMs[row.order_id]=ms});
+orders.forEach(o=>{
+if(o.status==='delivered'&&o.delivered_at&&minMs[o.id]!==undefined)o.expires_at=addMsToIso(o.delivered_at,minMs[o.id]);
+else o.expires_at=null;
+});
+}
+return json(orders);
 }
 const om=q.match(/^\/orders\/(\d+)(\/(settle|fulfill|refund))?$/);
 if(om){
 const id=num(om[1]);const act=om[3];
-if(m==='GET'&&!act){const o=await getOrder(env,id,null);if(!o)return err('Order tidak ditemukan',404);const pays=await env.DB.prepare('SELECT provider,provider_tx_id,status,gross_amount,raw_status,created_at FROM rsl_payments WHERE order_id=? ORDER BY id').bind(id).all();o.payments=pays.results;o.credentials=await listOrderCredentials(env,id);return json(o)}
+if(m==='GET'&&!act){const o=await getOrder(env,id,null);if(!o)return err('Order tidak ditemukan',404);const pays=await env.DB.prepare('SELECT provider,provider_tx_id,status,gross_amount,raw_status,created_at FROM rsl_payments WHERE order_id=? ORDER BY id').bind(id).all();o.payments=pays.results;o.credentials=await listOrderCredentials(env,id);if(o.delivered_at&&o.items)o.items.forEach(it=>{const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});return json(o)}
 if(m==='POST'&&act==='settle'){const r=await manualSettle(env,id,null,ip);return json(r)}
 if(m==='POST'&&act==='fulfill'){const r=await retryFulfill(env,id,null,ip);return json(r)}
 if(m==='POST'&&act==='refund'){const r=await refundOrder(env,id,null,ip,!!b.return_stock);return json(r)}
