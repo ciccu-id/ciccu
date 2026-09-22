@@ -18,9 +18,29 @@ export function parseCookies(header){const out={};(header||'').split(';').forEac
 export function isSecure(request){return new URL(request.url).protocol==='https:'}
 export function sessionCookieValue(token,secure){return SESSION_COOKIE+'='+token+'; Path=/; HttpOnly; SameSite=Lax'+(secure?'; Secure':'')+'; Max-Age='+(SESSION_HOURS*3600)}
 export function clearCookieValue(secure){return SESSION_COOKIE+'=; Path=/; HttpOnly; SameSite=Lax'+(secure?'; Secure':'')+'; Max-Age=0'}
+function rawSessionToken(request){
+const h=request.headers.get('x-reseller-token');
+if(h&&h.length>=32)return h.slice(0,128);
+const c=parseCookies(request.headers.get('cookie')||'')[SESSION_COOKIE];
+if(c&&c.length>=32)return c.slice(0,128);
+return null;
+}
 export async function createSession(env,reseller,request){const token=randomHex(32);const th=await sha256hex(token);const ip=request?(request.headers.get('cf-connecting-ip')||''):'';const ua=request?((request.headers.get('user-agent')||'').slice(0,200)):'';await env.DB.prepare('INSERT INTO rsl_sessions(reseller_id,token_hash,expires_at,ip,ua) VALUES(?,?,?,?,?)').bind(reseller.id,th,addHours(SESSION_HOURS),ip,ua).run();return token}
-export async function getSession(env,request){const token=parseCookies(request.headers.get('cookie')||'')[SESSION_COOKIE];if(!token)return null;const th=await sha256hex(token);const row=await env.DB.prepare('SELECT s.id AS sid,s.expires_at,s.revoked_at,r.id,r.username,r.display_name,r.status FROM rsl_sessions s JOIN rsl_resellers r ON r.id=s.reseller_id WHERE s.token_hash=?').bind(th).first();if(!row||row.revoked_at||row.expires_at<=nowStr()||row.status!=='active')return null;await env.DB.prepare('UPDATE rsl_sessions SET last_used_at=? WHERE id=?').bind(nowStr(),row.sid).run();return{id:row.id,username:row.username,display_name:row.display_name,sid:row.sid}}
-export async function revokeSession(env,request){const token=parseCookies(request.headers.get('cookie')||'')[SESSION_COOKIE];if(!token)return;const th=await sha256hex(token);await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL').bind(nowStr(),th).run()}
+export async function getSession(env,request){
+const token=rawSessionToken(request);
+if(!token)return null;
+const th=await sha256hex(token);
+const row=await env.DB.prepare('SELECT s.id AS sid,s.expires_at,s.revoked_at,r.id,r.username,r.display_name,r.status FROM rsl_sessions s JOIN rsl_resellers r ON r.id=s.reseller_id WHERE s.token_hash=?').bind(th).first();
+if(!row||row.revoked_at||row.expires_at<=nowStr()||row.status!=='active')return null;
+await env.DB.prepare('UPDATE rsl_sessions SET last_used_at=? WHERE id=?').bind(nowStr(),row.sid).run();
+return{id:row.id,username:row.username,display_name:row.display_name,sid:row.sid};
+}
+export async function revokeSession(env,request){
+const token=rawSessionToken(request);
+if(!token)return;
+const th=await sha256hex(token);
+await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL').bind(nowStr(),th).run();
+}
 export function isLocked(r){return!!(r&&r.locked_until&&r.locked_until>nowStr())}
 export async function recordFailure(env,id){const r=await env.DB.prepare('SELECT failed_attempts FROM rsl_resellers WHERE id=?').bind(id).first();const n=(r?r.failed_attempts:0)+1;if(n>=MAX_FAILED)await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=0,locked_until=? WHERE id=?').bind(addMinutes(LOCK_MINUTES),id).run();else await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=? WHERE id=?').bind(n,id).run()}
 export async function resetFailures(env,id){await env.DB.prepare('UPDATE rsl_resellers SET failed_attempts=0,locked_until=NULL,last_login_at=? WHERE id=?').bind(nowStr(),id).run()}
