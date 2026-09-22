@@ -1,0 +1,115 @@
+function actHeaders(){return{'x-admin-password':sessionPass}}
+function actTime(s){
+var t=Date.parse(String(s||'').replace(' ','T')+'Z');
+if(isNaN(t))return'-';
+var diff=Date.now()-t;if(diff<0)diff=0;
+var m=Math.floor(diff/60000);
+if(m<1)return'baru saja';
+if(m<60)return m+' mnt lalu';
+var h=Math.floor(m/60);
+if(h<24)return h+' jam lalu';
+var d=Math.floor(h/24);
+if(d<7)return d+' hari lalu';
+return new Date(t).toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+}
+function actLabel(a){
+var map={
+'login.ok':'Login berhasil',
+'login.fail':'Login gagal',
+'logout':'Logout',
+'checkout':'Checkout dibuat',
+'credentials.reveal':'Data order diakses',
+'stock.add':'Tambah stok',
+'stock.bulk':'Import stok bulk',
+'stock.update':'Edit stok',
+'stock.disable':'Nonaktifkan stok',
+'stock.delete':'Hapus stok',
+'rpricelist.create':'Tambah paket reseller',
+'rpricelist.update':'Edit paket reseller',
+'rpricelist.delete':'Hapus paket reseller',
+'reseller.create':'Buat akun reseller',
+'reseller.update':'Edit akun reseller',
+'template.set':'Atur template stok',
+'order.settle':'Tandai order lunas',
+'order.fulfill':'Proses ulang order',
+'order.refund':'Refund order'
+};
+return map[a]||a;
+}
+function actSeverity(a){
+if(/fail|delete|refund|disable/.test(a))return{bg:'var(--brick-50)',color:'var(--brick-500)'};
+if(/create|add|settle|fulfill|bulk/.test(a))return{bg:'var(--sage-50)',color:'var(--sage-600)'};
+if(/reveal|update/.test(a))return{bg:'var(--butter-100)',color:'var(--choco-700)'};
+return{bg:'var(--blue-50)',color:'var(--blue-400)'};
+}
+function actIcon(a){
+if(/^login|^logout/.test(a))return'⇄';
+if(a==='checkout')return'⌑';
+if(a==='credentials.reveal')return'◉';
+if(/^stock/.test(a))return'◫';
+if(/^rpricelist/.test(a))return'▤';
+if(/^reseller/.test(a))return'◔';
+if(a==='template.set')return'⬒';
+if(/^order/.test(a))return'⌑';
+return'•';
+}
+function entitySummary(et,eid){
+if(!et)return'';
+if(et==='order')return'Order #'+eid;
+if(et==='variant')return'Varian #'+eid;
+if(et==='stock')return'Stok #'+eid;
+if(et==='reseller')return'Reseller #'+eid;
+if(et==='app')return'';
+return et+(eid?(' #'+eid):'');
+}
+function metaSummary(metaStr){
+if(!metaStr)return'';
+try{
+var o=JSON.parse(metaStr);
+var parts=[];
+if(o.app)parts.push(o.app);
+if(o.username)parts.push(o.username);
+if(o.count!==undefined)parts.push(o.count+' item');
+if(o.items!==undefined)parts.push(o.items+' item');
+if(o.total!==undefined)parts.push('Rp '+Number(o.total).toLocaleString('id-ID'));
+return parts.join(' • ');
+}catch(e){return''}
+}
+function loadActivity(){
+if(!sessionPass)return;
+var list=document.getElementById('activityList');
+if(!list)return;
+while(list.firstChild)list.removeChild(list.firstChild);
+list.appendChild(ce('div','loading-state','Memuat aktivitas...'));
+fetch('/api/admin/audit?limit=100',{headers:actHeaders()}).then(function(r){return r.json()}).then(function(rows){
+while(list.firstChild)list.removeChild(list.firstChild);
+if(!rows||!rows.length){list.appendChild(ce('div','empty-state','Belum ada aktivitas tercatat.'));return}
+rows.forEach(function(a){
+var row=ce('div','activity-row');
+var ico=ce('div','activity-ico',actIcon(a.action));
+var sev=actSeverity(a.action);
+ico.style.background=sev.bg;
+ico.style.color=sev.color;
+row.appendChild(ico);
+var body=ce('div','activity-body');
+var es=entitySummary(a.entity_type,a.entity_id);
+var ms=metaSummary(a.meta);
+var title=actLabel(a.action)+(es?(' — '+es):'');
+body.appendChild(ce('div','activity-title',title));
+var actor=(a.actor_type==='reseller'?(('Reseller'+(a.actor_id?(' #'+a.actor_id):''))):'Admin');
+var metaLine=actor+(ms?(' • '+ms):'')+(a.ip?(' • '+a.ip):'');
+body.appendChild(ce('div','activity-meta',metaLine));
+row.appendChild(body);
+row.appendChild(ce('div','activity-time',actTime(a.created_at)));
+list.appendChild(row);
+});
+}).catch(function(){
+while(list.firstChild)list.removeChild(list.firstChild);
+list.appendChild(ce('div','empty-state','Gagal memuat aktivitas.'));
+});
+}
+document.addEventListener('DOMContentLoaded',function(){
+var btn=document.getElementById('btnRefreshActivity');
+if(btn)btn.addEventListener('click',loadActivity);
+if(sessionPass&&typeof switchTab==='function'){}
+});
