@@ -2,6 +2,7 @@ import{RES,resApi,resToast}from'./r-core.js';
 import{clearCart}from'./r-store.js';
 const RES_TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 let turnstileWidgetId=null;
+let authMode='login';
 function ensureTurnstile(cb){
 if(window.turnstile){cb();return;}
 let n=0;
@@ -61,6 +62,18 @@ if(greet&&RES.session){
 greet.textContent='Halo, '+(RES.session.display_name||RES.session.username);
 }
 }
+function setAuthMode(mode){
+authMode=mode;
+const lf=document.getElementById('resLoginForm');
+const rf=document.getElementById('resRegForm');
+const sub=document.getElementById('resAuthSub');
+const tog=document.getElementById('resToggleAuth');
+if(lf)lf.classList.toggle('hidden',mode!=='login');
+if(rf)rf.classList.toggle('hidden',mode!=='register');
+if(sub)sub.textContent=mode==='login'?'Masuk untuk mengelola toko Anda':'Daftar sebagai reseller dengan token undangan';
+if(tog)tog.textContent=mode==='login'?'Punya token? Daftar di sini':'Sudah punya akun? Masuk';
+resetTurnstile();
+}
 async function handleLoginSubmit(e){
 e.preventDefault();
 const uEl=document.getElementById('resUsername');
@@ -95,6 +108,46 @@ resetTurnstile();
 if(btn){btn.textContent=oldText||'Masuk';btn.disabled=false;}
 }
 }
+async function handleRegisterSubmit(e){
+e.preventDefault();
+const u=(document.getElementById('regUsername').value||'').trim();
+const dn=(document.getElementById('regDisplayName').value||'').trim();
+const pw=document.getElementById('regPassword').value||'';
+const tk=(document.getElementById('regToken').value||'').trim();
+if(!u||!pw||!tk){
+resToast('Username, password, dan token wajib diisi.');
+return;
+}
+if(pw.length<8){
+resToast('Password minimal 8 karakter.');
+return;
+}
+const token=getTurnstileToken();
+if(!token){
+resToast('Selesaikan verifikasi keamanan terlebih dahulu.');
+return;
+}
+const btn=document.getElementById('regSubmitBtn');
+const oldText=btn?btn.textContent:'';
+if(btn){btn.textContent='Mendaftarkan...';btn.disabled=true;}
+try{
+const d=await resApi('/api/reseller/register',{
+method:'POST',
+body:{username:u,display_name:dn,password:pw,token:tk,turnstileResponse:token}
+});
+resToast(d.message||'Pendaftaran berhasil. Menunggu konfirmasi admin.');
+const rf=document.getElementById('resRegForm');
+if(rf)rf.reset();
+setAuthMode('login');
+const lu=document.getElementById('resUsername');
+if(lu)lu.value=u;
+}catch(err){
+resToast(err.message||'Pendaftaran gagal.');
+resetTurnstile();
+}finally{
+if(btn){btn.textContent=oldText||'Daftar';btn.disabled=false;}
+}
+}
 async function handleLogout(){
 try{
 await resApi('/api/reseller/logout',{method:'POST'});
@@ -107,6 +160,10 @@ document.dispatchEvent(new CustomEvent('res:logged-out'));
 export function initAuth(){
 const form=document.getElementById('resLoginForm');
 if(form)form.addEventListener('submit',handleLoginSubmit);
+const regForm=document.getElementById('resRegForm');
+if(regForm)regForm.addEventListener('submit',handleRegisterSubmit);
+const tog=document.getElementById('resToggleAuth');
+if(tog)tog.addEventListener('click',function(){setAuthMode(authMode==='login'?'register':'login')});
 const logoutBtn=document.getElementById('resLogoutBtn');
 if(logoutBtn)logoutBtn.addEventListener('click',handleLogout);
 document.addEventListener('res:session-expired',function(){
