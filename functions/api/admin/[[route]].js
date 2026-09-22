@@ -286,7 +286,7 @@ const lim=Math.min(num(url.searchParams.get('limit'))||50,200);
 const r=await env.DB.prepare('SELECT id,actor_type,actor_id,action,entity_type,entity_id,meta,ip,created_at FROM rsl_audit ORDER BY id DESC LIMIT ?').bind(lim).all();
 return json(r.results);
 }
-if(q==='/resellers'&&m==='GET'){const r=await env.DB.prepare('SELECT id,username,display_name,status,failed_attempts,locked_until,last_login_at,created_at FROM rsl_resellers ORDER BY id').all();return json(r.results)}
+if(q==='/resellers'&&m==='GET'){const r=await env.DB.prepare('SELECT id,username,display_name,whatsapp,x_username,status,failed_attempts,locked_until,last_login_at,created_at FROM rsl_resellers ORDER BY id').all();return json(r.results)}
 if(q==='/resellers'&&m==='POST'){
 const username=String(b.username||'').trim().slice(0,50);
 const password=String(b.password||'').slice(0,200);
@@ -305,7 +305,9 @@ const id=num(rm[1]);
 const old=await env.DB.prepare('SELECT status FROM rsl_resellers WHERE id=?').bind(id).first();
 if(!old)return err('Reseller tidak ditemukan',404);
 const sets=[];const args=[];
-if(b.display_name!==undefined){sets.push('display_name=?');args.push(String(b.display_name).slice(0,100))}
+if(b.display_name!==undefined){const dn=String(b.display_name||'').trim().slice(0,40);if(!dn||dn.length>30)return err('Nama wajib diisi (maksimal 30 karakter)',400);sets.push('display_name=?');args.push(dn)}
+if(b.whatsapp!==undefined){const w=String(b.whatsapp||'').trim().slice(0,30);if(!/^08\d{8,18}$/.test(w))return err('WhatsApp wajib angka diawali 08 (maksimal 20 digit)',400);sets.push('whatsapp=?');args.push(w)}
+if(b.x_username!==undefined){const xx=String(b.x_username||'').trim().replace(/^@+/,'').slice(0,30);if(!/^[A-Za-z0-9_]{1,15}$/.test(xx))return err('Akun X wajib 1-15 karakter tanpa tanda @',400);sets.push('x_username=?');args.push(xx)}
 if(b.status!==undefined){const st=String(b.status);if(st!=='active'&&st!=='suspended')return err('Status tidak valid',400);sets.push('status=?');args.push(st)}
 if(b.password){const pw=String(b.password).slice(0,200);if(pw.length<8)return err('Password minimal 8 karakter',400);const h=await hashNewPassword(pw);sets.push('pass_hash=?','pass_salt=?','pass_iter=?');args.push(h.hash,h.salt,h.iter);await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE reseller_id=? AND revoked_at IS NULL').bind(nowStr(),id).run()}
 if(!sets.length)return err('Tidak ada perubahan',400);
