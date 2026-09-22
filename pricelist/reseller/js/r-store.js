@@ -7,9 +7,10 @@ var okSearch=!RES_SEARCH||c.app_name.toLowerCase().includes(RES_SEARCH)||c.categ
 return okApp&&okSearch;
 });
 }
-function stockBadge(n){
-if(n<=0)return{cls:'out',txt:'Habis'};
-if(n<=4)return{cls:'low',txt:'Sisa '+n};
+function resIsOut(c){return c.stock_available<=0||String(c.status).toLowerCase()!=='ready'}
+function stockBadge(c){
+if(resIsOut(c))return{cls:'out',txt:'Habis'};
+if(c.stock_available<=4)return{cls:'low',txt:'Sisa '+c.stock_available};
 return{cls:'ok',txt:'Ready'};
 }
 function resCartCount(){var c=0;RES_CART.forEach(function(i){c+=i.qty});return c}
@@ -63,11 +64,11 @@ if(item.qty<1)RES_CART.splice(idx,1);
 updateResCartUI();
 }
 function resAddToCart(c){
-if(c.stock_available<=0)return resToast('Stok habis.');
+if(resIsOut(c))return resToast('Stok habis.');
 var found=null;
 for(var i=0;i<RES_CART.length;i++){if(RES_CART[i].variant_id===c.id){found=RES_CART[i];break}}
 if(found){if(found.qty>=c.stock_available)return resToast('Melebihi stok tersedia.');found.qty++}
-else RES_CART.push({variant_id:c.id,app_name:c.app_name,category:c.category,duration:c.duration,price_str:c.reseller_price,unit:resNum(c.reseller_price),qty:1});
+else RES_CART.push({variant_id:c.id,app_name:c.app_name,category:c.category,duration:c.duration,price_str:c.price,unit:resNum(c.price),qty:1});
 updateResCartUI();
 resToast('Ditambahkan ke keranjang.');
 }
@@ -114,19 +115,18 @@ while(grid.firstChild)grid.removeChild(grid.firstChild);
 var rows=resFiltered();
 if(!rows.length){grid.appendChild(ce('div','r-empty','Tidak ada produk cocok.'));return}
 rows.forEach(function(c){
-var out=c.stock_available<=0;
+var out=resIsOut(c);
 var card=ce('div','r-card'+(out?' out':''));
 var top=ce('div','r-card-top');
 var logo=ce('div','r-logo-ph',c.app_name.charAt(0).toUpperCase());
 top.appendChild(logo);
-var b=stockBadge(c.stock_available);
+var b=stockBadge(c);
 top.appendChild(ce('span','r-badge '+b.cls,b.txt));
 card.appendChild(top);
 card.appendChild(ce('p','r-name',c.app_name));
 card.appendChild(ce('p','r-pkg',c.category+' • '+c.duration));
 var pr=ce('div','r-price-row');
-if(resNum(c.price)>resNum(c.reseller_price))pr.appendChild(ce('span','r-old',c.price));
-pr.appendChild(ce('span','r-price',c.reseller_price));
+pr.appendChild(ce('span','r-price',c.price));
 card.appendChild(pr);
 var foot=ce('div','r-foot');
 foot.appendChild(ce('span','r-count',c.stock_available+' stok'));
