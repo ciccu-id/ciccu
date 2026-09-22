@@ -20,9 +20,7 @@ if(diff<86400000)mod='danger';
 else if(diff<604800000)mod='warn';
 return{text:txt,mod:mod};
 }
-function startTicker(){
-if(ORDERS_TIMER)return;
-ORDERS_TIMER=setInterval(function(){
+function tickAll(){
 const els=document.querySelectorAll('[data-cd]');
 if(!els.length)return;
 for(let i=0;i<els.length;i++){
@@ -32,7 +30,15 @@ if(el.textContent!==r.text)el.textContent=r.text;
 el.classList.remove('ok','warn','danger','dead');
 el.classList.add(r.mod);
 }
-},1000);
+}
+function startTicker(){
+if(ORDERS_TIMER)return;
+ORDERS_TIMER=setInterval(tickAll,1000);
+}
+function cdTag(iso){
+const t=ce('span','r-cd-tag','—');
+t.setAttribute('data-cd',iso);
+return t;
 }
 function orderStatusLabel(s){
 const m={
@@ -54,6 +60,14 @@ refunded:'red'
 };
 return map[s]||'gray';
 }
+function rowPair(label,value){
+const row=ce('div','r-od-row');
+const p=ce('p','r-od-pair');
+p.appendChild(ce('span','r-od-label',label));
+p.appendChild(ce('span','r-od-value',value));
+row.appendChild(p);
+return row;
+}
 export async function loadOrders(){
 const list=document.getElementById('resOrdersList');
 if(!list)return;
@@ -68,15 +82,7 @@ return;
 }
 rows.forEach(function(o){list.appendChild(renderOrderCard(o));});
 startTicker();
-setTimeout(function(){
-const els=document.querySelectorAll('[data-cd]');
-for(let i=0;i<els.length;i++){
-const el=els[i];
-const r=fmtRemainRes(el.getAttribute('data-cd'));
-el.textContent=r.text;
-el.classList.add(r.mod);
-}
-},20);
+tickAll();
 }catch(e){
 while(list.firstChild)list.removeChild(list.firstChild);
 list.appendChild(ce('div','r-empty','Gagal memuat pesanan.'));
@@ -89,43 +95,42 @@ const left=ce('div','r-oc-left');
 left.appendChild(ce('p','r-oc-id','Order #'+o.id));
 left.appendChild(ce('p','r-oc-time',relTime(o.created_at)));
 head.appendChild(left);
-const pill=ce('span','r-pill r-pill-'+orderStatusPill(o.status),orderStatusLabel(o.status));
-head.appendChild(pill);
+head.appendChild(ce('span','r-pill r-pill-'+orderStatusPill(o.status),orderStatusLabel(o.status)));
 card.appendChild(head);
 const body=ce('div','r-oc-body');
 body.appendChild(ce('p','r-oc-total','Total '+resFmtIDR(o.total_amount)));
-if(o.status==='delivered'&&o.paid_at){
-body.appendChild(ce('p','r-oc-meta','Lunas '+relTime(o.paid_at)));
-}
-if(o.status==='delivered'&&o.delivered_at){
-body.appendChild(ce('p','r-oc-meta','Terkirim '+relTime(o.delivered_at)));
-}
+if(o.paid_at)body.appendChild(ce('p','r-oc-meta','Lunas '+relTime(o.paid_at)));
+if(o.delivered_at)body.appendChild(ce('p','r-oc-meta','Terkirim '+relTime(o.delivered_at)));
 card.appendChild(body);
-if(o.status==='delivered'){
+if(o.status==='delivered'&&o.expires_at){
+const cdRow=ce('div','r-oc-cd');
+cdRow.style.display='flex';
+cdRow.style.alignItems='center';
+cdRow.style.justifyContent='space-between';
+cdRow.style.gap='.5rem';
+cdRow.appendChild(ce('p','r-oc-meta','Sisa masa aktif'));
+cdRow.appendChild(cdTag(o.expires_at));
+card.appendChild(cdRow);
+}
 const foot=ce('div','r-oc-foot');
 const det=ce('button','r-oc-btn sky','Detail');
 det.type='button';
 det.addEventListener('click',function(){viewOrderDetail(o.id);});
 foot.appendChild(det);
+if(o.status==='delivered'){
 const acc=ce('button','r-oc-btn green','🔑 Data Akses');
 acc.type='button';
 acc.addEventListener('click',function(){revealCredentials(o.id);});
 foot.appendChild(acc);
-card.appendChild(foot);
-}else{
-const foot=ce('div','r-oc-foot');
-const det=ce('button','r-oc-btn sky','Detail');
-det.type='button';
-det.addEventListener('click',function(){viewOrderDetail(o.id);});
-foot.appendChild(det);
-card.appendChild(foot);
 }
+card.appendChild(foot);
 return card;
 }
 async function viewOrderDetail(id){
 try{
 const o=await resApi('/api/reseller/orders/'+id);
 openModal('Detail Order #'+o.id,renderOrderDetailBody(o));
+tickAll();
 }catch(e){
 resToast(e.message||'Gagal memuat detail.');
 }
@@ -133,28 +138,39 @@ resToast(e.message||'Gagal memuat detail.');
 function renderOrderDetailBody(o){
 const frag=document.createDocumentFragment();
 const stRow=ce('div','r-od-row');
-stRow.appendChild(ce('span','r-od-label','Status'));
-stRow.appendChild(ce('span','r-pill r-pill-'+orderStatusPill(o.status),orderStatusLabel(o.status)));
+const stP=ce('p','r-od-pair');
+stP.appendChild(ce('span','r-od-label','Status'));
+stP.appendChild(ce('span','r-pill r-pill-'+orderStatusPill(o.status),orderStatusLabel(o.status)));
+stRow.appendChild(stP);
 frag.appendChild(stRow);
-frag.appendChild(ce('div','r-od-row',createPair('Total',resFmtIDR(o.total_amount))));
-frag.appendChild(ce('div','r-od-row',createPair('Dibuat',relTime(o.created_at))));
-if(o.paid_at)frag.appendChild(ce('div','r-od-row',createPair('Lunas',relTime(o.paid_at))));
-if(o.delivered_at)frag.appendChild(ce('div','r-od-row',createPair('Terkirim',relTime(o.delivered_at))));
+frag.appendChild(rowPair('Total',resFmtIDR(o.total_amount)));
+frag.appendChild(rowPair('Dibuat',relTime(o.created_at)));
+if(o.paid_at)frag.appendChild(rowPair('Lunas',relTime(o.paid_at)));
+if(o.delivered_at)frag.appendChild(rowPair('Terkirim',relTime(o.delivered_at)));
+if(o.status==='delivered'&&o.expires_at){
+const row=ce('div','r-od-row');
+const p=ce('p','r-od-pair');
+p.appendChild(ce('span','r-od-label','Sisa masa aktif'));
+p.appendChild(cdTag(o.expires_at));
+row.appendChild(p);
+frag.appendChild(row);
+}
 frag.appendChild(ce('p','r-od-sub','Item Pesanan'));
 (o.items||[]).forEach(function(it){
 const row=ce('div','r-od-item');
 row.appendChild(ce('p','r-od-item-name',it.app_name+' • '+it.category+' • '+it.duration));
 row.appendChild(ce('p','r-od-item-meta','qty '+it.qty+' × '+resFmtIDR(it.unit_price)+' = '+resFmtIDR(it.line_total)));
+if(it.expires_at){
+const wrap=ce('div','r-od-row');
+const p=ce('p','r-od-pair');
+p.appendChild(ce('span','r-od-label','Sisa'));
+p.appendChild(cdTag(it.expires_at));
+wrap.appendChild(p);
+row.appendChild(wrap);
+}
 frag.appendChild(row);
 });
 return frag;
-}
-function createPair(label,value){
-const wrap=document.createDocumentFragment();
-const p=ce('p','r-od-pair');
-p.appendChild(ce('span','r-od-label',label));
-p.appendChild(ce('span','r-od-value',value));
-return p;
 }
 async function revealCredentials(id){
 try{
