@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=3">
+<link rel="stylesheet" href="css/admin.css?v=4">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -191,6 +191,28 @@
 </div>
 </div>
 <div id="rsub-raccounts" class="section hidden">
+<div class="card" id="cardPendingResellers">
+<div class="card-header-row"><h2 class="card-title">⏳ Menunggu Konfirmasi</h2><span id="pendingResellerCount" class="item-count">0</span></div>
+<div id="pendingResellerList" class="data-list"></div>
+</div>
+<div class="card">
+<div class="card-header-row"><h2 class="card-title">🎟 Token Pendaftaran</h2><span id="regTokenCount" class="item-count">0 aktif</span></div>
+<div class="toolbar-row">
+<div class="dd" id="tokenDurationDD">
+<input type="hidden" id="tokenDuration" value="168">
+<button type="button" class="dd-btn"><span id="tokenDurationLabel">7 Hari</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item" data-value="24"><span>24 Jam</span><span class="dd-check"></span></div>
+<div class="dd-item active" data-value="168"><span>7 Hari</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="720"><span>30 Hari</span><span class="dd-check"></span></div>
+</div>
+</div>
+<div style="flex:1;min-width:8rem"><input id="tokenLabelInput" class="form-input" type="text" placeholder="Label (opsional, mis. untuk Budi)"></div>
+<button id="btnCreateToken" type="button" class="tool-btn green">＋ Buat Token</button>
+</div>
+<p class="field-hint" style="margin-top:.5rem">Token hanya ditampilkan sekali saat dibuat. Token sekali pakai dan terhapus otomatis saat kedaluwarsa atau terpakai. Pendaftaran tetap memerlukan konfirmasi admin.</p>
+<div id="regTokenList" class="data-list" style="margin-top:.75rem"></div>
+</div>
 <div class="card">
 <h2 class="card-title">➕ Tambah Reseller</h2>
 <form id="resellerForm" class="add-form">
@@ -368,14 +390,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=3" defer></script>
-<script src="js/admin-modules.js?v=3" defer></script>
-<script src="js/admin.js?v=3" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=3" defer></script>
-<script src="js/admin-stock.js?v=3" defer></script>
-<script src="js/admin-orders.js?v=3" defer></script>
-<script src="js/admin-resellers.js?v=3" defer></script>
-<script src="js/admin-dashboard.js?v=3" defer></script>
-<script src="js/admin-activity.js?v=3" defer></script>
+<script src="js/admin-ui.js?v=4" defer></script>
+<script src="js/admin-modules.js?v=4" defer></script>
+<script src="js/admin.js?v=4" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=4" defer></script>
+<script src="js/admin-stock.js?v=4" defer></script>
+<script src="js/admin-orders.js?v=4" defer></script>
+<script src="js/admin-resellers.js?v=4" defer></script>
+<script src="js/admin-dashboard.js?v=4" defer></script>
+<script src="js/admin-activity.js?v=4" defer></script>
 </body>
 </html>
