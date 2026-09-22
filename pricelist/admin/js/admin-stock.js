@@ -39,16 +39,26 @@ row.appendChild(info);
 var act=ce('div','fs-item-actions');
 var viewBtn=ce('button','fs-edit-btn','Lihat');
 viewBtn.setAttribute('type','button');
-viewBtn.addEventListener('click',function(){try{var obj=JSON.parse(it.fields);alert(Object.keys(obj).map(function(k){return k+': '+obj[k]}).join('\n'))}catch(e){alert('Data tidak valid')}});
+viewBtn.addEventListener('click',function(){
+try{var obj=JSON.parse(it.fields);uiAlert(Object.keys(obj).map(function(k){return k+': '+obj[k]}).join('\n'),'Kredensial #'+it.id)}catch(e){uiAlert('Data tidak valid','Kesalahan')}
+});
 act.appendChild(viewBtn);
 if(it.status==='available'){
 var disBtn=ce('button','fs-edit-btn','Nonaktif');
 disBtn.setAttribute('type','button');
-disBtn.addEventListener('click',function(){if(!confirm('Nonaktifkan stok #'+it.id+'?'))return;fetch('/api/admin/stock/'+it.id+'/disable',{method:'POST',headers:stockHeaders()}).then(handleResponseStatus).then(function(){stockAfterChange()}).catch(function(){})});
+disBtn.addEventListener('click',function(){
+uiConfirm('Nonaktifkan stok #'+it.id+'? Item tidak akan bisa dijual lagi.','Nonaktifkan Stok',function(){
+fetch('/api/admin/stock/'+it.id+'/disable',{method:'POST',headers:stockHeaders()}).then(handleResponseStatus).then(function(){uiToast('Stok dinonaktifkan.');stockAfterChange()}).catch(function(){uiAlert('Gagal menonaktifkan stok.','Kesalahan')});
+});
+});
 act.appendChild(disBtn);
 var delBtn=ce('button','fs-remove-btn','Hapus');
 delBtn.setAttribute('type','button');
-delBtn.addEventListener('click',function(){if(!confirm('Hapus stok #'+it.id+'?'))return;fetch('/api/admin/stock/'+it.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(handleResponseStatus).then(function(){stockAfterChange()}).catch(function(){})});
+delBtn.addEventListener('click',function(){
+uiConfirm('Hapus permanen stok #'+it.id+'? Tindakan tidak dapat dibatalkan.','Hapus Stok',function(){
+fetch('/api/admin/stock/'+it.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(handleResponseStatus).then(function(){uiToast('Stok dihapus.');stockAfterChange()}).catch(function(){uiAlert('Gagal menghapus stok.','Kesalahan')});
+},{danger:true,okText:'Hapus'});
+});
 act.appendChild(delBtn);
 }
 row.appendChild(act);
@@ -62,7 +72,7 @@ if(typeof loadResellerPricelist==='function')loadResellerPricelist();
 }
 function stockOpenAdd(variant){
 var fields=currentTemplateFields(variant.app_name);
-if(!fields.length)return alert('Buat template field dulu lewat tombol 🧩 pada header aplikasi '+variant.app_name+'.');
+if(!fields.length)return uiAlert('Buat template field dulu lewat tombol 🧩 Template pada aplikasi '+variant.app_name+'.','Template Belum Ada');
 stockCtxVariant=variant;
 var sub=document.getElementById('stockAddVariantName');
 if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration;
@@ -90,18 +100,18 @@ var v=inp?inp.value.trim():'';
 if(!v)ok=false;
 obj[f]=v;
 });
-if(!ok)return alert('Semua field wajib diisi.');
+if(!ok)return uiAlert('Semua field wajib diisi.','Data Belum Lengkap');
 var btn=document.getElementById('btnSubmitStockAdd');
 if(btn){btn.disabled=true;btn.textContent='Menyimpan...'}
 fetch('/api/admin/stock/'+stockCtxVariant.id,{method:'POST',headers:stockHeaders(),body:JSON.stringify({fields:obj})})
 .then(handleResponseStatus)
-.then(function(){closeModal('stockAddModal');stockAfterChange()})
-.catch(function(){alert('Gagal menambah stok.')})
+.then(function(){closeModal('stockAddModal');uiToast('Stok ditambahkan.');stockAfterChange()})
+.catch(function(){uiAlert('Gagal menambah stok.','Kesalahan')})
 .finally(function(){if(btn){btn.disabled=false;btn.textContent='Simpan Stok'}});
 }
 function stockOpenBulk(variant){
 var fields=currentTemplateFields(variant.app_name);
-if(!fields.length)return alert('Buat template field dulu lewat tombol 🧩 pada header aplikasi '+variant.app_name+'.');
+if(!fields.length)return uiAlert('Buat template field dulu lewat tombol 🧩 Template pada aplikasi '+variant.app_name+'.','Template Belum Ada');
 stockCtxVariant=variant;
 var sub=document.getElementById('stockBulkVariantName');
 if(sub)sub.textContent=variant.app_name+' • '+variant.category+' • '+variant.duration+' (urutan: '+fields.join(', ')+')';
@@ -113,7 +123,7 @@ function submitStockBulk(){
 if(!stockCtxVariant)return;
 var fields=currentTemplateFields(stockCtxVariant.app_name);
 var ta=document.getElementById('stockBulkText');
-if(!ta||!ta.value.trim())return alert('Isi data CSV dulu.');
+if(!ta||!ta.value.trim())return uiAlert('Isi data CSV dulu.','Data Kosong');
 var lines=ta.value.split(/\r?\n/);
 var items=[];
 for(var i=0;i<lines.length;i++){
@@ -124,15 +134,17 @@ var obj={};var valid=true;
 for(var f=0;f<fields.length;f++){var v=cols[f]||'';if(!v)valid=false;obj[fields[f]]=v}
 if(valid)items.push(obj);
 }
-if(!items.length)return alert('Tidak ada baris valid sesuai template.');
-if(!confirm('Import '+items.length+' item stok?'))return;
+if(!items.length)return uiAlert('Tidak ada baris valid sesuai template.','Format Salah');
+var count=items.length;
+uiConfirm('Import '+count+' item stok ke varian ini?','Import Bulk',function(){
 var btn=document.getElementById('btnSubmitStockBulk');
 if(btn){btn.disabled=true;btn.textContent='Mengimport...'}
 fetch('/api/admin/stock/'+stockCtxVariant.id+'/bulk',{method:'POST',headers:stockHeaders(),body:JSON.stringify({items:items})})
 .then(handleResponseStatus)
-.then(function(){closeModal('stockBulkModal');stockAfterChange()})
-.catch(function(){alert('Gagal import bulk.')})
+.then(function(){closeModal('stockBulkModal');uiToast(count+' item stok ditambahkan.');stockAfterChange()})
+.catch(function(){uiAlert('Gagal import bulk.','Kesalahan')})
 .finally(function(){if(btn){btn.disabled=false;btn.textContent='Import'}});
+});
 }
 function renderCredTplFields(){
 var wrap=document.getElementById('credTplFieldsContainer');
@@ -166,28 +178,28 @@ openModal('credTemplateModal');
 }
 function saveCredTemplate(){
 var arr=credTplFields.map(function(f){return String(f||'').trim()}).filter(Boolean);
+if(!arr.length)return uiAlert('Minimal satu field diperlukan.','Template Kosong');
 fetch('/api/admin/cred-templates/'+encodeURIComponent(credTplApp),{method:'PUT',headers:stockHeaders(),body:JSON.stringify({fields:arr})})
 .then(handleResponseStatus)
-.then(function(){closeModal('credTemplateModal');loadTemplates()})
-.catch(function(){alert('Gagal menyimpan template.')});
+.then(function(){closeModal('credTemplateModal');uiToast('Template disimpan.');loadTemplates()})
+.catch(function(){uiAlert('Gagal menyimpan template.','Kesalahan')});
 }
-document.addEventListener('DOMContentLoaded',function(){
 loadTemplates();
-var bMgrAdd=document.getElementById('btnMgrAdd');
-if(bMgrAdd)bMgrAdd.addEventListener('click',function(){if(stockMgrVariant)stockOpenAdd(stockMgrVariant)});
-var bMgrBulk=document.getElementById('btnMgrBulk');
-if(bMgrBulk)bMgrBulk.addEventListener('click',function(){if(stockMgrVariant)stockOpenBulk(stockMgrVariant)});
-var bMgrTpl=document.getElementById('btnMgrTpl');
-if(bMgrTpl)bMgrTpl.addEventListener('click',function(){if(stockMgrVariant)stockOpenTemplate(stockMgrVariant.app_name)});
-var bAddF=document.getElementById('btnAddCredField');
-if(bAddF)bAddF.addEventListener('click',function(){credTplFields.push('');renderCredTplFields()});
-var bSaveTpl=document.getElementById('btnSaveCredTemplate');
-if(bSaveTpl)bSaveTpl.addEventListener('click',saveCredTemplate);
-var bSubmitAdd=document.getElementById('btnSubmitStockAdd');
-if(bSubmitAdd)bSubmitAdd.addEventListener('click',submitStockAdd);
-var bSubmitBulk=document.getElementById('btnSubmitStockBulk');
-if(bSubmitBulk)bSubmitBulk.addEventListener('click',submitStockBulk);
-[['credTemplateModal','credTplClose','credTplBackdrop','credTplCancel'],['stockAddModal','stockAddClose','stockAddBackdrop','stockAddCancel'],['stockBulkModal','stockBulkClose','stockBulkBackdrop','stockBulkCancel'],['stockManagerModal','stockMgrClose','stockMgrBackdrop',null]].forEach(function(cfg){
-[cfg[1],cfg[2],cfg[3]].forEach(function(id){if(!id)return;var el=document.getElementById(id);if(el)el.addEventListener('click',function(){closeModal(cfg[0])})});
-});
-});
+uiOn('btnMgrAdd',function(){if(stockMgrVariant)stockOpenAdd(stockMgrVariant)});
+uiOn('btnMgrBulk',function(){if(stockMgrVariant)stockOpenBulk(stockMgrVariant)});
+uiOn('btnMgrTpl',function(){if(stockMgrVariant)stockOpenTemplate(stockMgrVariant.app_name)});
+uiOn('btnAddCredField',function(){credTplFields.push('');renderCredTplFields()});
+uiOn('btnSaveCredTemplate',saveCredTemplate);
+uiOn('btnSubmitStockAdd',submitStockAdd);
+uiOn('btnSubmitStockBulk',submitStockBulk);
+uiOn('stockMgrClose',function(){closeModal('stockManagerModal')});
+uiOn('stockMgrBackdrop',function(){closeModal('stockManagerModal')});
+uiOn('credTplClose',function(){closeModal('credTemplateModal')});
+uiOn('credTplBackdrop',function(){closeModal('credTemplateModal')});
+uiOn('credTplCancel',function(){closeModal('credTemplateModal')});
+uiOn('stockAddClose',function(){closeModal('stockAddModal')});
+uiOn('stockAddBackdrop',function(){closeModal('stockAddModal')});
+uiOn('stockAddCancel',function(){closeModal('stockAddModal')});
+uiOn('stockBulkClose',function(){closeModal('stockBulkModal')});
+uiOn('stockBulkBackdrop',function(){closeModal('stockBulkModal')});
+uiOn('stockBulkCancel',function(){closeModal('stockBulkModal')});
