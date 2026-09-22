@@ -1,11 +1,23 @@
 import{hashNewPassword,nowStr}from'../../lib/auth-reseller.js';
-import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,listStock,addStock,addStockBulk,updateStockFields,disableStock,deleteAvailableStock,countAvailable,lowStock,getOrder,listOrderCredentials,audit}from'../../lib/db.js';
+import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,listStock,addStock,disableStock,deleteAvailableStock,countAvailable,lowStock,getOrder,listOrderCredentials,audit}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder}from'../../lib/fulfillment.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, x-admin-password'};
 function truncate(s,m){return s?String(s).slice(0,m):''}
 function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
 const num=s=>parseInt(s,10);
+function cleanFields(raw){
+const out={};let n=0;
+for(const k in raw){
+if(!Object.prototype.hasOwnProperty.call(raw,k))continue;
+if(n>=30)break;
+const key=String(k).trim().slice(0,50);
+if(!key)continue;
+out[key]=String(raw[k]==null?'':raw[k]).slice(0,500);
+n++;
+}
+return out;
+}
 function durationMs(str){
 if(!str)return 0;
 const s=String(str).toLowerCase();
@@ -188,14 +200,40 @@ await setTemplate(env,app,arr);
 await audit(env,'admin',null,'template.set','app',null,{app,count:arr.length},ip);
 return json({success:true});
 }
-const sm=q.match(/^\/stock\/(\d+)(\/(bulk|disable))?$/);
+const sm=q.match(/^\/stock\/(\d+)(\/(disable|enable))?$/);
 if(sm){
 const id=num(sm[1]);const sub=sm[3];
 if(m==='GET'&&!sub){const rows=await listStock(env,id,url.searchParams.get('status'),url.searchParams.get('limit'),url.searchParams.get('offset'));const c=await countAvailable(env,id);return json({available:c,items:rows})}
-if(m==='POST'&&!sub){const f=b.fields;if(!f||typeof f!=='object'||Array.isArray(f))return err('fields wajib objek',400);const nid=await addStock(env,id,f);await audit(env,'admin',null,'stock.add','variant',id,{stock:nid},ip);return json({success:true,id:nid},201)}
-if(m==='POST'&&sub==='bulk'){const arr=Array.isArray(b.items)?b.items:[];if(!arr.length||arr.length>500)return err('items tidak valid',400);const n=await addStockBulk(env,id,arr);await audit(env,'admin',null,'stock.bulk','variant',id,{count:n},ip);return json({success:true,added:n})}
-if(m==='PUT'&&!sub){const f=b.fields;if(!f||typeof f!=='object'||Array.isArray(f))return err('fields wajib objek',400);await updateStockFields(env,id,f);await audit(env,'admin',null,'stock.update','stock',id,{},ip);return json({success:true})}
+if(m==='POST'&&!sub){
+const raw=b.fields;
+if(!raw||typeof raw!=='object'||Array.isArray(raw))return err('fields wajib objek',400);
+const f=cleanFields(raw);
+if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
+const nid=await addStock(env,id,f);
+const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(id).first();
+if(v)await setTemplate(env,v.app_name,Object.keys(f));
+await audit(env,'admin',null,'stock.add','variant',id,{stock:nid,fields:Object.keys(f).length},ip);
+return json({success:true,id:nid},201);
+}
+if(m==='PUT'&&!sub){
+const raw=b.fields;
+if(!raw||typeof raw!=='object'||Array.isArray(raw))return err('fields wajib objek',400);
+const f=cleanFields(raw);
+if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
+const up=await env.DB.prepare("UPDATE rsl_stock_items SET fields=? WHERE id=? AND status IN ('available','disabled')").bind(JSON.stringify(f),id).run();
+if(!up.meta||!up.meta.changes)return err('Stok terkunci (terjual) atau tidak ditemukan',409);
+const si=await env.DB.prepare('SELECT variant_id FROM rsl_stock_items WHERE id=?').bind(id).first();
+if(si){const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(si.variant_id).first();if(v)await setTemplate(env,v.app_name,Object.keys(f));}
+await audit(env,'admin',null,'stock.update','stock',id,{fields:Object.keys(f).length},ip);
+return json({success:true});
+}
 if(m==='POST'&&sub==='disable'){await disableStock(env,id);await audit(env,'admin',null,'stock.disable','stock',id,{},ip);return json({success:true})}
+if(m==='POST'&&sub==='enable'){
+const en=await env.DB.prepare("UPDATE rsl_stock_items SET status='available' WHERE id=? AND status='disabled'").bind(id).run();
+if(!en.meta||!en.meta.changes)return err('Stok tidak berstatus nonaktif',409);
+await audit(env,'admin',null,'stock.enable','stock',id,{},ip);
+return json({success:true});
+}
 if(m==='DELETE'&&!sub){await deleteAvailableStock(env,id);await audit(env,'admin',null,'stock.delete','stock',id,{},ip);return json({success:true})}
 }
 if(q.startsWith('/low-stock')&&m==='GET'){const rows=await lowStock(env,url.searchParams.get('threshold'));return json(rows)}
