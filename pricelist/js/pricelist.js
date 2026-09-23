@@ -1,11 +1,24 @@
 var allApps={},orderedAppNames=[],currentCategory='all',isStoreClosed=false,storeClosedMessage='Ciccu Store sedang tutup. Produk di website sementara belum dapat diorder. Kami akan kembali melayani mulai pukul 05.00 WIB. Terima kasih!';
 var searchTimeout=null,orderModalEl=null,orderModalListEl=null,orderModalTitleEl=null,orderModalLogoEl=null,storeClosedEl=null,currentOrderApp='';
+var appMetaMap={};
 var BASE_URL='';
 var gridLabelMap={all:'Semua Aplikasi',streaming:'Aplikasi Streaming',music:'Aplikasi Music',editing:'Aplikasi Editing',study:'Study Needs',game:'Game'};
 var appCategoryMap={'netflix':'streaming','disney':'streaming','youtube':'streaming','viu':'streaming','iqiyi':'streaming','prime':'streaming','amazon':'streaming','hbo':'streaming','wetv':'streaming','we tv':'streaming','vidio':'streaming','crunchyroll':'streaming','loklok':'streaming','loktv':'streaming','gagaoolala':'streaming','dramabox':'streaming','apple tv':'streaming','bstation':'streaming','viki plus':'streaming','drakor id':'streaming','mango tv':'streaming','mangotv':'streaming','spotify':'music','apple music':'music','apple':'music','capcut':'editing','canva':'editing','alight motion':'editing','alight':'editing','turnitin':'study','cek turnitin':'study','cek ai':'study','chatgpt':'study','claude':'study','grok':'study','grokai':'study','ms365':'study','microsoft':'study','duolingo':'study','picsart':'editing','remini':'editing','wattpad':'study','pollar':'editing','ibis paint':'editing','quillbot':'study','meitu':'editing','camscanner':'study','grammarly':'study','viki rakuten':'streaming','wink':'editing','aio drama':'streaming','aiodrama':'streaming','aio':'streaming','ilovepdf':'study','wps office':'study','robux':'game','youku':'streaming','sushiroll':'streaming'};
 var logoMap={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'polarr.com','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
-function getAppCategory(name){var n=name.toLowerCase();for(var k in appCategoryMap){if(n.includes(k))return appCategoryMap[k]}return'lainnya'}
-function getLogoUrl(name){var n=name.toLowerCase();for(var k in logoMap){if(n.includes(k)){var d=logoMap[k];if(d.startsWith('http'))return d;return'https://www.google.com/s2/favicons?sz=64&domain='+d}}return''}
+function getAppCategory(name){
+var meta=appMetaMap[String(name).toLowerCase().trim()];
+if(meta&&meta.t&&meta.t!=='lainnya')return meta.t;
+var n=name.toLowerCase();
+for(var k in appCategoryMap){if(n.includes(k))return appCategoryMap[k]}
+return'lainnya';
+}
+function getLogoUrl(name){
+var meta=appMetaMap[String(name).toLowerCase().trim()];
+if(meta&&meta.l)return '/api/logo/'+encodeURIComponent(meta.l);
+var n=name.toLowerCase();
+for(var k in logoMap){if(n.includes(k)){var d=logoMap[k];if(d.startsWith('http'))return d;return'https://www.google.com/s2/favicons?sz=128&domain='+d}}
+return'';
+}
 function loadPricelist(){
 return fetch(BASE_URL+'/api/settings').then(function(r){return r.json()}).then(function(s){
 if(s.is_closed){isStoreClosed=true;if(s.message)storeClosedMessage=s.message}
@@ -31,6 +44,13 @@ return fetch(BASE_URL+'/api/forms');
 }).then(function(r){return r.json()}).then(function(forms){
 appForms={};
 if(Array.isArray(forms))forms.forEach(function(f){appForms[f.app_name.toLowerCase().trim()]=f.form_fields});
+return fetch(BASE_URL+'/api/metadata').catch(function(){return null});
+}).then(function(r){
+if(!r)return;
+return r.json().then(function(meta){
+appMetaMap={};
+if(Array.isArray(meta))meta.forEach(function(m){appMetaMap[String(m.n).toLowerCase().trim()]=m});
+}).catch(function(){});
 }).catch(function(e){console.error('Gagal memuat data:',e)});
 }
 function onFlashSaleExpire(){
