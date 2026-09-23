@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=8">
+<link rel="stylesheet" href="css/admin.css?v=9">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -112,7 +112,7 @@
 </section>
 <section id="section-produk" class="section hidden">
 <div class="prod-bar">
-<label for="addPkgSheetToggle" class="prod-icon-btn" title="Tambah Paket Baru" aria-label="Tambah Paket Baru">
+<label for="addAppSheetToggle" class="prod-icon-btn" title="Tambah Aplikasi Baru" aria-label="Tambah Aplikasi Baru">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
 </label>
 <button id="btnReorder" type="button" class="prod-icon-btn" title="Urutkan Aplikasi" aria-label="Urutkan Aplikasi">
@@ -122,24 +122,116 @@
 </div>
 <div id="dataList" class="data-list"></div>
 
-<input type="checkbox" id="addPkgSheetToggle" class="sheet-toggle">
-<label for="addPkgSheetToggle" class="sheet-backdrop"></label>
-<aside class="sheet" id="addPkgSheet">
+<input type="checkbox" id="addAppSheetToggle" class="sheet-toggle">
+<label for="addAppSheetToggle" class="sheet-backdrop"></label>
+<aside class="sheet" id="addAppSheet">
 <div class="sheet-head">
-<h3>Tambah Paket Baru</h3>
-<label for="addPkgSheetToggle" class="sheet-close" aria-label="Tutup">✕</label>
+<h3>Tambah Aplikasi Baru</h3>
+<label for="addAppSheetToggle" class="sheet-close" aria-label="Tutup">✕</label>
 </div>
-<form id="addForm" class="sheet-body" novalidate>
-<div class="adm-field"><label for="appName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="appName" required></div></div>
-<div class="adm-field"><label for="appCat">KATEGORI</label><div class="adm-input"><input type="text" id="appCat" required></div></div>
-<div class="adm-field"><label for="appDur">DURASI</label><div class="adm-input"><input type="text" id="appDur" required></div></div>
-<div class="adm-field"><label for="appPrice">HARGA</label><div class="adm-input"><input type="text" id="appPrice" required></div></div>
-<div class="adm-field"><label for="appStatus">STATUS</label><div class="adm-input adm-input-select"><select id="appStatus"><option value="Ready">Ready</option><option value="Sold">Sold</option></select></div></div>
-<div class="adm-field"><label for="appFlashPrice">HARGA FLASH (OPSIONAL)</label><div class="adm-input"><input type="text" id="appFlashPrice"></div></div>
-<div class="adm-field"><label for="appNotes">CATATAN (OPSIONAL)</label><div class="adm-input"><textarea id="appNotes" rows="2"></textarea></div></div>
-<button type="submit" id="btnSubmit" class="sheet-submit">SIMPAN PAKET</button>
+<form id="addAppForm" class="sheet-body" novalidate>
+<div class="adm-field"><label for="newAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="newAppName" required autocomplete="off"></div></div>
+<div class="adm-field">
+<label for="newAppLogoUrl">LOGO</label>
+<div class="adm-input">
+<div class="logo-picker-wrap">
+<div class="logo-picker-preview" id="newAppLogoPreview"><span>Belum dipilih</span></div>
+<div class="logo-picker-actions">
+<button type="button" id="newAppLogoPickBtn" class="logo-picker-btn">Pilih dari daftar</button>
+<button type="button" id="newAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
+</div>
+</div>
+<input type="hidden" id="newAppLogoUrl" value="">
+</div>
+</div>
+<div class="adm-field">
+<label for="newAppType">JENIS</label>
+<div class="adm-input adm-input-select">
+<select id="newAppType">
+<option value="streaming">Streaming</option>
+<option value="music">Music</option>
+<option value="editing">Editing</option>
+<option value="study">Study</option>
+<option value="game">Game</option>
+<option value="lainnya" selected>Lainnya</option>
+</select>
+</div>
+</div>
+<p class="sheet-hint">Paket dan detail lainnya dapat ditambahkan setelah aplikasi dibuat, lewat tombol <b>＋ Tambah Paket</b> di header grup aplikasi.</p>
+<button type="submit" id="btnSubmitApp" class="sheet-submit">BUAT APLIKASI</button>
 </form>
 </aside>
+
+<div id="logoPickerModal" class="modal-overlay hidden">
+<div class="logo-picker-backdrop"></div>
+<div class="logo-picker-box">
+<div class="modal-head">
+<div><h3>Pilih Logo</h3><p class="modal-sub">Cari atau tempel URL gambar</p></div>
+<button type="button" class="modal-close-btn" id="logoPickerClose">×</button>
+</div>
+<div class="logo-picker-body">
+<div class="logo-picker-tabs">
+<button type="button" class="logo-tab active" data-tab="search">Dari daftar</button>
+<button type="button" class="logo-tab" data-tab="url">Tempel URL</button>
+</div>
+<div class="logo-tab-pane active" data-pane="search">
+<input type="text" id="logoSearchInput" class="form-input" placeholder="Cari aplikasi (mis. netflix)...">
+<div id="logoSearchResults" class="logo-search-grid"></div>
+<p class="logo-search-hint" id="logoSearchHint">Menampilkan saran bawaan.</p>
+</div>
+<div class="logo-tab-pane" data-pane="url">
+<input type="text" id="logoUrlInput" class="form-input" placeholder="https://contoh.com/logo.png">
+<p class="logo-search-hint">Tempel URL gambar apa pun. Maksimal 300 KB.</p>
+</div>
+</div>
+<div class="modal-actions">
+<button type="button" class="cancel-btn" id="logoPickerCancel">Batal</button>
+<button type="button" class="submit-btn" id="logoPickerConfirm" disabled>Konfirmasi</button>
+</div>
+</div>
+</div>
+</div>
+
+<div id="editAppModal" class="modal-overlay hidden">
+<div class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Edit Aplikasi</h3><p id="editAppNameDisplay" class="modal-sub"></p></div><button id="editAppClose" class="modal-close-btn" type="button">×</button></div>
+<form id="editAppForm" class="modal-form" novalidate>
+<input type="hidden" id="editAppName">
+<div class="adm-field">
+<label for="editAppLogoUrl">LOGO</label>
+<div class="adm-input">
+<div class="logo-picker-wrap">
+<div class="logo-picker-preview" id="editAppLogoPreview"><span>Belum dipilih</span></div>
+<div class="logo-picker-actions">
+<button type="button" id="editAppLogoPickBtn" class="logo-picker-btn">Pilih dari daftar</button>
+<button type="button" id="editAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
+</div>
+</div>
+<input type="hidden" id="editAppLogoUrl" value="">
+</div>
+</div>
+<div class="adm-field">
+<label for="editAppType">JENIS</label>
+<div class="adm-input adm-input-select">
+<select id="editAppType">
+<option value="streaming">Streaming</option>
+<option value="music">Music</option>
+<option value="editing">Editing</option>
+<option value="study">Study</option>
+<option value="game">Game</option>
+<option value="lainnya">Lainnya</option>
+</select>
+</div>
+</div>
+<div class="modal-actions">
+<button type="button" class="cancel-btn" id="editAppCancelBtn">Batal</button>
+<button type="submit" class="submit-btn">Simpan</button>
+</div>
+</form>
+</div>
+</div>
+
 </section>
 <section id="section-flashsale" class="section hidden">
 <div class="card">
@@ -396,14 +488,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=8" defer></script>
-<script src="js/admin-modules.js?v=8" defer></script>
-<script src="js/admin.js?v=8" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=8" defer></script>
-<script src="js/admin-stock.js?v=8" defer></script>
-<script src="js/admin-orders.js?v=8" defer></script>
-<script src="js/admin-resellers.js?v=8" defer></script>
-<script src="js/admin-dashboard.js?v=8" defer></script>
-<script src="js/admin-activity.js?v=8" defer></script>
+<script src="js/admin-ui.js?v=9" defer></script>
+<script src="js/admin-modules.js?v=9" defer></script>
+<script src="js/admin.js?v=9" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=9" defer></script>
+<script src="js/admin-stock.js?v=9" defer></script>
+<script src="js/admin-orders.js?v=9" defer></script>
+<script src="js/admin-resellers.js?v=9" defer></script>
+<script src="js/admin-dashboard.js?v=9" defer></script>
+<script src="js/admin-activity.js?v=9" defer></script>
 </body>
 </html>
