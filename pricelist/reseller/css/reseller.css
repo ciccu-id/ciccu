@@ -70,22 +70,22 @@ img{max-width:100%;display:block}
 @media(max-width:640px){
 .r-login{padding:16px 12px}
 .r-login .auth{padding:20px 16px 22px;border-radius:18px}
-.r-login .overlay{text-align:center;margin-bottom:16px}
-.r-login .logo{width:38px;height:38px;border-radius:12px;font-size:16px;margin:0 auto 12px}
+.r-login .overlay{margin-bottom:16px}
+.r-login .logo{width:38px;height:38px;border-radius:12px;font-size:16px;margin:0 0 12px}
 .r-login .overlay h2{font-size:19px}
 .r-login .overlay p{font-size:12px}
 .r-login .seg{margin-bottom:18px;padding:3px;border-radius:12px}
 .r-login .seg-thumb{top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:9px}
 .r-login .seg-btn{padding:9px 0;font-size:12px}
-.r-login .form-box h1{font-size:18px;text-align:center}
-.r-login .form-box .sub{font-size:11.5px;margin-bottom:16px;text-align:center}
+.r-login .form-box h1{font-size:18px}
+.r-login .form-box .sub{font-size:11.5px;margin-bottom:16px}
 .r-login .form{gap:14px}
 .r-login .field label{font-size:9px;left:10px}
-.r-login .input input{height:44px;border-radius:11px}
+.r-login .input input{height:44px;border-radius:11px;font-size:14px}
+.r-login .input input:focus{font-size:16px}
 .r-login .password input{padding-right:44px}
 .r-login .eye{width:36px;height:36px;right:4px}
 .r-login .eye svg{width:17px;height:17px}
-.r-login .hint{font-size:10px}
 .r-login .r-cf{transform:scale(.9);transform-origin:center;margin-top:-4px}
 .r-login .submit{height:44px;font-size:12px;border-radius:11px}
 .r-login .switch-text{margin-top:14px;padding-top:10px;font-size:11px}
@@ -100,20 +100,27 @@ img{max-width:100%;display:block}
 .r-login .form-box h1{font-size:22px}
 }
 @media(min-width:961px){
-.r-login .auth{max-width:940px;min-height:560px;padding:0;border-radius:26px;overflow:hidden}
+.r-login .auth{max-width:940px;min-height:600px;padding:0;border-radius:26px;overflow:hidden}
 .r-login .seg{display:none}
 .r-login .forms{position:absolute;inset:0;display:flex;overflow:hidden;transition:none}
-.r-login .form-side,.r-login .auth.register-mode .login-form,.r-login .auth.register-mode .register-form{position:static;width:50%;display:flex;align-items:center;justify-content:center;padding:44px 54px}
+.r-login .form-side,.r-login .auth.register-mode .login-form,.r-login .auth.register-mode .register-form{position:static;width:50%;display:flex;align-items:center;justify-content:center;padding:28px 40px}
 .r-login .form-side{transition:opacity .5s ease,transform .6s cubic-bezier(.75,0,.2,1),visibility .5s}
 .r-login .login-form{opacity:1;visibility:visible;pointer-events:auto;transform:none}
 .r-login .register-form{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(36px)}
 .r-login .auth.register-mode .login-form{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-36px)}
 .r-login .auth.register-mode .register-form{opacity:1;visibility:visible;pointer-events:auto;transform:none}
-.r-login .form-box{max-width:320px;margin:0}
-.r-login .form-box h1{font-size:23px}
-.r-login .form{gap:19px}
-.r-login .input input{height:48px;font-size:14px}
-.r-login .submit{height:46px}
+.r-login .form-box{max-width:340px;margin:0}
+.r-login .form-box h1{font-size:21px}
+.r-login .form-box .sub{font-size:12px;margin-bottom:14px}
+.r-login .form{gap:12px}
+.r-login .field label{font-size:9.5px}
+.r-login .input input{height:42px;font-size:13px;border-radius:11px}
+.r-login .password input{padding-right:42px}
+.r-login .eye{width:36px;height:36px}
+.r-login .eye svg{width:17px;height:17px}
+.r-login .r-cf{transform:scale(.8);transform-origin:center;margin-top:-4px}
+.r-login .submit{height:42px;font-size:12px}
+.r-login .switch-text{margin-top:12px;padding-top:10px;font-size:11px}
 .r-login .overlay{position:absolute;z-index:5;top:0;right:0;width:50%;height:100%;margin:0;padding:40px;background:linear-gradient(150deg,#14bcd8,#2478e6);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:26px 0 0 26px;transition:transform .6s cubic-bezier(.75,0,.2,1),border-radius .6s cubic-bezier(.75,0,.2,1)}
 .r-login .auth.register-mode .overlay{transform:translateX(-100%);border-radius:0 26px 26px 0}
 .r-login .overlay-content{max-width:280px}
