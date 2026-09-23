@@ -9,8 +9,8 @@
 <link rel="manifest" href="manifest-admin.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=4">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css?v=8">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -111,29 +111,35 @@
 </div>
 </section>
 <section id="section-produk" class="section hidden">
-<div class="card">
-<h2 class="card-title">➕ Tambah Paket Baru</h2>
-<form id="addForm" class="add-form">
-<input id="appName" class="form-input" placeholder="Nama Aplikasi" required>
-<input id="appCat" class="form-input" placeholder="Kategori" required>
-<input id="appDur" class="form-input" placeholder="Durasi" required>
-<input id="appPrice" class="form-input" placeholder="Harga (mis. 50K)" required>
-<select id="appStatus" class="form-input"><option value="Ready">Ready</option><option value="Sold">Sold</option></select>
-<input id="appFlashPrice" class="form-input flash-input" placeholder="Harga Flash (opsional)">
-<input id="appNotes" class="form-input span-2" placeholder="Catatan (opsional)">
-<button id="btnSubmit" type="submit" class="submit-btn">Simpan Paket</button>
-</form>
+<div class="prod-bar">
+<label for="addPkgSheetToggle" class="prod-icon-btn" title="Tambah Paket Baru" aria-label="Tambah Paket Baru">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+</label>
+<button id="btnReorder" type="button" class="prod-icon-btn" title="Urutkan Aplikasi" aria-label="Urutkan Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m16 16 4 4 4-4"/><path d="M20 8V20"/></svg>
+</button>
+<input id="adminSearchInput" class="prod-search" type="text" placeholder="Cari aplikasi / kategori / status...">
 </div>
-<div class="toolbar-row">
-<button id="btnExpandAll" type="button" class="tool-btn">Buka Semua</button>
-<button id="btnCollapseAll" type="button" class="tool-btn">Tutup Semua</button>
-<span class="tool-sep"></span>
-<button id="btnReorder" type="button" class="tool-btn sky">Urutan Aplikasi</button>
-<button id="btnImport" type="button" class="tool-btn purple">Import CSV</button>
-<button id="btnExport" type="button" class="tool-btn green">Export CSV</button>
-</div>
-<div class="search-row"><input id="adminSearchInput" class="search-input" type="text" placeholder="Cari aplikasi / kategori / status..."></div>
 <div id="dataList" class="data-list"></div>
+
+<input type="checkbox" id="addPkgSheetToggle" class="sheet-toggle">
+<label for="addPkgSheetToggle" class="sheet-backdrop"></label>
+<aside class="sheet" id="addPkgSheet">
+<div class="sheet-head">
+<h3>Tambah Paket Baru</h3>
+<label for="addPkgSheetToggle" class="sheet-close" aria-label="Tutup">✕</label>
+</div>
+<form id="addForm" class="sheet-body" novalidate>
+<div class="adm-field"><label for="appName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="appName" required></div></div>
+<div class="adm-field"><label for="appCat">KATEGORI</label><div class="adm-input"><input type="text" id="appCat" required></div></div>
+<div class="adm-field"><label for="appDur">DURASI</label><div class="adm-input"><input type="text" id="appDur" required></div></div>
+<div class="adm-field"><label for="appPrice">HARGA</label><div class="adm-input"><input type="text" id="appPrice" required></div></div>
+<div class="adm-field"><label for="appStatus">STATUS</label><div class="adm-input adm-input-select"><select id="appStatus"><option value="Ready">Ready</option><option value="Sold">Sold</option></select></div></div>
+<div class="adm-field"><label for="appFlashPrice">HARGA FLASH (OPSIONAL)</label><div class="adm-input"><input type="text" id="appFlashPrice"></div></div>
+<div class="adm-field"><label for="appNotes">CATATAN (OPSIONAL)</label><div class="adm-input"><textarea id="appNotes" rows="2"></textarea></div></div>
+<button type="submit" id="btnSubmit" class="sheet-submit">SIMPAN PAKET</button>
+</form>
+</aside>
 </section>
 <section id="section-flashsale" class="section hidden">
 <div class="card">
@@ -266,13 +272,13 @@
 <div class="modal-box">
 <div class="modal-head"><div><h3>Edit Paket</h3></div><button id="editModalClose" class="modal-close-btn" type="button">×</button></div>
 <form id="editForm" class="modal-form">
-<input id="editAppName" class="form-input" placeholder="Nama Aplikasi" required>
-<input id="editAppCat" class="form-input" placeholder="Kategori" required>
-<input id="editAppDur" class="form-input" placeholder="Durasi" required>
-<input id="editAppPrice" class="form-input" placeholder="Harga" required>
-<select id="editAppStatus" class="form-input"><option value="Ready">Ready</option><option value="Sold">Sold</option></select>
-<input id="editAppFlashPrice" class="form-input flash-input" placeholder="Harga Flash (opsional)">
-<textarea id="editAppNotes" class="form-input" rows="2" placeholder="Catatan"></textarea>
+<div class="adm-field"><label for="editAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="editAppName" required></div></div>
+<div class="adm-field"><label for="editAppCat">KATEGORI</label><div class="adm-input"><input type="text" id="editAppCat" required></div></div>
+<div class="adm-field"><label for="editAppDur">DURASI</label><div class="adm-input"><input type="text" id="editAppDur" required></div></div>
+<div class="adm-field"><label for="editAppPrice">HARGA</label><div class="adm-input"><input type="text" id="editAppPrice" required></div></div>
+<div class="adm-field"><label for="editAppStatus">STATUS</label><div class="adm-input adm-input-select"><select id="editAppStatus"><option value="Ready">Ready</option><option value="Sold">Sold</option></select></div></div>
+<div class="adm-field"><label for="editAppFlashPrice">HARGA FLASH</label><div class="adm-input"><input type="text" id="editAppFlashPrice"></div></div>
+<div class="adm-field"><label for="editAppNotes">CATATAN</label><div class="adm-input"><textarea id="editAppNotes" rows="2"></textarea></div></div>
 <div class="modal-actions"><button id="editCancelBtn" type="button" class="cancel-btn">Batal</button><button id="btnSubmitEdit" type="submit" class="submit-btn">Simpan</button></div>
 </form>
 </div>
@@ -283,12 +289,12 @@
 <div class="modal-head"><div><h3>Tambah Paket</h3><p id="addPkgAppNameDisplay" class="modal-sub"></p></div><button id="addPkgClose" class="modal-close-btn" type="button">×</button></div>
 <form id="addPackageForm" class="modal-form">
 <input id="addPkgAppName" type="hidden">
-<input id="addPkgCat" class="form-input" placeholder="Kategori" required>
-<input id="addPkgDur" class="form-input" placeholder="Durasi" required>
-<input id="addPkgPrice" class="form-input" placeholder="Harga" required>
-<select id="addPkgStatus" class="form-input"><option value="Ready">Ready</option><option value="Sold">Sold</option></select>
-<input id="addPkgFlashPrice" class="form-input flash-input" placeholder="Harga Flash (opsional)">
-<textarea id="addPkgNotes" class="form-input" rows="2" placeholder="Catatan"></textarea>
+<div class="adm-field"><label for="addPkgCat">KATEGORI</label><div class="adm-input"><input type="text" id="addPkgCat" required></div></div>
+<div class="adm-field"><label for="addPkgDur">DURASI</label><div class="adm-input"><input type="text" id="addPkgDur" required></div></div>
+<div class="adm-field"><label for="addPkgPrice">HARGA</label><div class="adm-input"><input type="text" id="addPkgPrice" required></div></div>
+<div class="adm-field"><label for="addPkgStatus">STATUS</label><div class="adm-input adm-input-select"><select id="addPkgStatus"><option value="Ready">Ready</option><option value="Sold">Sold</option></select></div></div>
+<div class="adm-field"><label for="addPkgFlashPrice">HARGA FLASH</label><div class="adm-input"><input type="text" id="addPkgFlashPrice"></div></div>
+<div class="adm-field"><label for="addPkgNotes">CATATAN</label><div class="adm-input"><textarea id="addPkgNotes" rows="2"></textarea></div></div>
 <div class="modal-actions"><button id="addPkgCancelBtn" type="button" class="cancel-btn">Batal</button><button id="btnSubmitAddPkg" type="submit" class="submit-btn">Simpan</button></div>
 </form>
 </div>
@@ -390,14 +396,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=4" defer></script>
-<script src="js/admin-modules.js?v=4" defer></script>
-<script src="js/admin.js?v=4" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=4" defer></script>
-<script src="js/admin-stock.js?v=4" defer></script>
-<script src="js/admin-orders.js?v=4" defer></script>
-<script src="js/admin-resellers.js?v=4" defer></script>
-<script src="js/admin-dashboard.js?v=4" defer></script>
-<script src="js/admin-activity.js?v=4" defer></script>
+<script src="js/admin-ui.js?v=8" defer></script>
+<script src="js/admin-modules.js?v=8" defer></script>
+<script src="js/admin.js?v=8" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=8" defer></script>
+<script src="js/admin-stock.js?v=8" defer></script>
+<script src="js/admin-orders.js?v=8" defer></script>
+<script src="js/admin-resellers.js?v=8" defer></script>
+<script src="js/admin-dashboard.js?v=8" defer></script>
+<script src="js/admin-activity.js?v=8" defer></script>
 </body>
 </html>
