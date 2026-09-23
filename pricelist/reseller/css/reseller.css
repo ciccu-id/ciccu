@@ -17,20 +17,44 @@ input,textarea,select{font-family:inherit}
 img{max-width:100%;display:block}
 .hidden{display:none!important}
 .r-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;background:linear-gradient(165deg,var(--blue-100),var(--butter-50) 50%,var(--blue-50))}
-.r-login-box{background:var(--w);padding:1.75rem 1.5rem;border-radius:var(--r-2xl);box-shadow:var(--sh-xl);width:100%;max-width:24rem;text-align:center;border:1px solid var(--blue-200);border-top:5px solid var(--butter-300)}
-@media(max-width:400px){.r-login-box{padding:1.5rem 1rem}}
-.r-login-title{font-family:'Fredoka',sans-serif;font-size:1.375rem;font-weight:700;color:var(--choco-600);margin-bottom:.25rem}
-.r-login-sub{font-size:.75rem;color:var(--choco-400);font-weight:600;margin-bottom:1.25rem}
-.r-login-form{display:flex;flex-direction:column;gap:.625rem}
-.r-login-input{width:100%;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:var(--r-md);padding:.625rem .875rem;outline:none;font-weight:700;color:var(--choco-600);font-size:.8125rem;box-shadow:inset 0 1px 2px rgba(67,47,46,.05);text-align:center}
-.r-login-input:focus{border-color:var(--blue-400)}
-.r-turnstile{margin:.625rem 0 .25rem;display:flex;justify-content:center}
-.r-auth-toggle{margin-top:.875rem;text-align:center}
-.r-toggle-link{font-size:.6875rem;font-weight:700;color:var(--choco-500);background:var(--blue-50);border:1px solid var(--blue-200);padding:.45rem .875rem;border-radius:9999px;transition:all .15s;cursor:pointer}
-.r-toggle-link:hover{background:var(--blue-100);color:var(--choco-700)}
-.r-login-btn{width:100%;background:var(--choco-600);color:var(--butter-100);font-weight:700;padding:.625rem;border-radius:var(--r-md);transition:background .15s;box-shadow:var(--sh-md);margin-top:.25rem;font-size:.8125rem}
-.r-login-btn:hover{background:var(--choco-700)}
-.r-login-btn:disabled{opacity:.6;cursor:not-allowed}
+.r-auth-shell{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);width:100%;max-width:62rem;background:var(--w);border-radius:var(--r-2xl);overflow:hidden;box-shadow:var(--sh-xl);border:1px solid var(--blue-200)}
+.r-auth-hero{background:linear-gradient(160deg,var(--navy-800),var(--navy-900));color:var(--w);padding:2.5rem 2rem;display:flex;flex-direction:column;justify-content:center;gap:.875rem;position:relative}
+.r-auth-hero::after{content:'';position:absolute;right:-4rem;top:-4rem;width:14rem;height:14rem;background:radial-gradient(circle,var(--butter-300) 0%,transparent 70%);opacity:.22;pointer-events:none}
+.r-hero-brand{display:flex;align-items:center;gap:.625rem}
+.r-hero-logo{width:2.5rem;height:2.5rem;border-radius:.75rem;object-fit:cover;border:2px solid rgba(255,255,255,.18)}
+.r-hero-brand-name{font-family:'Fredoka',sans-serif;font-size:.8125rem;font-weight:700;color:var(--butter-300);text-transform:uppercase;letter-spacing:.1em}
+.r-hero-title{font-family:'Fredoka',sans-serif;font-size:1.875rem;font-weight:700;color:var(--w);line-height:1.15}
+.r-hero-sub{font-size:.8125rem;color:rgba(255,255,255,.75);font-weight:500;line-height:1.65;max-width:24rem}
+.r-hero-cta{align-self:flex-start;margin-top:.5rem;background:var(--butter-300);color:var(--choco-700);font-size:.6875rem;font-weight:900;letter-spacing:.08em;padding:.7rem 1.375rem;border-radius:9999px;box-shadow:var(--sh-md);transition:background .15s}
+.r-hero-cta:hover{background:var(--butter-400)}
+.r-auth-card{background:var(--w);padding:2rem 1.875rem;display:flex;flex-direction:column;gap:.875rem}
+.r-auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:9999px;padding:.25rem}
+.r-auth-tab{padding:.55rem .5rem;border-radius:9999px;font-size:.75rem;font-weight:700;color:var(--choco-500);transition:all .15s}
+.r-auth-tab:hover{background:var(--blue-100)}
+.r-auth-tab.active{background:var(--choco-600);color:var(--butter-100);box-shadow:var(--sh-md)}
+.r-auth-pane{display:flex;flex-direction:column}
+.r-auth-title{font-family:'Fredoka',sans-serif;font-size:1.25rem;font-weight:700;color:var(--choco-700)}
+.r-auth-desc{font-size:.75rem;color:var(--choco-400);font-weight:600;margin-top:.125rem;margin-bottom:.75rem}
+.r-auth-form{display:flex;flex-direction:column}
+.r-field-label{font-size:.5625rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--choco-500);margin-top:.625rem;margin-bottom:.25rem}
+.r-field-input{width:100%;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:var(--r-md);padding:.625rem .75rem;outline:none;font-weight:700;color:var(--choco-600);font-size:.8125rem;box-shadow:inset 0 1px 2px rgba(67,47,46,.05);transition:border-color .15s}
+.r-field-input:focus{border-color:var(--blue-400)}
+.r-field-hint{font-size:.5625rem;color:var(--choco-400);font-weight:600;margin-top:.2rem}
+.r-turnstile{margin:.875rem 0 .25rem;display:flex;justify-content:center}
+.r-auth-submit{width:100%;margin-top:.5rem;background:var(--choco-600);color:var(--butter-100);font-size:.6875rem;font-weight:900;letter-spacing:.08em;padding:.75rem;border-radius:var(--r-md);transition:background .15s;box-shadow:var(--sh-md)}
+.r-auth-submit:hover{background:var(--choco-700)}
+.r-auth-submit:disabled{opacity:.6;cursor:not-allowed}
+.r-auth-foot{text-align:center;margin-top:.875rem}
+.r-foot-link{font-size:.6875rem;font-weight:700;color:var(--blue-400);transition:color .15s}
+.r-foot-link:hover{color:var(--choco-600);text-decoration:underline}
+@media(max-width:900px){
+.r-auth-shell{grid-template-columns:1fr;max-width:30rem}
+.r-auth-hero{padding:1.5rem 1.25rem;gap:.5rem}
+.r-hero-title{font-size:1.375rem}
+.r-hero-sub{font-size:.75rem;max-width:none}
+.r-hero-cta{display:none}
+.r-auth-card{padding:1.5rem 1.125rem}
+}
 .r-main{display:flex;flex-direction:column;min-height:100vh}
 .r-header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--blue-200);display:flex;align-items:center;justify-content:space-between;gap:.625rem;padding:.625rem .875rem}
 .r-header-left{min-width:0}
