@@ -93,7 +93,6 @@ var parsedFields=parseFormFields(rawFields);
 var exactAppName=formObj?formObj.app_name:appName;
 var isExpanded=!!expandedApps[exactAppName];
 var packageIds=packages.map(function(p){return p.id});
-var isAllSelected=packageIds.length>0&&packageIds.every(function(id){return selectedItems.has(id)});
 var isAllSold=packages.length>0&&packages.every(function(p){return p.status&&p.status.toLowerCase()!=='ready'});
 var meta=getMeta(appName);
 var group=ce('div','app-group');
@@ -114,25 +113,38 @@ var arrow=ce('div','app-header-arrow');
 arrow.appendChild(admSvg('M19 9l-7 7-7-7','1.25rem','1.25rem'));
 header.appendChild(arrow);
 var actions=ce('div','app-header-actions');
-var editAppBtn=ce('button','icon-btn');
-editAppBtn.setAttribute('type','button');
-editAppBtn.setAttribute('title','Edit Aplikasi');
-editAppBtn.appendChild(admSvg('M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z','1rem','1rem'));
-editAppBtn.addEventListener('click',function(e){e.stopPropagation();openEditAppModal(appName)});
-actions.appendChild(editAppBtn);
-var delAppBtn=ce('button','icon-btn');
-delAppBtn.setAttribute('type','button');
-delAppBtn.setAttribute('title','Hapus Aplikasi');
-delAppBtn.appendChild(admSvg('M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16','1rem','1rem'));
-delAppBtn.addEventListener('click',function(e){e.stopPropagation();deleteApplication(exactAppName,packageIds)});
-actions.appendChild(delAppBtn);
-var appCb=ce('input','app-checkbox');
-appCb.setAttribute('type','checkbox');
-if(isAllSelected)appCb.checked=true;
-appCb.addEventListener('change',function(){toggleSelectApp(exactAppName,this.checked,packageIds)});
-actions.appendChild(appCb);
+var kebab=ce('div','kebab-wrap');
+var kbtn=ce('button','kebab-btn');
+kbtn.setAttribute('type','button');
+kbtn.setAttribute('title','Menu aplikasi');
+kbtn.textContent='⋮';
+var kmenu=ce('div','kebab-menu');
+var ki1=ce('button','kebab-item');
+ki1.setAttribute('type','button');
+ki1.textContent='✏️ Edit Aplikasi';
+ki1.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');openEditAppModal(appName)});
+var ki2=ce('button','kebab-item');
+ki2.setAttribute('type','button');
+ki2.textContent='📋 Form Pembeli';
+ki2.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');openFormModal(exactAppName,encodeURIComponent(rawFields))});
+var ki3=ce('button','kebab-item danger');
+ki3.setAttribute('type','button');
+ki3.textContent='🗑 Hapus Aplikasi';
+ki3.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');deleteApplication(exactAppName,packageIds)});
+kmenu.appendChild(ki1);
+kmenu.appendChild(ki2);
+kmenu.appendChild(ki3);
+kebab.appendChild(kbtn);
+kebab.appendChild(kmenu);
+kbtn.addEventListener('click',function(e){
+e.stopPropagation();
+var willOpen=!kebab.classList.contains('open');
+if(typeof closeAllKebab==='function')closeAllKebab(null);
+if(willOpen)kebab.classList.add('open');
+});
+actions.appendChild(kebab);
 header.appendChild(actions);
-header.addEventListener('click',function(e){if(e.target.closest('.icon-btn')||e.target.closest('.app-checkbox')||e.target.tagName==='IMG')return;toggleExpand(exactAppName)});
+header.addEventListener('click',function(e){if(e.target.closest('.kebab-wrap')||e.target.tagName==='IMG')return;toggleExpand(exactAppName)});
 group.appendChild(header);
 var body=ce('div','app-body '+(isExpanded?'open':'closed'));
 var bodyInner=ce('div','app-body-inner');
@@ -140,11 +152,6 @@ var content=ce('div','app-body-content');
 var formSection=ce('div','form-section');
 var fsHeader=ce('div','form-section-header');
 fsHeader.appendChild(ce('h4','form-section-title',parsedFields.length>0?'📋 FORM PEMBELI':'🌸 TIDAK ADA FORMULIR KHUSUS'));
-var formBtn=ce('button','form-edit-btn');
-formBtn.setAttribute('type','button');
-formBtn.textContent=parsedFields.length>0?'✏️ Edit Form':'➕ Buat Form';
-formBtn.addEventListener('click',function(){openFormModal(exactAppName,encodeURIComponent(rawFields))});
-fsHeader.appendChild(formBtn);
 formSection.appendChild(fsHeader);
 if(parsedFields.length>0){
 var fieldsList=ce('div','form-fields-list');
@@ -477,7 +484,7 @@ function editPackage(id){
 var item=globalAdminData.find(function(d){return d.id===id});
 if(!item)return;
 currentEditId=id;
-var fields={editAppName:item.app_name,editAppCat:item.category,editAppDur:item.duration,editAppPrice:item.price,editAppStatus:item.status,editAppNotes:(item.notes&&item.notes.toLowerCase()!=='nan')?item.notes:'',editAppFlashPrice:item.flash_price||''};
+var fields={editAppNamePkg:item.app_name,editAppCat:item.category,editAppDur:item.duration,editAppPrice:item.price,editAppStatus:item.status,editAppNotes:(item.notes&&item.notes.toLowerCase()!=='nan')?item.notes:'',editAppFlashPrice:item.flash_price||''};
 for(var key in fields){
 var el=document.getElementById(key);
 if(el)el.value=fields[key];
@@ -496,7 +503,7 @@ var btn=document.getElementById('btnSubmitEdit');
 var oldText=btn?btn.textContent:'';
 if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
 var payload={
-app_name:document.getElementById('editAppName').value,
+app_name:document.getElementById('editAppNamePkg').value,
 category:document.getElementById('editAppCat').value,
 duration:document.getElementById('editAppDur').value,
 price:document.getElementById('editAppPrice').value,
@@ -583,12 +590,14 @@ e.preventDefault();
 var btn=e.target.querySelector('.submit-btn');
 var oldText=btn?btn.textContent:'';
 if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
-var appName=document.getElementById('editAppName').value;
+var appName=(document.getElementById('editAppName').value||'').trim();
 var logoUrlVal=(document.getElementById('editAppLogoUrl').value||'').trim();
 var appType=(document.getElementById('editAppType').value||'lainnya').trim();
-var payload={app_type:appType};
+if(!appName){alert('Nama aplikasi wajib diisi');if(btn){btn.textContent=oldText;btn.disabled=false}return}
+var payload={app_name:appName,app_type:appType};
 if(logoUrlVal)payload.logo_url=logoUrlVal;
-fetch('/api/admin/app-metadata/'+encodeURIComponent(appName),{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)})
+var originalName=document.getElementById('editAppNameDisplay').textContent;
+fetch('/api/admin/app-metadata/'+encodeURIComponent(originalName),{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)})
 .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
 .then(function(res){
 if(!res.ok){throw new Error(res.data.error||'Gagal menyimpan')}
@@ -693,10 +702,6 @@ renderLogoPreview(target);
 }
 function toggleSelect(id,isChecked){
 if(isChecked)selectedItems.add(id);else selectedItems.delete(id);
-updateBulkUI();filterAdminList();
-}
-function toggleSelectApp(appName,isChecked,packageIds){
-packageIds.forEach(function(id){if(isChecked)selectedItems.add(id);else selectedItems.delete(id)});
 updateBulkUI();filterAdminList();
 }
 function deleteApplication(appName,packageIds){
