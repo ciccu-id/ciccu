@@ -57,6 +57,26 @@ return n*DAY;
 }
 function isoToUTC(s){if(!s)return null;const t=Date.parse(String(s).replace(' ','T')+'Z');return isNaN(t)?null:t}
 function addMsToIso(iso,ms){const base=isoToUTC(iso);if(base===null)return null;return new Date(base+ms).toISOString().replace('T',' ').slice(0,19)}
+async function fetchLogoToR2(env,name,rawUrl){
+const slug=slugify(name);
+if(!slug)return{ok:false,error:'Nama aplikasi tidak valid'};
+let u;
+try{u=new URL(rawUrl)}catch(e){return{ok:false,error:'URL tidak valid'}}
+if(u.protocol!=='http:'&&u.protocol!=='https:')return{ok:false,error:'URL harus http/https'};
+const ctl=new AbortController();
+const to=setTimeout(function(){ctl.abort()},8000);
+let res;
+try{res=await fetch(u.href,{redirect:'follow',signal:ctl.signal,headers:{'User-Agent':'CiccuLogoBot/1.0'}})}catch(e){clearTimeout(to);return{ok:false,error:'Gagal mengambil gambar: sumber tidak terjangkau'}}
+clearTimeout(to);
+if(!res.ok)return{ok:false,error:'Sumber mengembalikan status '+res.status};
+const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
+if(LOGO_CT.indexOf(ct)<0)return{ok:false,error:'URL bukan gambar ('+ct+')'};
+const buf=await res.arrayBuffer();
+if(!buf.byteLength)return{ok:false,error:'Gambar kosong'};
+if(buf.byteLength>307200)return{ok:false,error:'Gambar terlalu besar (maks 300 KB)'};
+await env.LOGOS.put('logos/'+slug,buf,{httpMetadata:{contentType:ct,cacheControl:'public, max-age=3600'}});
+return{ok:true,slug:slug};
+}
 export async function onRequest(context){
 const{request,env}=context;
 const url=new URL(request.url);const p=url.pathname;const m=request.method;
@@ -293,20 +313,60 @@ if(q==='/app-metadata'&&m==='GET'){
 const r=await env.DB.prepare('SELECT app_name,logo_path,app_type,created_at FROM app_metadata ORDER BY app_name').all();
 return json(r.results);
 }
+if(q==='/app-metadata'&&m==='POST'){
+const name=String(b.app_name||'').trim();
+if(!name)return err('Nama aplikasi wajib diisi',400);
+const at=String(b.app_type||'lainnya').trim().toLowerCase();
+if(APP_TYPES.indexOf(at)<0)return err('Jenis aplikasi tidak valid',400);
+const ex=await env.DB.prepare('SELECT app_name FROM app_metadata WHERE app_name=?').bind(name).first();
+if(ex)return err('Aplikasi sudah ada',409);
+await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path,app_type) VALUES(?,?,?)').bind(name,'',at).run();
+const rawUrl=String(b.logo_url||'').trim();
+let logoError=null;
+if(rawUrl){
+const r=await fetchLogoToR2(env,name,rawUrl);
+if(r.ok){await env.DB.prepare('UPDATE app_metadata SET logo_path=? WHERE app_name=?').bind(r.slug,name).run()}
+else{logoError=r.error}
+}
+await audit(env,'admin',null,'app.create','app',null,{name:name,type:at},ip);
+return json({success:true,created:true,logo_error:logoError},201);
+}
 const amq=q.match(/^\/app-metadata\/(.+)$/);
 if(amq&&m==='PUT'){
 const name=decodeURIComponent(amq[1]);
-const lp=String(b.logo_path!==undefined?b.logo_path:'').trim().toLowerCase();
-const at=String(b.app_type!==undefined?b.app_type:'').trim().toLowerCase();
+const hasType=b.app_type!==undefined;
+const hasLogoUrl=b.logo_url!==undefined;
+const hasLogoPath=b.logo_path!==undefined;
+if(!hasType&&!hasLogoUrl&&!hasLogoPath)return err('Tidak ada perubahan',400);
+const at=hasType?String(b.app_type||'').trim().toLowerCase():null;
+if(hasType&&APP_TYPES.indexOf(at)<0)return err('Jenis aplikasi tidak valid',400);
+let logoPath=undefined;
+if(hasLogoPath){
+const lp=String(b.logo_path||'').trim().toLowerCase();
 if(lp&&!/^[a-z0-9-]{1,64}$/.test(lp))return err('logo_path tidak valid',400);
-if(at&&APP_TYPES.indexOf(at)<0)return err('app_type tidak valid',400);
+logoPath=lp;
+}
+if(hasLogoUrl){
+const v=String(b.logo_url||'').trim();
+if(v==='__clear__'){
+logoPath='';
+const old=await env.DB.prepare('SELECT logo_path FROM app_metadata WHERE app_name=?').bind(name).first();
+if(old&&old.logo_path){try{await env.LOGOS.delete('logos/'+old.logo_path)}catch(e){}}
+}else if(v){
+const r=await fetchLogoToR2(env,name,v);
+if(!r.ok)return err(r.error,502);
+logoPath=r.slug;
+}else{logoPath=''}
+}
+const ex=await env.DB.prepare('SELECT app_name FROM app_metadata WHERE app_name=?').bind(name).first();
+if(ex){
 const sets=[];const args=[];
-if(b.logo_path!==undefined){sets.push('logo_path=?');args.push(lp)}
-if(b.app_type!==undefined){sets.push('app_type=?');args.push(at||'lainnya')}
-if(!sets.length)return err('Tidak ada perubahan',400);
-args.push(name);
-const up=await env.DB.prepare('UPDATE app_metadata SET '+sets.join(',')+' WHERE app_name=?').bind(...args).run();
-if(!up.meta||!up.meta.changes)return err('Aplikasi tidak ditemukan',404);
+if(logoPath!==undefined){sets.push('logo_path=?');args.push(logoPath)}
+if(hasType){sets.push('app_type=?');args.push(at)}
+if(sets.length){args.push(name);await env.DB.prepare('UPDATE app_metadata SET '+sets.join(',')+' WHERE app_name=?').bind(...args).run()}
+}else{
+await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path,app_type) VALUES(?,?,?)').bind(name,logoPath!==undefined?logoPath:'',hasType?at:'lainnya').run();
+}
 await audit(env,'admin',null,'app.update','app',null,{name:name},ip);
 return json({success:true});
 }
@@ -329,24 +389,11 @@ if(!rawUrl){
 await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path) VALUES(?,?) ON CONFLICT(app_name) DO UPDATE SET logo_path=excluded.logo_path').bind(name,'').run();
 return json({success:true,slug:slug,logo_path:''});
 }
-let u;
-try{u=new URL(rawUrl)}catch(e){return err('URL tidak valid',400)}
-if(u.protocol!=='http:'&&u.protocol!=='https:')return err('URL harus http/https',400);
-const ctl=new AbortController();
-const to=setTimeout(function(){ctl.abort()},8000);
-let res;
-try{res=await fetch(u.href,{redirect:'follow',signal:ctl.signal,headers:{'User-Agent':'CiccuLogoBot/1.0'}})}catch(e){clearTimeout(to);return err('Gagal mengambil gambar: sumber tidak terjangkau',502)}
-clearTimeout(to);
-if(!res.ok)return err('Sumber mengembalikan status '+res.status,502);
-const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
-if(LOGO_CT.indexOf(ct)<0)return err('URL bukan gambar ('+ct+')',415);
-const buf=await res.arrayBuffer();
-if(!buf.byteLength)return err('Gambar kosong',415);
-if(buf.byteLength>307200)return err('Gambar terlalu besar (maks 300 KB)',413);
-await env.LOGOS.put('logos/'+slug,buf,{httpMetadata:{contentType:ct,cacheControl:'public, max-age=3600'}});
-await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path) VALUES(?,?) ON CONFLICT(app_name) DO UPDATE SET logo_path=excluded.logo_path').bind(name,slug).run();
-await audit(env,'admin',null,'logo.ingest','app',null,{name:name,slug:slug},ip);
-return json({success:true,slug:slug,logo_path:slug,url:'/api/logo/'+slug});
+const r=await fetchLogoToR2(env,name,rawUrl);
+if(!r.ok)return err(r.error,502);
+await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path) VALUES(?,?) ON CONFLICT(app_name) DO UPDATE SET logo_path=excluded.logo_path').bind(name,r.slug).run();
+await audit(env,'admin',null,'logo.ingest','app',null,{name:name,slug:r.slug},ip);
+return json({success:true,slug:r.slug,logo_path:r.slug,url:'/api/logo/'+r.slug});
 }
 if(q==='/logo-suggestions'&&m==='GET'){
 const s=(url.searchParams.get('search')||'').toLowerCase().trim();
