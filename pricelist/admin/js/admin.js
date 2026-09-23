@@ -53,14 +53,15 @@ var keyword=searchEl?searchEl.value.toLowerCase():'';
 var filtered=globalAdminData.filter(function(item){
 return item.app_name.toLowerCase().includes(keyword)||item.category.toLowerCase().includes(keyword)||item.status.toLowerCase().includes(keyword);
 });
-renderData(filtered);
+renderData(filtered,keyword);
 }
-function renderData(dataArray){
+function renderData(dataArray,keyword){
 var list=document.getElementById('dataList');
 if(!list)return;
 while(list.firstChild)list.removeChild(list.firstChild);
-if(!dataArray.length){list.appendChild(ce('div','empty-state','Tidak ada paket aplikasi ditemukan 🥺'));return}
-var appOrders={},appFirstIds={},grouped={};
+var grouped={};
+var appOrders={};
+var appFirstIds={};
 dataArray.forEach(function(item){
 if(!grouped[item.app_name])grouped[item.app_name]=[];
 grouped[item.app_name].push(item);
@@ -68,7 +69,17 @@ var order=(item.app_sort_order&&item.app_sort_order>0)?item.app_sort_order:9999;
 if(!appOrders[item.app_name]||order<appOrders[item.app_name])appOrders[item.app_name]=order;
 if(!appFirstIds[item.app_name]||item.id<appFirstIds[item.app_name])appFirstIds[item.app_name]=item.id;
 });
+var kk=(keyword||'').toLowerCase();
+for(var mk in globalAppMeta){
+var mn=globalAppMeta[mk]?globalAppMeta[mk].app_name:'';
+if(!mn||grouped[mn])continue;
+if(kk&&mn.toLowerCase().indexOf(kk)<0)continue;
+grouped[mn]=[];
+if(appOrders[mn]===undefined)appOrders[mn]=9999;
+if(appFirstIds[mn]===undefined)appFirstIds[mn]=999999999;
+}
 var orderedApps=Object.keys(grouped).sort(function(a,b){return(appOrders[a]-appOrders[b])||(appFirstIds[a]-appFirstIds[b])});
+if(!orderedApps.length){list.appendChild(ce('div','empty-state','Tidak ada paket aplikasi ditemukan 🥺'));return}
 orderedApps.forEach(function(appName){
 grouped[appName].sort(function(a,b){
 var aP=(a.sort_order&&a.sort_order>0)?a.sort_order:9999,bP=(b.sort_order&&b.sort_order>0)?b.sort_order:9999;
@@ -91,11 +102,11 @@ var header=ce('div','app-header '+(isAllSold?'app-header-gray':'app-header-pink'
 if(meta&&meta.logo_path){var logoImg=ce('img','app-header-logo');logoImg.src=logoUrl(meta.logo_path);logoImg.alt=appName;header.appendChild(logoImg)}
 var headerInfo=ce('div','app-header-info');
 var nameRow=ce('h3','app-header-name'+(isAllSold?' sold':''),appName);
-if(meta&&meta.app_type&&meta.app_type!=='lainnya'){var typeBadge=ce('span',null,meta.app_type);typeBadge.style.cssText='font-size:.4375rem;background:var(--butter-100);color:var(--choco-700);border:1px solid var(--butter-300);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem;letter-spacing:.05em';nameRow.appendChild(typeBadge)}
 if(isAllSold){var soldBadge=ce('span',null,'Habis');soldBadge.style.cssText='font-size:.5rem;background:var(--brick-50);color:var(--brick-500);border:1px solid var(--brick-200);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem';nameRow.appendChild(soldBadge)}
 headerInfo.appendChild(nameRow);
 headerInfo.appendChild(ce('p','app-header-form',parsedFields.length>0?'📋 Form Pembeli: '+parsedFields.join(', '):'🌸 Tidak memakai formulir khusus'));
 var countWrap=ce('div','app-header-count');
+if(meta&&meta.app_type&&meta.app_type!=='lainnya'){var typeBadge=ce('span',null,meta.app_type);typeBadge.style.cssText='font-size:.4375rem;background:var(--butter-100);color:var(--choco-700);border:1px solid var(--butter-300);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em';countWrap.appendChild(typeBadge)}
 countWrap.appendChild(ce('span',null,packages.length+' Paket'));
 headerInfo.appendChild(countWrap);
 header.appendChild(headerInfo);
@@ -545,6 +556,7 @@ var form=document.getElementById('addAppForm');
 if(form)form.reset();
 resetLogoPickerPreview('newApp');
 expandedApps[appName]=true;
+if(res.data&&res.data.logo_error){alert('Aplikasi tersimpan, tetapi logo gagal dipasang: '+res.data.logo_error)}
 loadData();
 })
 .catch(function(err){alert('Error: '+(err&&err.message?err.message:'tidak diketahui'))})
@@ -577,9 +589,13 @@ var appType=(document.getElementById('editAppType').value||'lainnya').trim();
 var payload={app_type:appType};
 if(logoUrlVal)payload.logo_url=logoUrlVal;
 fetch('/api/admin/app-metadata/'+encodeURIComponent(appName),{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)})
-.then(handleResponseStatus)
-.then(function(){closeEditAppModal();loadData()})
-.catch(function(){})
+.then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+.then(function(res){
+if(!res.ok){throw new Error(res.data.error||'Gagal menyimpan')}
+closeEditAppModal();
+loadData();
+})
+.catch(function(err){alert('Error: '+(err&&err.message?err.message:'tidak diketahui'))})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
 function openLogoPicker(target){
@@ -685,9 +701,11 @@ updateBulkUI();filterAdminList();
 }
 function deleteApplication(appName,packageIds){
 if(!packageIds.length){
-if(!confirm('Aplikasi "'+appName+'" kosong. Hapus form?'))return;
-fetch('/api/admin/forms/'+encodeURIComponent(appName),{method:'DELETE',headers:{'x-admin-password':sessionPass}})
-.then(function(){loadData()}).catch(function(){});
+if(!confirm('Aplikasi "'+appName+'" kosong. Hapus metadata & form?'))return;
+Promise.all([
+fetch('/api/admin/forms/'+encodeURIComponent(appName),{method:'DELETE',headers:{'x-admin-password':sessionPass}}).catch(function(){}),
+fetch('/api/admin/app-metadata/'+encodeURIComponent(appName),{method:'DELETE',headers:{'x-admin-password':sessionPass}}).catch(function(){})
+]).then(function(){loadData()});
 return;
 }
 if(!confirm('Hapus permanen "'+appName+'" beserta '+packageIds.length+' paket?'))return;
