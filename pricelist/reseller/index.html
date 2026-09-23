@@ -2,68 +2,103 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<title>Ciccu Reseller</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f3f6fa">
+<title>Reseller Portal</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#101a2e">
-<link rel="stylesheet" href="css/reseller.css?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/reseller.css?v=4">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 <div id="resLoginView" class="r-login">
-<div class="r-auth-shell">
-<aside class="r-auth-hero">
-<div class="r-hero-brand">
-<img src="../icon-192.png" alt="logo" class="r-hero-logo">
-<span class="r-hero-brand-name">Reseller Portal</span>
+<main class="auth" id="auth">
+<div class="overlay">
+<div class="overlay-content" id="overlayContent">
+<div class="logo">R</div>
+<h2 id="overlayTitle">Hello, Reseller!</h2>
+<p id="overlayText">Kelola akun reseller Anda dengan mudah dan nikmati akses ke berbagai fitur yang tersedia.</p>
+<button class="overlay-btn" type="button" id="resHeroCta">DAFTAR SEKARANG</button>
 </div>
-<h1 class="r-hero-title">Hello, Reseller!</h1>
-<p class="r-hero-sub">Kelola akun reseller Anda dengan mudah dan nikmati akses ke berbagai fitur yang tersedia.</p>
-<button id="resHeroCta" type="button" class="r-hero-cta">DAFTAR SEKARANG</button>
-</aside>
-<div class="r-auth-card">
-<div class="r-auth-tabs">
-<button id="resTabLogin" type="button" class="r-auth-tab active">Masuk</button>
-<button id="resTabReg" type="button" class="r-auth-tab">Daftar</button>
 </div>
-<div id="resLoginPane" class="r-auth-pane">
-<h2 class="r-auth-title">Selamat Datang</h2>
-<p class="r-auth-desc">Masuk ke akun reseller Anda untuk melanjutkan.</p>
-<form id="resLoginForm" class="r-auth-form" novalidate>
-<label class="r-field-label" for="resUsername">Username</label>
-<input id="resUsername" class="r-field-input" type="text" autocomplete="username" required>
-<label class="r-field-label" for="resPassword">Password</label>
-<input id="resPassword" class="r-field-input" type="password" autocomplete="current-password" required>
-<div id="resTurnstileLogin" class="r-turnstile"></div>
-<button id="resLoginBtn" class="r-auth-submit" type="submit">MASUK KE AKUN</button>
+<div class="seg" aria-label="Pilih halaman">
+<span class="seg-thumb" aria-hidden="true"></span>
+<button type="button" class="seg-btn is-active" id="resTabLogin" data-mode="login">Masuk</button>
+<button type="button" class="seg-btn" id="resTabReg" data-mode="register">Daftar</button>
+</div>
+<div class="forms" id="resForms">
+<section class="form-side login-form">
+<div class="form-box">
+<h1>Selamat Datang</h1>
+<p class="sub">Masuk ke akun reseller Anda untuk melanjutkan.</p>
+<form class="form" id="resLoginForm" novalidate>
+<div class="field">
+<label for="resUsername">USERNAME</label>
+<div class="input"><input id="resUsername" type="text" placeholder="Masukkan username" autocomplete="username"></div>
+</div>
+<div class="field">
+<label for="resPassword">PASSWORD</label>
+<div class="input password">
+<input id="resPassword" type="password" placeholder="Masukkan password" autocomplete="current-password">
+<button type="button" class="eye" data-target="resPassword" aria-label="Tampilkan password">
+<svg class="i-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+<svg class="i-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M10.6 5.8A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17.4 17.4 0 0 1-3.2 3.9M6.4 6.9A17 17 0 0 0 2.5 12S6 18.5 12 18.5c1.4 0 2.7-.3 3.9-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+</button>
+</div>
+</div>
+<div id="resTurnstileLogin" class="r-cf"></div>
+<button class="submit" id="resLoginBtn" type="submit"><span>MASUK KE AKUN</span></button>
 </form>
-<p class="r-auth-foot"><button type="button" id="resFootToReg" class="r-foot-link">Belum punya akun? Daftar sekarang</button></p>
+<div class="switch-text">Belum punya akun? <button type="button" id="resFootToReg" data-mode="register">Daftar sekarang</button></div>
 </div>
-<div id="resRegPane" class="r-auth-pane hidden">
-<h2 class="r-auth-title">Buat Akun</h2>
-<p class="r-auth-desc">Daftarkan diri Anda sebagai reseller baru.</p>
-<form id="resRegForm" class="r-auth-form" novalidate>
-<label class="r-field-label" for="regName">Nama</label>
-<input id="regName" class="r-field-input" type="text" maxlength="30" placeholder="Nama Anda (maks 30 karakter)" required>
-<label class="r-field-label" for="regUsername">Username</label>
-<input id="regUsername" class="r-field-input" type="text" maxlength="30" placeholder="5-30 karakter: a-z, angka, _ . -" required>
-<label class="r-field-label" for="regWa">WhatsApp</label>
-<input id="regWa" class="r-field-input" type="tel" inputmode="numeric" maxlength="20" placeholder="08xxxxxxxxxx" required>
-<label class="r-field-label" for="regX">Akun X</label>
-<input id="regX" class="r-field-input" type="text" maxlength="15" placeholder="username tanpa @" required>
-<p class="r-field-hint">Masukkan username X tanpa tanda @</p>
-<label class="r-field-label" for="regPassword">Buat Password</label>
-<input id="regPassword" class="r-field-input" type="password" maxlength="30" autocomplete="new-password" placeholder="8-30 karakter" required>
-<label class="r-field-label" for="regToken">Token</label>
-<input id="regToken" class="r-field-input" type="text" placeholder="CICCU-XXXX-XXXX-XXXX-XXXX" required>
-<p class="r-field-hint">Hubungi admin untuk mendapatkan token.</p>
-<div id="resTurnstileReg" class="r-turnstile"></div>
-<button id="regSubmitBtn" class="r-auth-submit" type="submit">DAFTAR SEBAGAI RESELLER</button>
+</section>
+<section class="form-side register-form">
+<div class="form-box">
+<h1>Buat Akun</h1>
+<p class="sub">Daftarkan diri Anda sebagai reseller baru.</p>
+<form class="form" id="resRegForm" novalidate>
+<div class="field">
+<label for="regName">NAMA</label>
+<div class="input"><input id="regName" type="text" placeholder="Nama Anda (maks 30 karakter)" maxlength="30"></div>
+</div>
+<div class="field">
+<label for="regUsername">USERNAME</label>
+<div class="input"><input id="regUsername" type="text" placeholder="5-30 karakter: a-z, angka, _ . -" maxlength="30" autocomplete="username"></div>
+</div>
+<div class="field">
+<label for="regWa">WHATSAPP</label>
+<div class="input"><input id="regWa" type="tel" inputmode="numeric" placeholder="08xxxxxxxxxx" maxlength="20" autocomplete="tel"></div>
+</div>
+<div class="field">
+<label for="regX">AKUN X</label>
+<div class="input"><input id="regX" type="text" placeholder="Username X tanpa @" maxlength="15"></div>
+<div class="hint">Masukkan username X tanpa tanda @</div>
+</div>
+<div class="field">
+<label for="regPassword">BUAT PASSWORD</label>
+<div class="input password">
+<input id="regPassword" type="password" placeholder="8-30 karakter" maxlength="30" autocomplete="new-password">
+<button type="button" class="eye" data-target="regPassword" aria-label="Tampilkan password">
+<svg class="i-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+<svg class="i-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 18 18"/><path d="M10.6 5.8A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17.4 17.4 0 0 1-3.2 3.9M6.4 6.9A17 17 0 0 0 2.5 12S6 18.5 12 18.5c1.4 0 2.7-.3 3.9-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+</button>
+</div>
+</div>
+<div class="field">
+<label for="regToken">TOKEN</label>
+<div class="input"><input id="regToken" type="text" placeholder="Masukkan token"></div>
+<div class="hint">Hubungi admin untuk mendapatkan token.</div>
+</div>
+<div id="resTurnstileReg" class="r-cf"></div>
+<button class="submit" id="regSubmitBtn" type="submit"><span>DAFTAR SEBAGAI RESELLER</span></button>
 </form>
-<p class="r-auth-foot"><button type="button" id="resFootToLogin" class="r-foot-link">Sudah punya akun? Masuk sekarang</button></p>
+<div class="switch-text">Sudah punya akun? <button type="button" id="resFootToLogin" data-mode="login">Masuk sekarang</button></div>
 </div>
+</section>
 </div>
-</div>
+</main>
 </div>
 <div id="resMainView" class="r-main hidden">
 <header class="r-header">
@@ -89,6 +124,6 @@
 </div>
 </main>
 </div>
-<script type="module" src="js/r-main.js?v=3"></script>
+<script type="module" src="js/r-main.js?v=4"></script>
 </body>
 </html>
