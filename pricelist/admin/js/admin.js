@@ -9,6 +9,19 @@ return str.split(',').map(function(s){return s.trim()}).filter(Boolean);
 function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
 function getMeta(appName){return globalAppMeta[String(appName).toLowerCase().trim()]||null}
 function logoUrl(slug){return slug?'/api/logo/'+encodeURIComponent(slug):''}
+function setDD(prefix,value){
+var hid=document.getElementById(prefix);
+var lbl=document.getElementById(prefix+'Label');
+var dd=document.getElementById(prefix+'DD');
+if(hid)hid.value=value;
+if(!dd)return;
+var items=dd.querySelectorAll('.dd-item');
+for(var i=0;i<items.length;i++){
+var on=(items[i].getAttribute('data-value')===value);
+items[i].classList.toggle('active',on);
+if(on&&lbl){var sp=items[i].querySelector('span');if(sp)lbl.textContent=sp.textContent}
+}
+}
 function loadData(){
 if(!sessionPass)return;
 var list=document.getElementById('dataList');
@@ -113,6 +126,12 @@ var arrow=ce('div','app-header-arrow');
 arrow.appendChild(admSvg('M19 9l-7 7-7-7','1.25rem','1.25rem'));
 header.appendChild(arrow);
 var actions=ce('div','app-header-actions');
+var formBtn=ce('button','icon-btn');
+formBtn.setAttribute('type','button');
+formBtn.setAttribute('title','Form Pembeli');
+formBtn.appendChild(admSvg('M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z','1rem','1rem'));
+formBtn.addEventListener('click',function(e){e.stopPropagation();openFormModal(exactAppName,encodeURIComponent(rawFields))});
+actions.appendChild(formBtn);
 var kebab=ce('div','kebab-wrap');
 var kbtn=ce('button','kebab-btn');
 kbtn.setAttribute('type','button');
@@ -123,17 +142,12 @@ var ki1=ce('button','kebab-item');
 ki1.setAttribute('type','button');
 ki1.textContent='✏️ Edit Aplikasi';
 ki1.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');openEditAppModal(appName)});
-var ki2=ce('button','kebab-item');
+var ki2=ce('button','kebab-item danger');
 ki2.setAttribute('type','button');
-ki2.textContent='📋 Form Pembeli';
-ki2.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');openFormModal(exactAppName,encodeURIComponent(rawFields))});
-var ki3=ce('button','kebab-item danger');
-ki3.setAttribute('type','button');
-ki3.textContent='🗑 Hapus Aplikasi';
-ki3.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');deleteApplication(exactAppName,packageIds)});
+ki2.textContent='🗑 Hapus Aplikasi';
+ki2.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');deleteApplication(exactAppName,packageIds)});
 kmenu.appendChild(ki1);
 kmenu.appendChild(ki2);
-kmenu.appendChild(ki3);
 kebab.appendChild(kbtn);
 kebab.appendChild(kmenu);
 kbtn.addEventListener('click',function(e){
@@ -144,26 +158,11 @@ if(willOpen)kebab.classList.add('open');
 });
 actions.appendChild(kebab);
 header.appendChild(actions);
-header.addEventListener('click',function(e){if(e.target.closest('.kebab-wrap')||e.target.tagName==='IMG')return;toggleExpand(exactAppName)});
+header.addEventListener('click',function(e){if(e.target.closest('.kebab-wrap')||e.target.closest('.icon-btn')||e.target.tagName==='IMG')return;toggleExpand(exactAppName)});
 group.appendChild(header);
 var body=ce('div','app-body '+(isExpanded?'open':'closed'));
 var bodyInner=ce('div','app-body-inner');
 var content=ce('div','app-body-content');
-var formSection=ce('div','form-section');
-var fsHeader=ce('div','form-section-header');
-fsHeader.appendChild(ce('h4','form-section-title',parsedFields.length>0?'📋 FORM PEMBELI':'🌸 TIDAK ADA FORMULIR KHUSUS'));
-formSection.appendChild(fsHeader);
-if(parsedFields.length>0){
-var fieldsList=ce('div','form-fields-list');
-parsedFields.forEach(function(f,i){
-var fieldItem=ce('div','form-field-item');
-fieldItem.appendChild(ce('span','form-field-num',String(i+1)));
-fieldItem.appendChild(ce('span',null,f));
-fieldsList.appendChild(fieldItem);
-});
-formSection.appendChild(fieldsList);
-}
-content.appendChild(formSection);
 var pkgHeader=ce('div','pkg-section-header');
 pkgHeader.appendChild(ce('span','pkg-section-label','📋 Daftar Paket'));
 var addPkgBtn=ce('button','add-pkg-btn');
@@ -447,11 +446,10 @@ function openAddPackageModal(appName){
 var nameInput=document.getElementById('addPkgAppName');
 var displayEl=document.getElementById('addPkgAppNameDisplay');
 var form=document.getElementById('addPackageForm');
-var statusEl=document.getElementById('addPkgStatus');
 if(nameInput)nameInput.value=appName;
 if(displayEl)displayEl.textContent=appName;
 if(form)form.reset();
-if(statusEl)statusEl.value='Ready';
+setDD('addPkgStatus','Ready');
 var modal=document.getElementById('addPackageModal');
 if(modal)modal.classList.remove('hidden');
 }
@@ -484,11 +482,12 @@ function editPackage(id){
 var item=globalAdminData.find(function(d){return d.id===id});
 if(!item)return;
 currentEditId=id;
-var fields={editAppNamePkg:item.app_name,editAppCat:item.category,editAppDur:item.duration,editAppPrice:item.price,editAppStatus:item.status,editAppNotes:(item.notes&&item.notes.toLowerCase()!=='nan')?item.notes:'',editAppFlashPrice:item.flash_price||''};
+var fields={editAppNamePkg:item.app_name,editAppCat:item.category,editAppDur:item.duration,editAppPrice:item.price,editAppNotes:(item.notes&&item.notes.toLowerCase()!=='nan')?item.notes:'',editAppFlashPrice:item.flash_price||''};
 for(var key in fields){
 var el=document.getElementById(key);
 if(el)el.value=fields[key];
 }
+setDD('editAppStatus',item.status||'Ready');
 var modal=document.getElementById('editModal');
 if(modal)modal.classList.remove('hidden');
 }
@@ -562,6 +561,7 @@ if(toggle)toggle.checked=false;
 var form=document.getElementById('addAppForm');
 if(form)form.reset();
 resetLogoPickerPreview('newApp');
+setDD('newAppType','lainnya');
 expandedApps[appName]=true;
 if(res.data&&res.data.logo_error){alert('Aplikasi tersimpan, tetapi logo gagal dipasang: '+res.data.logo_error)}
 loadData();
@@ -573,7 +573,7 @@ function openEditAppModal(appName){
 var meta=getMeta(appName)||{logo_path:'',app_type:'lainnya'};
 document.getElementById('editAppName').value=appName;
 document.getElementById('editAppNameDisplay').textContent=appName;
-document.getElementById('editAppType').value=meta.app_type||'lainnya';
+setDD('editAppType',meta.app_type||'lainnya');
 document.getElementById('editAppLogoUrl').value='';
 logoPickerState.isEdit=true;
 logoPickerState.target='editApp';
