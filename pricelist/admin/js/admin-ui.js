@@ -80,12 +80,22 @@ try{fn(e,el)}catch(err){
 window.uiAlert('Terjadi kesalahan saat aksi dijalankan:\n'+(err&&err.message?err.message:String(err))+'\n['+window.uiVersion+']','Bug Tertangkap');
 }
 },true);
+function isNoise(msg){
+var m=String(msg||'').trim().toLowerCase();
+if(!m)return true;
+if(m==='script error.'||m==='script error')return true;
+return false;
+}
 window.addEventListener('error',function(ev){
-try{window.uiToast('⚠ '+(ev.message||'Error tidak diketahui')+' ['+window.uiVersion+']',true)}catch(e){}
+try{
+if(isNoise(ev.message))return;
+window.uiToast('⚠ '+(ev.message||'Error tidak diketahui')+' ['+window.uiVersion+']',true);
+}catch(e){}
 });
 window.addEventListener('unhandledrejection',function(ev){
 try{
 var msg=(ev.reason&&ev.reason.message)?ev.reason.message:String(ev.reason);
+if(isNoise(msg))return;
 window.uiToast('⚠ Gagal: '+msg+' ['+window.uiVersion+']',true);
 }catch(e){}
 });
