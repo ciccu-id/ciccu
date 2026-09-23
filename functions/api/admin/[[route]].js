@@ -1,11 +1,15 @@
-import{hashNewPassword,nowStr}from'../../lib/auth-reseller.js';
-import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,listStock,addStock,disableStock,deleteAvailableStock,countAvailable,lowStock,getOrder,listOrderCredentials,audit}from'../../lib/db.js';
-import{manualSettle,retryFulfill,refundOrder}from'../../lib/fulfillment.js';
+import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
+import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
+import{getProvider}from'../../lib/payment/provider.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, x-admin-password'};
 function truncate(s,m){return s?String(s).slice(0,m):''}
 function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
 const num=s=>parseInt(s,10);
+function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
+const LOGO_MAP={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'polarr.com','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
+const LOGO_CT=['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','image/x-icon','image/vnd.microsoft.icon'];
+const APP_TYPES=['streaming','music','editing','study','game','lainnya'];
 function cleanFields(raw){
 const out={};let n=0;
 for(const k in raw){
@@ -91,7 +95,6 @@ return json({orders:{total:oc?oc.c:0,delivered:dv?dv.c:0,pending:pd?pd.c:0},reve
 }
 if(q==='/pricelist'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM pricelist').all();return json(results)}
 if(q==='/forms'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM app_forms').all();return json(results)}
-if(q==='/testimoni'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM testimonials ORDER BY created_at DESC').all();return json(results)}
 if(q==='/settings'&&m==='PUT'){
 const cm=truncate(b.close_message||'',500),fn=truncate(b.flash_sale_name||'Flash Sale',100),fd=truncate(b.flash_sale_description||'',200);
 const fs=b.flash_sale_start||'',fe=b.flash_sale_end||'',ot=b.open_time||'05:00',ct=b.close_time||'23:00';
@@ -285,6 +288,76 @@ if(q==='/audit'&&m==='GET'){
 const lim=Math.min(num(url.searchParams.get('limit'))||50,200);
 const r=await env.DB.prepare('SELECT id,actor_type,actor_id,action,entity_type,entity_id,meta,ip,created_at FROM rsl_audit ORDER BY id DESC LIMIT ?').bind(lim).all();
 return json(r.results);
+}
+if(q==='/app-metadata'&&m==='GET'){
+const r=await env.DB.prepare('SELECT app_name,logo_path,app_type,created_at FROM app_metadata ORDER BY app_name').all();
+return json(r.results);
+}
+const amq=q.match(/^\/app-metadata\/(.+)$/);
+if(amq&&m==='PUT'){
+const name=decodeURIComponent(amq[1]);
+const lp=String(b.logo_path!==undefined?b.logo_path:'').trim().toLowerCase();
+const at=String(b.app_type!==undefined?b.app_type:'').trim().toLowerCase();
+if(lp&&!/^[a-z0-9-]{1,64}$/.test(lp))return err('logo_path tidak valid',400);
+if(at&&APP_TYPES.indexOf(at)<0)return err('app_type tidak valid',400);
+const sets=[];const args=[];
+if(b.logo_path!==undefined){sets.push('logo_path=?');args.push(lp)}
+if(b.app_type!==undefined){sets.push('app_type=?');args.push(at||'lainnya')}
+if(!sets.length)return err('Tidak ada perubahan',400);
+args.push(name);
+const up=await env.DB.prepare('UPDATE app_metadata SET '+sets.join(',')+' WHERE app_name=?').bind(...args).run();
+if(!up.meta||!up.meta.changes)return err('Aplikasi tidak ditemukan',404);
+await audit(env,'admin',null,'app.update','app',null,{name:name},ip);
+return json({success:true});
+}
+if(amq&&m==='DELETE'){
+const name=decodeURIComponent(amq[1]);
+const row=await env.DB.prepare('SELECT logo_path FROM app_metadata WHERE app_name=?').bind(name).first();
+if(row&&row.logo_path){try{await env.LOGOS.delete('logos/'+row.logo_path)}catch(e){}}
+const del=await env.DB.prepare('DELETE FROM app_metadata WHERE app_name=?').bind(name).run();
+if(!del.meta||!del.meta.changes)return err('Aplikasi tidak ditemukan',404);
+await audit(env,'admin',null,'app.delete','app',null,{name:name},ip);
+return json({success:true});
+}
+if(q==='/logo-ingest'&&m==='POST'){
+const name=String(b.app_name||'').trim();
+const rawUrl=String(b.url||'').trim();
+if(!name)return err('app_name wajib diisi',400);
+const slug=slugify(name);
+if(!slug)return err('Nama aplikasi tidak valid',400);
+if(!rawUrl){
+await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path) VALUES(?,?) ON CONFLICT(app_name) DO UPDATE SET logo_path=excluded.logo_path').bind(name,'').run();
+return json({success:true,slug:slug,logo_path:''});
+}
+let u;
+try{u=new URL(rawUrl)}catch(e){return err('URL tidak valid',400)}
+if(u.protocol!=='http:'&&u.protocol!=='https:')return err('URL harus http/https',400);
+const ctl=new AbortController();
+const to=setTimeout(function(){ctl.abort()},8000);
+let res;
+try{res=await fetch(u.href,{redirect:'follow',signal:ctl.signal,headers:{'User-Agent':'CiccuLogoBot/1.0'}})}catch(e){clearTimeout(to);return err('Gagal mengambil gambar: sumber tidak terjangkau',502)}
+clearTimeout(to);
+if(!res.ok)return err('Sumber mengembalikan status '+res.status,502);
+const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
+if(LOGO_CT.indexOf(ct)<0)return err('URL bukan gambar ('+ct+')',415);
+const buf=await res.arrayBuffer();
+if(!buf.byteLength)return err('Gambar kosong',415);
+if(buf.byteLength>307200)return err('Gambar terlalu besar (maks 300 KB)',413);
+await env.LOGOS.put('logos/'+slug,buf,{httpMetadata:{contentType:ct,cacheControl:'public, max-age=3600'}});
+await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path) VALUES(?,?) ON CONFLICT(app_name) DO UPDATE SET logo_path=excluded.logo_path').bind(name,slug).run();
+await audit(env,'admin',null,'logo.ingest','app',null,{name:name,slug:slug},ip);
+return json({success:true,slug:slug,logo_path:slug,url:'/api/logo/'+slug});
+}
+if(q==='/logo-suggestions'&&m==='GET'){
+const s=(url.searchParams.get('search')||'').toLowerCase().trim();
+const out=[];
+for(const k in LOGO_MAP){
+if(s&&k.indexOf(s)<0)continue;
+const d=LOGO_MAP[k];
+out.push({name:k,url:d.indexOf('http')===0?d:'https://www.google.com/s2/favicons?sz=64&domain='+d});
+if(out.length>=60)break;
+}
+return json(out);
 }
 if(q==='/resellers'&&m==='GET'){const r=await env.DB.prepare('SELECT id,username,display_name,whatsapp,x_username,status,failed_attempts,locked_until,last_login_at,created_at FROM rsl_resellers ORDER BY id').all();return json(r.results)}
 if(q==='/resellers'&&m==='POST'){
