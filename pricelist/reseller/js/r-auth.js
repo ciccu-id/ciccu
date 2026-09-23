@@ -3,6 +3,7 @@ import{clearCart}from'./r-store.js';
 const RES_TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 const tw={login:null,reg:null};
 let authMode='login';
+let mqDesktop=null;
 function ensureTurnstile(cb){
 if(window.turnstile){cb();return;}
 let n=0;
@@ -45,6 +46,48 @@ function vUsername(v){return/^[a-z0-9_.-]{5,30}$/.test(String(v||'').trim().toLo
 function vWa(v){return/^08\d{8,18}$/.test(String(v||'').trim())}
 function vX(v){return/^[A-Za-z0-9_]{1,15}$/.test(String(v||'').trim().replace(/^@+/,''))}
 function vPw(v){const s=String(v||'');return s.length>=8&&s.length<=30}
+function setBtnLabel(btn,txt){
+if(!btn)return;
+const s=btn.querySelector('span');
+if(s)s.textContent=txt;
+else btn.textContent=txt;
+}
+function getBtnLabel(btn){
+if(!btn)return'';
+const s=btn.querySelector('span');
+return s?s.textContent:btn.textContent;
+}
+function activePanel(){
+const auth=document.getElementById('auth');
+if(!auth)return null;
+return auth.classList.contains('register-mode')
+?document.querySelector('.register-form')
+:document.querySelector('.login-form');
+}
+function setMode(mode){
+const auth=document.getElementById('auth');
+const forms=document.getElementById('resForms');
+if(!auth)return;
+const reg=mode==='register';
+authMode=mode;
+if(mqDesktop&&mqDesktop.matches&&forms)forms.style.height=forms.offsetHeight+'px';
+auth.classList.toggle('register-mode',reg);
+const ovTitle=document.getElementById('overlayTitle');
+const ovText=document.getElementById('overlayText');
+const ovBtn=document.getElementById('resHeroCta');
+const ovContent=document.getElementById('overlayContent');
+if(ovTitle)ovTitle.textContent=reg?'Selamat Datang Kembali!':'Hello, Reseller!';
+if(ovText)ovText.textContent=reg?'Sudah memiliki akun? Masuk kembali untuk melanjutkan ke portal reseller.':'Kelola akun reseller Anda dengan mudah dan nikmati akses ke berbagai fitur yang tersedia.';
+if(ovBtn)ovBtn.textContent=reg?'MASUK SEKARANG':'DAFTAR SEKARANG';
+if(ovContent){ovContent.classList.remove('swap');void ovContent.offsetWidth;ovContent.classList.add('swap');}
+document.querySelectorAll('.seg-btn').forEach(function(b){b.classList.toggle('is-active',b.getAttribute('data-mode')===mode)});
+if(mqDesktop&&mqDesktop.matches&&forms){
+const panel=activePanel();
+const endH=panel?panel.offsetHeight:0;
+requestAnimationFrame(function(){requestAnimationFrame(function(){forms.style.height=endH+'px'})});
+}
+resetTurnstiles();
+}
 export async function checkSession(){
 try{
 const me=await resApi('/api/reseller/me');
@@ -73,18 +116,6 @@ if(greet&&RES.session){
 greet.textContent='Halo, '+(RES.session.display_name||RES.session.username);
 }
 }
-function setAuthMode(mode){
-authMode=mode;
-const lp=document.getElementById('resLoginPane');
-const rp=document.getElementById('resRegPane');
-const tl=document.getElementById('resTabLogin');
-const tr=document.getElementById('resTabReg');
-if(lp)lp.classList.toggle('hidden',mode!=='login');
-if(rp)rp.classList.toggle('hidden',mode!=='register');
-if(tl)tl.classList.toggle('active',mode==='login');
-if(tr)tr.classList.toggle('active',mode==='register');
-resetTurnstiles();
-}
 async function handleLoginSubmit(e){
 e.preventDefault();
 const uEl=document.getElementById('resUsername');
@@ -101,8 +132,8 @@ resToast('Selesaikan verifikasi keamanan terlebih dahulu.');
 return;
 }
 const btn=document.getElementById('resLoginBtn');
-const oldText=btn?btn.textContent:'';
-if(btn){btn.textContent='MEMVERIFIKASI...';btn.disabled=true;}
+const oldText=getBtnLabel(btn);
+if(btn){setBtnLabel(btn,'MEMVERIFIKASI…');btn.disabled=true;}
 try{
 const loginRes=await resApi('/api/reseller/login',{
 method:'POST',
@@ -126,7 +157,7 @@ document.dispatchEvent(new CustomEvent('res:logged-in'));
 resToast(err.message||'Login gagal.');
 resetTurnstiles();
 }finally{
-if(btn){btn.textContent=oldText||'MASUK KE AKUN';btn.disabled=false;}
+if(btn){setBtnLabel(btn,oldText||'MASUK KE AKUN');btn.disabled=false;}
 }
 }
 async function handleRegisterSubmit(e){
@@ -149,8 +180,8 @@ resToast('Selesaikan verifikasi keamanan terlebih dahulu.');
 return;
 }
 const btn=document.getElementById('regSubmitBtn');
-const oldText=btn?btn.textContent:'';
-if(btn){btn.textContent='MENDAFTARKAN...';btn.disabled=true;}
+const oldText=getBtnLabel(btn);
+if(btn){setBtnLabel(btn,'MEMPROSES…');btn.disabled=true;}
 try{
 const d=await resApi('/api/reseller/register',{
 method:'POST',
@@ -159,14 +190,14 @@ body:{name:name,username:username,whatsapp:wa,x_username:xraw,password:pw,token:
 resToast(d.message||'Pendaftaran berhasil. Menunggu konfirmasi admin.');
 const rf=document.getElementById('resRegForm');
 if(rf)rf.reset();
-setAuthMode('login');
+setMode('login');
 const lu=document.getElementById('resUsername');
 if(lu)lu.value=username;
 }catch(err){
 resToast(err.message||'Pendaftaran gagal.');
 resetTurnstiles();
 }finally{
-if(btn){btn.textContent=oldText||'DAFTAR SEBAGAI RESELLER';btn.disabled=false;}
+if(btn){setBtnLabel(btn,oldText||'DAFTAR SEBAGAI RESELLER');btn.disabled=false;}
 }
 }
 async function handleLogout(){
@@ -177,24 +208,54 @@ RES.session=null;
 setResToken(null);
 clearCart();
 showLoginView();
-setAuthMode('login');
+setMode('login');
 document.dispatchEvent(new CustomEvent('res:logged-out'));
 }
+function initVisualBehaviors(){
+mqDesktop=window.matchMedia('(max-width:960px)');
+document.querySelectorAll('#auth [data-mode]').forEach(function(b){
+b.addEventListener('click',function(){setMode(b.getAttribute('data-mode'))});
+});
+const ovBtn=document.getElementById('resHeroCta');
+if(ovBtn)ovBtn.addEventListener('click',function(){
+const auth=document.getElementById('auth');
+setMode(auth&&auth.classList.contains('register-mode')?'login':'register');
+});
+const forms=document.getElementById('resForms');
+if(forms){
+forms.addEventListener('transitionend',function(e){
+if(e.target===forms&&e.propertyName==='height'&&mqDesktop.matches)forms.style.height='auto';
+});
+}
+if(mqDesktop.addEventListener){
+mqDesktop.addEventListener('change',function(){if(forms)forms.style.height=''});
+}
+window.addEventListener('resize',function(){
+if(mqDesktop&&mqDesktop.matches&&forms&&forms.style.height&&forms.style.height!=='auto'){
+const panel=activePanel();
+if(panel)forms.style.height=panel.offsetHeight+'px';
+}
+});
+document.querySelectorAll('.eye').forEach(function(b){
+b.addEventListener('click',function(){
+const i=document.getElementById(b.getAttribute('data-target'));
+if(!i)return;
+const show=i.type==='password';
+i.type=show?'text':'password';
+b.classList.toggle('showing',show);
+});
+});
+const ix=document.getElementById('regX');
+if(ix)ix.addEventListener('input',function(e){e.target.value=e.target.value.replace(/^@+/,'').replace(/\s/g,'')});
+const iwa=document.getElementById('regWa');
+if(iwa)iwa.addEventListener('input',function(e){e.target.value=e.target.value.replace(/[^\d]/g,'')});
+}
 export function initAuth(){
+initVisualBehaviors();
 const form=document.getElementById('resLoginForm');
 if(form)form.addEventListener('submit',handleLoginSubmit);
 const regForm=document.getElementById('resRegForm');
 if(regForm)regForm.addEventListener('submit',handleRegisterSubmit);
-const tl=document.getElementById('resTabLogin');
-if(tl)tl.addEventListener('click',function(){setAuthMode('login')});
-const tr=document.getElementById('resTabReg');
-if(tr)tr.addEventListener('click',function(){setAuthMode('register')});
-const cta=document.getElementById('resHeroCta');
-if(cta)cta.addEventListener('click',function(){setAuthMode('register')});
-const ftr=document.getElementById('resFootToReg');
-if(ftr)ftr.addEventListener('click',function(){setAuthMode('register')});
-const ftl=document.getElementById('resFootToLogin');
-if(ftl)ftl.addEventListener('click',function(){setAuthMode('login')});
 const logoutBtn=document.getElementById('resLogoutBtn');
 if(logoutBtn)logoutBtn.addEventListener('click',handleLogout);
 document.addEventListener('res:session-expired',function(){
