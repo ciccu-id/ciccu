@@ -17,6 +17,11 @@ if(h===168)return'7 Hari';
 if(h===720)return'30 Hari';
 return h+' jam';
 }
+function vName(v){v=String(v||'').trim();return v.length>=1&&v.length<=30}
+function vWa(v){return/^08\d{8,18}$/.test(String(v||'').trim())}
+function vX(v){return/^[A-Za-z0-9_]{1,15}$/.test(String(v||'').trim().replace(/^@+/,''))}
+function waHref(wa){return'https://wa.me/62'+String(wa).slice(1)}
+function xHref(x){return'https://x.com/'+encodeURIComponent(String(x))}
 function copyTextRes(text,btn){
 function done(){
 if(!btn)return;
@@ -39,6 +44,16 @@ document.body.appendChild(ta);
 ta.select();
 try{document.execCommand('copy');done()}catch(e){}
 document.body.removeChild(ta);
+}
+function linkBtn(href,label){
+var a=document.createElement('a');
+a.className='fs-edit-btn';
+a.href=href;
+a.target='_blank';
+a.rel='noopener';
+a.textContent=label;
+a.style.textDecoration='none';
+return a;
 }
 function loadResellers(){
 var pendCard=document.getElementById('cardPendingResellers');
@@ -69,6 +84,14 @@ while(list.firstChild)list.removeChild(list.firstChild);
 list.appendChild(ce('div','empty-state','Gagal memuat data: '+(e.message||'')));
 });
 }
+function profileActions(r,act){
+if(r.whatsapp)act.appendChild(linkBtn(waHref(r.whatsapp),'WA'));
+if(r.x_username)act.appendChild(linkBtn(xHref(r.x_username),'X'));
+var edBtn=ce('button','fs-edit-btn','Edit Profil');
+edBtn.type='button';
+edBtn.addEventListener('click',function(){openProfileModal(r)});
+act.appendChild(edBtn);
+}
 function buildPendingRow(r){
 var row=ce('div','fs-item');
 var info=ce('div','fs-item-info');
@@ -76,6 +99,7 @@ info.appendChild(ce('p','fs-item-name',r.username+(r.display_name?(' ('+r.displa
 info.appendChild(ce('p','fs-item-price','Mendaftar '+fmtDTLocal(r.created_at)+' • menunggu konfirmasi'));
 row.appendChild(info);
 var act=ce('div','fs-item-actions');
+profileActions(r,act);
 var okBtn=ce('button','fs-edit-btn','Setujui');
 okBtn.type='button';
 okBtn.style.color='var(--sage-600)';
@@ -113,6 +137,7 @@ info.appendChild(nameP);
 info.appendChild(ce('p','fs-item-price','Login terakhir '+fmtDTLocal(r.last_login_at)+' • gagal '+r.failed_attempts));
 row.appendChild(info);
 var act=ce('div','fs-item-actions');
+profileActions(r,act);
 var togBtn=ce('button','fs-edit-btn',r.status==='suspended'?'Aktifkan':'Nonaktif');
 togBtn.type='button';
 togBtn.addEventListener('click',function(){
@@ -153,6 +178,67 @@ act.appendChild(delBtn);
 row.appendChild(act);
 return row;
 }
+function openProfileModal(r){
+var overlay=ce('div','modal-overlay');
+var backdrop=ce('div','modal-backdrop');
+var box=ce('div','modal-box');
+var head=ce('div','modal-head');
+var ht=ce('div');
+ht.appendChild(ce('h3',null,'Edit Profil Reseller'));
+ht.appendChild(ce('p','modal-sub',r.username));
+head.appendChild(ht);
+var closeBtn=ce('button','modal-close-btn','×');
+closeBtn.type='button';
+head.appendChild(closeBtn);
+box.appendChild(head);
+var body=ce('div','modal-body-scroll');
+var fName=ce('div','field');
+fName.appendChild(ce('label',null,'Nama (maks 30)'));
+var iName=ce('input','form-input');iName.type='text';iName.maxLength=30;iName.value=r.display_name||'';
+fName.appendChild(iName);
+body.appendChild(fName);
+var fWa=ce('div','field');
+fWa.appendChild(ce('label',null,'WhatsApp (awalan 08, maks 20 digit)'));
+var iWa=ce('input','form-input');iWa.type='tel';iWa.maxLength=20;iWa.value=r.whatsapp||'';
+fWa.appendChild(iWa);
+body.appendChild(fWa);
+var fX=ce('div','field');
+fX.appendChild(ce('label',null,'Akun X (tanpa @, 1-15 karakter)'));
+var iX=ce('input','form-input');iX.type='text';iX.maxLength=15;iX.value=r.x_username||'';
+fX.appendChild(iX);
+body.appendChild(fX);
+box.appendChild(body);
+var foot=ce('div','modal-actions');
+var cancelBtn=ce('button','cancel-btn','Batal');
+cancelBtn.type='button';
+var saveBtn=ce('button','submit-btn','Simpan Profil');
+saveBtn.type='button';
+foot.appendChild(cancelBtn);
+foot.appendChild(saveBtn);
+box.appendChild(foot);
+overlay.appendChild(backdrop);
+overlay.appendChild(box);
+function shut(){overlay.remove()}
+closeBtn.addEventListener('click',shut);
+cancelBtn.addEventListener('click',shut);
+backdrop.addEventListener('click',shut);
+saveBtn.addEventListener('click',function(){
+var dn=iName.value.trim();
+var wa=iWa.value.trim();
+var xx=iX.value.trim().replace(/^@+/,'');
+if(!vName(dn))return uiAlert('Nama wajib diisi (maksimal 30 karakter).','Data Belum Lengkap');
+if(!vWa(wa))return uiAlert('WhatsApp wajib angka diawali 08 (maksimal 20 digit).','Data Belum Lengkap');
+if(!vX(xx))return uiAlert('Akun X wajib 1-15 karakter tanpa tanda @.','Data Belum Lengkap');
+saveBtn.disabled=true;saveBtn.textContent='Menyimpan...';
+fetch('/api/admin/resellers/'+r.id,{method:'PUT',headers:resHeaders(),body:JSON.stringify({display_name:dn,whatsapp:wa,x_username:xx})})
+.then(okJsonRes)
+.then(function(){shut();uiToast('Profil diperbarui.');loadResellers()})
+.catch(function(e){uiAlert(e.message||'Gagal menyimpan profil.','Kesalahan')})
+.finally(function(){saveBtn.disabled=false;saveBtn.textContent='Simpan Profil'});
+});
+document.body.appendChild(overlay);
+setTimeout(function(){backdrop.classList.add('show');box.classList.add('show')},10);
+}
 function loadRegTokens(){
 var list=document.getElementById('regTokenList');
 var badge=document.getElementById('regTokenCount');
@@ -170,8 +256,8 @@ var info=ce('div','fs-item-info');
 info.appendChild(ce('p','fs-item-name',t.token_prefix+'…••••'+(t.label?(' — '+t.label):'')));
 var metaP=ce('p','fs-item-price');
 metaP.appendChild(document.createTextNode(durLabel(t.duration_hours)+' • dibuat '+fmtDTLocal(t.created_at)+' • sisa '));
-var r=window.fmtRemain?window.fmtRemain(t.expires_at):{text:'-',mod:'dead'};
-metaP.appendChild(ce('span','cd-tag '+r.mod,r.text));
+var rm=window.fmtRemain?window.fmtRemain(t.expires_at):{text:'-',mod:'dead'};
+metaP.appendChild(ce('span','cd-tag '+rm.mod,rm.text));
 info.appendChild(metaP);
 row.appendChild(info);
 var act=ce('div','fs-item-actions');
@@ -253,6 +339,7 @@ closeBtn.addEventListener('click',shut);
 doneBtn.addEventListener('click',shut);
 backdrop.addEventListener('click',shut);
 document.body.appendChild(overlay);
+setTimeout(function(){backdrop.classList.add('show');box.classList.add('show')},10);
 }
 function submitResellerForm(e){
 e.preventDefault();
