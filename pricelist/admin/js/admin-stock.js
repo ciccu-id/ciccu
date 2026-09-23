@@ -227,8 +227,7 @@ var checks={
 };
 var missing=[];
 for(var k in checks){if(!checks[k])missing.push(k)}
-if(!missing.length){try{uiToast('✓ Modul siap ['+window.uiVersion+']')}catch(e){}}
-else{try{uiToast('✗ Hilang: '+missing.join(', ')+' ['+window.uiVersion+']',true)}catch(e){}}
+if(missing.length){try{uiToast('✗ Hilang: '+missing.join(', ')+' ['+window.uiVersion+']',true)}catch(e){}}
 }
 (function(){
 loadTemplates();
