@@ -333,11 +333,31 @@ return json({success:true,created:true,logo_error:logoError},201);
 }
 const amq=q.match(/^\/app-metadata\/(.+)$/);
 if(amq&&m==='PUT'){
-const name=decodeURIComponent(amq[1]);
+const oldName=decodeURIComponent(amq[1]);
 const hasType=b.app_type!==undefined;
 const hasLogoUrl=b.logo_url!==undefined;
 const hasLogoPath=b.logo_path!==undefined;
-if(!hasType&&!hasLogoUrl&&!hasLogoPath)return err('Tidak ada perubahan',400);
+const hasName=b.app_name!==undefined;
+if(!hasType&&!hasLogoUrl&&!hasLogoPath&&!hasName)return err('Tidak ada perubahan',400);
+let name=oldName;
+if(hasName){
+const nn=String(b.app_name||'').trim();
+if(!nn)return err('Nama aplikasi tidak boleh kosong',400);
+if(nn!==oldName){
+const dupMeta=await env.DB.prepare('SELECT app_name FROM app_metadata WHERE app_name=?').bind(nn).first();
+const dupPrice=await env.DB.prepare('SELECT id FROM pricelist WHERE app_name=?').bind(nn).first();
+if(dupMeta||dupPrice)return err('Nama aplikasi sudah dipakai',409);
+await env.DB.batch([
+env.DB.prepare('UPDATE pricelist SET app_name=? WHERE app_name=?').bind(nn,oldName),
+env.DB.prepare('UPDATE app_forms SET app_name=? WHERE app_name=?').bind(nn,oldName),
+env.DB.prepare('UPDATE app_metadata SET app_name=? WHERE app_name=?').bind(nn,oldName)
+]);
+await audit(env,'admin',null,'app.rename','app',null,{old:oldName,new:nn},ip);
+name=nn;
+}
+}
+const exRow=await env.DB.prepare('SELECT app_name FROM app_metadata WHERE app_name=?').bind(name).first();
+if(!exRow){await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path,app_type) VALUES(?,?,?)').bind(name,'','lainnya').run()}
 const at=hasType?String(b.app_type||'').trim().toLowerCase():null;
 if(hasType&&APP_TYPES.indexOf(at)<0)return err('Jenis aplikasi tidak valid',400);
 let logoPath=undefined;
@@ -358,17 +378,12 @@ if(!r.ok)return err(r.error,502);
 logoPath=r.slug;
 }else{logoPath=''}
 }
-const ex=await env.DB.prepare('SELECT app_name FROM app_metadata WHERE app_name=?').bind(name).first();
-if(ex){
 const sets=[];const args=[];
 if(logoPath!==undefined){sets.push('logo_path=?');args.push(logoPath)}
 if(hasType){sets.push('app_type=?');args.push(at)}
 if(sets.length){args.push(name);await env.DB.prepare('UPDATE app_metadata SET '+sets.join(',')+' WHERE app_name=?').bind(...args).run()}
-}else{
-await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path,app_type) VALUES(?,?,?)').bind(name,logoPath!==undefined?logoPath:'',hasType?at:'lainnya').run();
-}
 await audit(env,'admin',null,'app.update','app',null,{name:name},ip);
-return json({success:true});
+return json({success:true,new_name:name});
 }
 if(amq&&m==='DELETE'){
 const name=decodeURIComponent(amq[1]);
