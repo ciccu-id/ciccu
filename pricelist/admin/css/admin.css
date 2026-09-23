@@ -189,6 +189,8 @@ input,textarea,select{font-family:inherit}
 .dd-item.active{color:var(--choco-700);font-weight:900;background:var(--blue-50)}
 .dd-check{width:.5rem;height:.5rem;border-radius:50%;background:var(--sage-500);opacity:0;flex-shrink:0}
 .dd-item.active .dd-check{opacity:1}
+.modal-form .dd,.modal-body-scroll .dd,.sheet-body .dd,.logo-picker-body .dd{width:100%;min-width:0}
+.modal-form .dd-menu,.modal-body-scroll .dd-menu,.sheet-body .dd-menu,.logo-picker-body .dd-menu{position:static;box-shadow:none;margin-top:.25rem}
 .sf-row{display:flex;gap:.4rem;align-items:center;background:var(--w);padding:.5rem;border-radius:var(--r-md);border:1px solid var(--blue-100);box-shadow:var(--sh-sm)}
 .sf-name{flex:1;min-width:0;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:var(--r-sm);padding:.45rem .5rem;font-size:.6875rem;font-weight:700;color:var(--choco-600);outline:none}
 .sf-name:focus{border-color:var(--blue-400)}
