@@ -1,10 +1,14 @@
-var selectedItems=new Set(),expandedApps={},currentEditId=null,builderCurrentApp='',builderFields=[],sortableReorder=null;
+var selectedItems=new Set(),expandedApps={},currentEditId=null,builderCurrentApp='',builderFields=[],sortableReorder=null,globalAppMeta={};
+var logoPickerState={target:null,currentUrl:'',currentSlug:'',isEdit:false};
 function admSvg(d,w,h){var ns='http://www.w3.org/2000/svg',s=document.createElementNS(ns,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');if(w)s.style.width=w;if(h)s.style.height=h;var p=document.createElementNS(ns,'path');p.setAttribute('d',d);s.appendChild(p);return s}
 function parseFormFields(str){
 if(!str)return[];
 try{if(str.trim().startsWith('['))return JSON.parse(str).map(function(i){return i.name||i})}catch(e){}
 return str.split(',').map(function(s){return s.trim()}).filter(Boolean);
 }
+function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
+function getMeta(appName){return globalAppMeta[String(appName).toLowerCase().trim()]||null}
+function logoUrl(slug){return slug?'/api/logo/'+encodeURIComponent(slug):''}
 function loadData(){
 if(!sessionPass)return;
 var list=document.getElementById('dataList');
@@ -29,6 +33,12 @@ return fetch('/api/admin/forms',{headers:{'x-admin-password':sessionPass}});
 .then(function(formData){
 globalFormsData={};
 if(Array.isArray(formData))formData.forEach(function(f){globalFormsData[f.app_name.toLowerCase().trim()]=f});
+return fetch('/api/admin/app-metadata',{headers:{'x-admin-password':sessionPass}}).catch(function(){return{json:function(){return Promise.resolve([])}}});
+})
+.then(function(r){return r.json().catch(function(){return[]})})
+.then(function(meta){
+globalAppMeta={};
+if(Array.isArray(meta))meta.forEach(function(m){globalAppMeta[String(m.app_name).toLowerCase().trim()]=m});
 loadStoreSettings();
 filterAdminList();
 })
@@ -74,11 +84,14 @@ var isExpanded=!!expandedApps[exactAppName];
 var packageIds=packages.map(function(p){return p.id});
 var isAllSelected=packageIds.length>0&&packageIds.every(function(id){return selectedItems.has(id)});
 var isAllSold=packages.length>0&&packages.every(function(p){return p.status&&p.status.toLowerCase()!=='ready'});
+var meta=getMeta(appName);
 var group=ce('div','app-group');
 group.setAttribute('data-app',exactAppName);
 var header=ce('div','app-header '+(isAllSold?'app-header-gray':'app-header-pink')+(isExpanded?' open':''));
+if(meta&&meta.logo_path){var logoImg=ce('img','app-header-logo');logoImg.src=logoUrl(meta.logo_path);logoImg.alt=appName;header.appendChild(logoImg)}
 var headerInfo=ce('div','app-header-info');
 var nameRow=ce('h3','app-header-name'+(isAllSold?' sold':''),appName);
+if(meta&&meta.app_type&&meta.app_type!=='lainnya'){var typeBadge=ce('span',null,meta.app_type);typeBadge.style.cssText='font-size:.4375rem;background:var(--butter-100);color:var(--choco-700);border:1px solid var(--butter-300);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem;letter-spacing:.05em';nameRow.appendChild(typeBadge)}
 if(isAllSold){var soldBadge=ce('span',null,'Habis');soldBadge.style.cssText='font-size:.5rem;background:var(--brick-50);color:var(--brick-500);border:1px solid var(--brick-200);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem';nameRow.appendChild(soldBadge)}
 headerInfo.appendChild(nameRow);
 headerInfo.appendChild(ce('p','app-header-form',parsedFields.length>0?'📋 Form Pembeli: '+parsedFields.join(', '):'🌸 Tidak memakai formulir khusus'));
@@ -90,6 +103,12 @@ var arrow=ce('div','app-header-arrow');
 arrow.appendChild(admSvg('M19 9l-7 7-7-7','1.25rem','1.25rem'));
 header.appendChild(arrow);
 var actions=ce('div','app-header-actions');
+var editAppBtn=ce('button','icon-btn');
+editAppBtn.setAttribute('type','button');
+editAppBtn.setAttribute('title','Edit Aplikasi');
+editAppBtn.appendChild(admSvg('M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z','1rem','1rem'));
+editAppBtn.addEventListener('click',function(e){e.stopPropagation();openEditAppModal(appName)});
+actions.appendChild(editAppBtn);
 var delAppBtn=ce('button','icon-btn');
 delAppBtn.setAttribute('type','button');
 delAppBtn.setAttribute('title','Hapus Aplikasi');
@@ -102,7 +121,7 @@ if(isAllSelected)appCb.checked=true;
 appCb.addEventListener('change',function(){toggleSelectApp(exactAppName,this.checked,packageIds)});
 actions.appendChild(appCb);
 header.appendChild(actions);
-header.addEventListener('click',function(e){if(e.target.closest('.icon-btn')||e.target.closest('.app-checkbox'))return;toggleExpand(exactAppName)});
+header.addEventListener('click',function(e){if(e.target.closest('.icon-btn')||e.target.closest('.app-checkbox')||e.target.tagName==='IMG')return;toggleExpand(exactAppName)});
 group.appendChild(header);
 var body=ce('div','app-body '+(isExpanded?'open':'closed'));
 var bodyInner=ce('div','app-body-inner');
@@ -506,6 +525,156 @@ loadData();
 .catch(function(){})
 .finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
 }
+function submitAddAppForm(e){
+e.preventDefault();
+var btn=document.getElementById('btnSubmitApp');
+var oldText=btn?btn.textContent:'';
+if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
+var appName=(document.getElementById('newAppName').value||'').trim();
+var logoUrlVal=(document.getElementById('newAppLogoUrl').value||'').trim();
+var appType=(document.getElementById('newAppType').value||'lainnya').trim();
+if(!appName){alert('Nama aplikasi wajib diisi');if(btn){btn.textContent=oldText;btn.disabled=false}return}
+var payload={app_name:appName,logo_url:logoUrlVal,app_type:appType};
+fetch('/api/admin/app-metadata',{method:'POST',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)})
+.then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+.then(function(res){
+if(!res.ok){throw new Error(res.data.error||'Gagal menyimpan')}
+var toggle=document.getElementById('addAppSheetToggle');
+if(toggle)toggle.checked=false;
+var form=document.getElementById('addAppForm');
+if(form)form.reset();
+resetLogoPickerPreview('newApp');
+expandedApps[appName]=true;
+loadData();
+})
+.catch(function(err){alert('Error: '+(err&&err.message?err.message:'tidak diketahui'))})
+.finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
+}
+function openEditAppModal(appName){
+var meta=getMeta(appName)||{logo_path:'',app_type:'lainnya'};
+document.getElementById('editAppName').value=appName;
+document.getElementById('editAppNameDisplay').textContent=appName;
+document.getElementById('editAppType').value=meta.app_type||'lainnya';
+document.getElementById('editAppLogoUrl').value='';
+logoPickerState.isEdit=true;
+logoPickerState.target='editApp';
+logoPickerState.currentSlug=meta.logo_path||'';
+logoPickerState.currentUrl='';
+renderLogoPreview('editApp',logoPickerState.currentSlug);
+document.getElementById('editAppModal').classList.remove('hidden');
+}
+function closeEditAppModal(){
+document.getElementById('editAppModal').classList.add('hidden');
+}
+function submitEditAppForm(e){
+e.preventDefault();
+var btn=e.target.querySelector('.submit-btn');
+var oldText=btn?btn.textContent:'';
+if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
+var appName=document.getElementById('editAppName').value;
+var logoUrlVal=(document.getElementById('editAppLogoUrl').value||'').trim();
+var appType=(document.getElementById('editAppType').value||'lainnya').trim();
+var payload={app_type:appType};
+if(logoUrlVal)payload.logo_url=logoUrlVal;
+fetch('/api/admin/app-metadata/'+encodeURIComponent(appName),{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify(payload)})
+.then(handleResponseStatus)
+.then(function(){closeEditAppModal();loadData()})
+.catch(function(){})
+.finally(function(){if(btn){btn.textContent=oldText;btn.disabled=false}});
+}
+function openLogoPicker(target){
+logoPickerState.target=target;
+logoPickerState.currentUrl='';
+logoPickerState.currentSlug='';
+var searchInput=document.getElementById('logoSearchInput');
+var urlInput=document.getElementById('logoUrlInput');
+if(searchInput)searchInput.value='';
+if(urlInput)urlInput.value='';
+renderLogoSearchResults('');
+switchLogoTab('search');
+updateLogoPickerConfirm();
+document.getElementById('logoPickerModal').classList.remove('hidden');
+}
+function closeLogoPicker(){
+document.getElementById('logoPickerModal').classList.add('hidden');
+}
+function switchLogoTab(tab){
+document.querySelectorAll('.logo-tab').forEach(function(el){el.classList.toggle('active',el.getAttribute('data-tab')===tab)});
+document.querySelectorAll('.logo-tab-pane').forEach(function(el){el.classList.toggle('active',el.getAttribute('data-pane')===tab)});
+}
+function renderLogoSearchResults(q){
+var grid=document.getElementById('logoSearchResults');
+var hint=document.getElementById('logoSearchHint');
+if(!grid)return;
+while(grid.firstChild)grid.removeChild(grid.firstChild);
+var query=(q||'').toLowerCase().trim();
+fetch('/api/admin/logo-suggestions?search='+encodeURIComponent(query),{headers:{'x-admin-password':sessionPass}})
+.then(function(r){return r.json()})
+.then(function(list){
+if(!Array.isArray(list))list=[];
+if(!list.length){hint.textContent=query?'Tidak ada hasil untuk "'+query+'"':'Menampilkan saran bawaan.';return}
+hint.textContent='Menampilkan '+list.length+' saran.';
+list.forEach(function(item){
+var div=ce('div','logo-search-item');
+div.setAttribute('data-url',item.url);
+div.setAttribute('data-name',item.name);
+if(logoPickerState.currentUrl===item.url)div.classList.add('selected');
+var img=ce('img');
+img.src=item.url;
+img.alt=item.name;
+img.onerror=function(){this.style.display='none'};
+div.appendChild(img);
+div.appendChild(ce('span',null,item.name));
+div.addEventListener('click',function(){
+logoPickerState.currentUrl=item.url;
+logoPickerState.currentSlug='';
+document.querySelectorAll('.logo-search-item').forEach(function(el){el.classList.remove('selected')});
+div.classList.add('selected');
+updateLogoPickerConfirm();
+});
+grid.appendChild(div);
+});
+})
+.catch(function(){hint.textContent='Gagal memuat saran.'});
+}
+function updateLogoPickerConfirm(){
+var btn=document.getElementById('logoPickerConfirm');
+if(!btn)return;
+btn.disabled=!logoPickerState.currentUrl;
+}
+function confirmLogoPicker(){
+if(!logoPickerState.currentUrl)return;
+var target=logoPickerState.target;
+document.getElementById(target+'LogoUrl').value=logoPickerState.currentUrl;
+renderLogoPreview(target,null,logoPickerState.currentUrl);
+closeLogoPicker();
+}
+function renderLogoPreview(target,slug,directUrl){
+var preview=document.getElementById(target+'LogoPreview');
+var clearBtn=document.getElementById(target+'LogoClearBtn');
+if(!preview)return;
+while(preview.firstChild)preview.removeChild(preview.firstChild);
+var url=directUrl||(slug?logoUrl(slug):'');
+if(url){
+var img=ce('img');
+img.src=url;
+img.alt='preview';
+img.onerror=function(){this.parentNode.removeChild(this);preview.appendChild(document.createTextNode('Gambar gagal dimuat'));preview.classList.remove('has-logo')};
+preview.appendChild(img);
+preview.classList.add('has-logo');
+if(clearBtn)clearBtn.style.display='';
+}else{
+preview.appendChild(document.createTextNode('Belum dipilih'));
+preview.classList.remove('has-logo');
+if(clearBtn)clearBtn.style.display='none';
+}
+}
+function resetLogoPickerPreview(target){
+document.getElementById(target+'LogoUrl').value='';
+logoPickerState.currentUrl='';
+logoPickerState.currentSlug='';
+renderLogoPreview(target);
+}
 function toggleSelect(id,isChecked){
 if(isChecked)selectedItems.add(id);else selectedItems.delete(id);
 updateBulkUI();filterAdminList();
@@ -582,6 +751,10 @@ var editForm=document.getElementById('editForm');
 if(editForm)editForm.addEventListener('submit',submitEditForm);
 var addPkgForm=document.getElementById('addPackageForm');
 if(addPkgForm)addPkgForm.addEventListener('submit',submitAddPackageForm);
+var addAppForm=document.getElementById('addAppForm');
+if(addAppForm)addAppForm.addEventListener('submit',submitAddAppForm);
+var editAppForm=document.getElementById('editAppForm');
+if(editAppForm)editAppForm.addEventListener('submit',submitEditAppForm);
 var btnExpandAll=document.getElementById('btnExpandAll');
 if(btnExpandAll)btnExpandAll.addEventListener('click',expandAll);
 var btnCollapseAll=document.getElementById('btnCollapseAll');
@@ -610,4 +783,49 @@ var btnBulkDelete=document.getElementById('btnBulkDelete');
 if(btnBulkDelete)btnBulkDelete.addEventListener('click',bulkDelete);
 var btnBulkCancel=document.getElementById('btnBulkCancel');
 if(btnBulkCancel)btnBulkCancel.addEventListener('click',clearSelection);
+var newAppLogoPickBtn=document.getElementById('newAppLogoPickBtn');
+if(newAppLogoPickBtn)newAppLogoPickBtn.addEventListener('click',function(){openLogoPicker('newApp')});
+var newAppLogoClearBtn=document.getElementById('newAppLogoClearBtn');
+if(newAppLogoClearBtn)newAppLogoClearBtn.addEventListener('click',function(){resetLogoPickerPreview('newApp')});
+var editAppLogoPickBtn=document.getElementById('editAppLogoPickBtn');
+if(editAppLogoPickBtn)editAppLogoPickBtn.addEventListener('click',function(){openLogoPicker('editApp')});
+var editAppLogoClearBtn=document.getElementById('editAppLogoClearBtn');
+if(editAppLogoClearBtn)editAppLogoClearBtn.addEventListener('click',function(){
+document.getElementById('editAppLogoUrl').value='__clear__';
+renderLogoPreview('editApp');
+});
+var editAppClose=document.getElementById('editAppClose');
+if(editAppClose)editAppClose.addEventListener('click',closeEditAppModal);
+var editAppCancelBtn=document.getElementById('editAppCancelBtn');
+if(editAppCancelBtn)editAppCancelBtn.addEventListener('click',closeEditAppModal);
+var logoPickerClose=document.getElementById('logoPickerClose');
+if(logoPickerClose)logoPickerClose.addEventListener('click',closeLogoPicker);
+var logoPickerCancel=document.getElementById('logoPickerCancel');
+if(logoPickerCancel)logoPickerCancel.addEventListener('click',closeLogoPicker);
+var logoPickerConfirm=document.getElementById('logoPickerConfirm');
+if(logoPickerConfirm)logoPickerConfirm.addEventListener('click',confirmLogoPicker);
+document.querySelectorAll('.logo-tab').forEach(function(el){
+el.addEventListener('click',function(){switchLogoTab(el.getAttribute('data-tab'))});
+});
+var logoSearchInput=document.getElementById('logoSearchInput');
+if(logoSearchInput){
+var searchTimer=null;
+logoSearchInput.addEventListener('input',function(){
+clearTimeout(searchTimer);
+var v=this.value;
+searchTimer=setTimeout(function(){renderLogoSearchResults(v)},200);
+});
+}
+var logoUrlInput=document.getElementById('logoUrlInput');
+if(logoUrlInput){
+logoUrlInput.addEventListener('input',function(){
+var v=this.value.trim();
+logoPickerState.currentUrl=v;
+logoPickerState.currentSlug='';
+document.querySelectorAll('.logo-search-item').forEach(function(el){el.classList.remove('selected')});
+updateLogoPickerConfirm();
+});
+}
+var pickerBackdrop=document.querySelector('.logo-picker-backdrop');
+if(pickerBackdrop)pickerBackdrop.addEventListener('click',closeLogoPicker);
 });
