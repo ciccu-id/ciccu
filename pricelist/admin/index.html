@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/admin.css?v=9">
+<link rel="stylesheet" href="css/admin-katalog.css?v=9">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -137,7 +138,7 @@
 <div class="logo-picker-wrap">
 <div class="logo-picker-preview" id="newAppLogoPreview"><span>Belum dipilih</span></div>
 <div class="logo-picker-actions">
-<button type="button" id="newAppLogoPickBtn" class="logo-picker-btn">Pilih dari daftar</button>
+<button type="button" id="newAppLogoPickBtn" class="logo-picker-btn">Pilih</button>
 <button type="button" id="newAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
 </div>
 </div>
@@ -190,21 +191,20 @@
 </div>
 </div>
 </div>
-</div>
 
 <div id="editAppModal" class="modal-overlay hidden">
 <div class="modal-backdrop"></div>
 <div class="modal-box">
 <div class="modal-head"><div><h3>Edit Aplikasi</h3><p id="editAppNameDisplay" class="modal-sub"></p></div><button id="editAppClose" class="modal-close-btn" type="button">×</button></div>
 <form id="editAppForm" class="modal-form" novalidate>
-<input type="hidden" id="editAppName">
+<div class="adm-field"><label for="editAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="editAppName" required autocomplete="off"></div></div>
 <div class="adm-field">
 <label for="editAppLogoUrl">LOGO</label>
 <div class="adm-input">
 <div class="logo-picker-wrap">
 <div class="logo-picker-preview" id="editAppLogoPreview"><span>Belum dipilih</span></div>
 <div class="logo-picker-actions">
-<button type="button" id="editAppLogoPickBtn" class="logo-picker-btn">Pilih dari daftar</button>
+<button type="button" id="editAppLogoPickBtn" class="logo-picker-btn">Pilih</button>
 <button type="button" id="editAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
 </div>
 </div>
@@ -356,7 +356,7 @@
 <button id="bnav-dashboard" class="bnav-item active" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg><span>Home</span></button>
 <button id="bnav-produk" class="bnav-item" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span>Katalog</span></button>
 <button id="bnav-rprice" class="bnav-item" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Reseller</span></button>
-<button id="bnav-rorders" class="bnav-item" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><span>Order</span></button>
+<label for="navToggle" class="bnav-item" id="bnav-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></label>
 </nav>
 </div>
 <div id="editModal" class="modal-overlay hidden">
@@ -364,7 +364,7 @@
 <div class="modal-box">
 <div class="modal-head"><div><h3>Edit Paket</h3></div><button id="editModalClose" class="modal-close-btn" type="button">×</button></div>
 <form id="editForm" class="modal-form">
-<div class="adm-field"><label for="editAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="editAppName" required></div></div>
+<div class="adm-field"><label for="editAppNamePkg">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="editAppNamePkg" required></div></div>
 <div class="adm-field"><label for="editAppCat">KATEGORI</label><div class="adm-input"><input type="text" id="editAppCat" required></div></div>
 <div class="adm-field"><label for="editAppDur">DURASI</label><div class="adm-input"><input type="text" id="editAppDur" required></div></div>
 <div class="adm-field"><label for="editAppPrice">HARGA</label><div class="adm-input"><input type="text" id="editAppPrice" required></div></div>
