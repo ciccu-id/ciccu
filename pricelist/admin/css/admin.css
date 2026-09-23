@@ -417,17 +417,17 @@ textarea.form-input{resize:vertical}
 .modal-backdrop{position:absolute;inset:0;background:rgba(51,36,35,.45);backdrop-filter:blur(2px)}
 .modal-box{position:relative;background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-xl);width:100%;max-width:26rem;display:flex;flex-direction:column;box-shadow:var(--sh-xl);max-height:88vh}
 @media(min-width:768px){.modal-box{max-width:30rem}}
-.modal-head{padding:.875rem 1rem;border-bottom:1px solid var(--blue-100);display:flex;justify-content:space-between;align-items:center;background:var(--blue-50);border-radius:var(--r-xl) var(--r-xl) 0 0}
+.modal-head{padding:.75rem .875rem;border-bottom:1px solid var(--blue-100);display:flex;justify-content:space-between;align-items:center;background:var(--blue-50);border-radius:var(--r-xl) var(--r-xl) 0 0}
 .modal-head h3{font-size:.9375rem;font-weight:900;color:var(--choco-600)}
-@media(min-width:768px){.modal-head h3{font-size:1.0625rem}}
 .modal-sub{font-size:.5625rem;color:var(--choco-400);font-weight:700;margin-top:.1rem}
 .modal-sub.italic{font-style:italic}
 .modal-close-btn{color:var(--blue-400);font-size:1.25rem;padding:.1rem .3rem;transition:color .15s;line-height:1}
 .modal-close-btn:hover{color:var(--choco-600)}
-.modal-form{padding:.875rem;display:flex;flex-direction:column;gap:.5rem;overflow-y:auto}
-.modal-body-scroll{padding:.875rem;overflow-y:auto;flex:1}
-.modal-actions{display:flex;gap:.4rem;padding:.875rem;border-top:1px solid var(--blue-100);background:var(--blue-50);border-radius:0 0 var(--r-xl) var(--r-xl)}
-.cancel-btn{flex:1;background:var(--g100);color:var(--g600);font-weight:700;padding:.5rem;font-size:.8125rem;border-radius:var(--r-md);transition:background .15s}
+.modal-form{padding:.75rem .875rem;display:flex;flex-direction:column;gap:.75rem;overflow-y:auto}
+.modal-form .adm-field{margin-bottom:0}
+.modal-body-scroll{padding:.75rem .875rem;overflow-y:auto;flex:1}
+.modal-actions{display:flex;gap:.4rem;padding:.75rem .875rem;border-top:1px solid var(--blue-100);background:var(--blue-50);border-radius:0 0 var(--r-xl) var(--r-xl)}
+.cancel-btn{flex:1;background:var(--g100);color:var(--g600);font-weight:700;padding:.45rem;font-size:.6875rem;border-radius:var(--r-md);transition:background .15s}
 .cancel-btn:hover{background:var(--g200)}
 .modal-actions .submit-btn{flex:1;margin-top:0;grid-column:auto}
 .form-fields{display:flex;flex-direction:column;gap:.625rem;margin-bottom:.875rem}
