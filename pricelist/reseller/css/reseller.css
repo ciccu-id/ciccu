@@ -21,7 +21,7 @@ img{max-width:100%;display:block}
 .r-login button:focus-visible{outline:2px solid var(--rp-primary2);outline-offset:2px}
 .r-login .auth{position:relative;width:100%;max-width:430px;margin:auto;background:#fff;border-radius:22px;padding:28px 20px 30px;box-shadow:0 24px 60px -20px rgba(23,43,80,.22);overflow:hidden}
 .r-login .overlay{margin-bottom:22px}
-.r-login .logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--rp-primary),var(--rp-primary2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;margin-bottom:18px;box-shadow:0 8px 18px -4px rgba(40,120,232,.4)}
+.r-login .logo{width:46px;height:46px;border-radius:14px;object-fit:cover;display:block;margin-bottom:18px;box-shadow:0 8px 18px -4px rgba(40,120,232,.4);background:#fff}
 .r-login .overlay h2{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:6px}
 .r-login .overlay p{font-size:13px;line-height:1.6;color:var(--rp-muted)}
 .r-login .overlay-btn{display:none}
@@ -71,7 +71,7 @@ img{max-width:100%;display:block}
 .r-login{padding:16px 12px}
 .r-login .auth{padding:20px 16px 22px;border-radius:18px}
 .r-login .overlay{margin-bottom:16px}
-.r-login .logo{width:38px;height:38px;border-radius:12px;font-size:16px;margin:0 0 12px}
+.r-login .logo{width:38px;height:38px;border-radius:12px;margin:0 0 12px}
 .r-login .overlay h2{font-size:19px}
 .r-login .overlay p{font-size:12px}
 .r-login .seg{margin-bottom:18px;padding:3px;border-radius:12px}
@@ -93,7 +93,7 @@ img{max-width:100%;display:block}
 @media(min-width:641px){
 .r-login .auth{max-width:560px;padding:42px 50px;border-radius:26px}
 .r-login .overlay{text-align:center;margin-bottom:26px}
-.r-login .logo{width:52px;height:52px;font-size:21px;margin-left:auto;margin-right:auto}
+.r-login .logo{width:52px;height:52px;margin-left:auto;margin-right:auto}
 .r-login .overlay h2{font-size:26px}
 .r-login .seg{max-width:340px;margin-left:auto;margin-right:auto}
 .r-login .form-box{max-width:400px;margin:0 auto}
@@ -124,7 +124,7 @@ img{max-width:100%;display:block}
 .r-login .overlay{position:absolute;z-index:5;top:0;right:0;width:50%;height:100%;margin:0;padding:40px;background:linear-gradient(150deg,#14bcd8,#2478e6);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;border-radius:26px 0 0 26px;transition:transform .6s cubic-bezier(.75,0,.2,1),border-radius .6s cubic-bezier(.75,0,.2,1)}
 .r-login .auth.register-mode .overlay{transform:translateX(-100%);border-radius:0 26px 26px 0}
 .r-login .overlay-content{max-width:280px}
-.r-login .logo{width:54px;height:54px;border-radius:16px;font-size:22px;margin:0 auto 22px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);box-shadow:none}
+.r-login .logo{width:54px;height:54px;border-radius:16px;margin:0 auto 22px;border:1px solid rgba(255,255,255,.4);box-shadow:none}
 .r-login .overlay h2{font-size:27px;margin-bottom:10px}
 .r-login .overlay p{font-size:12.5px;color:rgba(255,255,255,.85);margin-bottom:26px}
 .r-login .overlay-btn{display:inline-flex;align-items:center;height:42px;padding:0 28px;border:1.5px solid rgba(255,255,255,.55);border-radius:12px;background:transparent;color:#fff;font-size:11px;font-weight:800;letter-spacing:1.2px;cursor:pointer;transition:background .25s,color .25s,transform .2s}
