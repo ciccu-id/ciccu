@@ -1,8 +1,8 @@
-import{RES,resShowView}from'./r-core.js';
-import{initAuth}from'./r-auth.js';
-import{initStore}from'./r-store.js';
-import{initCheckout}from'./r-checkout.js';
-import{initOrders}from'./r-orders.js';
+import{RES,resShowView}from'./r-core.js?v=5';
+import{initAuth}from'./r-auth.js?v=5';
+import{initStore}from'./r-store.js?v=5';
+import{initCheckout}from'./r-checkout.js?v=5';
+import{initOrders}from'./r-orders.js?v=5';
 function setupNav(){
 const navStore=document.getElementById('resNavStore');
 const navOrders=document.getElementById('resNavOrders');
