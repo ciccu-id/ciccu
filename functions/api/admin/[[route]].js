@@ -214,6 +214,14 @@ const id=await createVariant(env,{app_name:an,category:cat,duration:dur,price:pr
 await audit(env,'admin',null,'rpricelist.create','variant',id,{app:an},ip);
 return json({success:true,id:id},201);
 }
+if(q==='/rpricelist/reorder-apps'&&m==='PUT'){
+if(!b.order||!Array.isArray(b.order)||b.order.length>100)return err('Data tidak valid',400);
+const stmts=b.order.map(i=>{const aso=num(i.app_sort_order);return(isNaN(aso)||!i.app_name)?null:env.DB.prepare('UPDATE rsl_pricelist SET app_sort_order=? WHERE app_name=?').bind(aso,truncate(i.app_name,100))}).filter(Boolean);
+if(!stmts.length)return err('Data tidak valid',400);
+await env.DB.batch(stmts);
+await audit(env,'admin',null,'rpricelist.reorder-apps','app',null,{count:stmts.length},ip);
+return json({success:true});
+}
 const rpm=q.match(/^\/rpricelist\/(\d+)$/);
 if(rpm&&m==='PUT'){
 const id=num(rpm[1]);
@@ -346,9 +354,11 @@ if(!nn)return err('Nama aplikasi tidak boleh kosong',400);
 if(nn!==oldName){
 const dupMeta=await env.DB.prepare('SELECT app_name FROM app_metadata WHERE app_name=?').bind(nn).first();
 const dupPrice=await env.DB.prepare('SELECT id FROM pricelist WHERE app_name=?').bind(nn).first();
-if(dupMeta||dupPrice)return err('Nama aplikasi sudah dipakai',409);
+const dupRsl=await env.DB.prepare('SELECT id FROM rsl_pricelist WHERE app_name=?').bind(nn).first();
+if(dupMeta||dupPrice||dupRsl)return err('Nama aplikasi sudah dipakai',409);
 await env.DB.batch([
 env.DB.prepare('UPDATE pricelist SET app_name=? WHERE app_name=?').bind(nn,oldName),
+env.DB.prepare('UPDATE rsl_pricelist SET app_name=? WHERE app_name=?').bind(nn,oldName),
 env.DB.prepare('UPDATE app_forms SET app_name=? WHERE app_name=?').bind(nn,oldName),
 env.DB.prepare('UPDATE app_metadata SET app_name=? WHERE app_name=?').bind(nn,oldName)
 ]);
