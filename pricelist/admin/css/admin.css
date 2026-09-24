@@ -40,9 +40,9 @@ input,textarea,select{font-family:inherit}
 .adm-burger svg{width:1.125rem;height:1.125rem}
 @media(min-width:1024px){.adm-burger{display:none}}
 .adm-topbar-title{font-family:'Fredoka',sans-serif;font-size:1rem;font-weight:700;color:var(--choco-600);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(min-width:768px){.adm-topbar-title{font-size:1.25rem;flex:0 1 auto}}
+@media(min-width:768px){.adm-topbar-title{font-size:1.25rem}}
 .topbar-search{display:none}
-@media(min-width:768px){.topbar-search{display:block;flex:1;max-width:26rem;height:2.25rem;border:1px solid var(--blue-200);border-radius:10px;padding:0 .75rem;font-size:.8125rem;background:var(--blue-50);outline:none;font-weight:600;color:var(--choco-600);transition:border-color .2s,box-shadow .2s}}
+@media(min-width:768px){.topbar-search{display:block;flex:0 0 auto;width:20rem;height:2.25rem;border:1px solid var(--blue-200);border-radius:10px;padding:0 .75rem;font-size:.8125rem;background:var(--blue-50);outline:none;font-weight:600;color:var(--choco-600);transition:border-color .2s,box-shadow .2s}}
 .topbar-search:focus{border-color:var(--choco-600);box-shadow:0 0 0 3px rgba(67,47,46,.08)}
 .saving-ind{display:flex;align-items:center;gap:.25rem;font-size:.5625rem;color:var(--sage-600);font-weight:700;background:var(--sage-50);border:1px solid var(--sage-200);padding:.25rem .5rem;border-radius:9999px;flex-shrink:0}
 .saving-dot{width:.3rem;height:.3rem;border-radius:50%;background:var(--sage-500);animation:pulse 1s infinite}
@@ -69,7 +69,7 @@ input,textarea,select{font-family:inherit}
 .login-btn{width:100%;background:var(--choco-600);color:var(--butter-100);font-weight:700;padding:.625rem;border-radius:var(--r-md);transition:background .15s;box-shadow:var(--sh-md);margin-top:.4rem;font-size:.8125rem}
 .login-btn:hover{background:var(--choco-700)}
 .login-btn:disabled{opacity:.6;cursor:not-allowed}
-.cf-turnstile{margin:4rem 0;display:flex;justify-content:center}
+.cf-turnstile{margin:.4rem 0;display:flex;justify-content:center}
 .section{display:flex;flex-direction:column;gap:1rem}
 @media(min-width:768px){.section{gap:1.125rem}}
 @media(min-width:1024px){.section{gap:1.25rem}}
