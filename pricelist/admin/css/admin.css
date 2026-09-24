@@ -221,18 +221,6 @@ body:has(#section-reseller:not(.hidden)):has(#subtab-rprice.active) .topbar-rsl{
 .kebab-item:hover{background:var(--blue-50)}
 .kebab-item.danger{color:var(--brick-500)}
 .kebab-item.danger:hover{background:var(--brick-50)}
-#rsub-rorders .card{display:flex;flex-direction:column;gap:.75rem;overflow:visible}
-#rsub-rorders .card-header-row{margin-bottom:0}
-@media(max-width:767px){
-#rsub-rorders .toolbar-row{overflow:visible;flex-wrap:wrap;gap:.5rem}
-#rsub-rorders .dd{flex:1;min-width:8rem}
-#orderList{gap:.625rem}
-#orderList .card{padding:.875rem;gap:.625rem;overflow:visible}
-#orderList .card-header-row{align-items:flex-start;gap:.4rem}
-#orderList .pkg-actions{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;width:100%;margin-top:.25rem}
-#orderList .pkg-actions .tool-btn{width:100%;justify-content:center;flex-shrink:1;white-space:normal}
-#orderList .fs-item-price{margin-top:.125rem}
-}
 .stock-strip{background:var(--brick-50);border:1px solid var(--brick-200);border-radius:var(--r-lg);padding:.625rem .75rem;display:flex;flex-direction:column;gap:.4rem}
 .stock-strip-title{font-size:.625rem;font-weight:900;color:var(--brick-500);text-transform:uppercase;letter-spacing:.05em}
 .stock-strip-item{display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:var(--w);border:1px solid var(--brick-200);border-radius:var(--r-md);padding:.4rem .5rem}
