@@ -10,9 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=17">
-<link rel="stylesheet" href="css/admin-katalog.css?v=17">
-<link rel="stylesheet" href="css/admin-reseller.css?v=17">
+<link rel="stylesheet" href="css/admin.css?v=18">
+<link rel="stylesheet" href="css/admin-katalog.css?v=18">
+<link rel="stylesheet" href="css/admin-reseller.css?v=18">
+<link rel="stylesheet" href="css/admin-orders.css?v=18">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -164,7 +165,7 @@
 <div class="rsl-header">
 <div class="rsl-subtab-row">
 <button id="subtab-rprice" class="rsl-subtab-cell active" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Pricelist</button>
-<button id="subtab-rorders" class="rsl-subtab-cell" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Pesanan</button>
+<button id="subtab-rorders" class="rsl-subtab-cell" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Pesanan<span id="ordersBadge" class="tab-badge hidden">0</span></button>
 <button id="subtab-raccounts" class="rsl-subtab-cell" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Akses</button>
 </div>
 <div class="rsl-action-row">
@@ -176,30 +177,41 @@
 </button>
 <input id="rpriceSearch" class="rsl-search" type="text" placeholder="Cari aplikasi / kategori / durasi...">
 </div>
+<div class="rsl-orders-row">
+<div class="dd ord-dd" id="orderStatusDD">
+<input type="hidden" id="orderStatusFilter" value="">
+<button type="button" class="dd-btn"><span id="orderStatusDDLabel">Semua Status</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item active" data-value=""><span>Semua Status</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="pending_payment"><span>Menunggu</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="delivered"><span>Terkirim</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="needs_attention"><span>Perhatian</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="cancelled"><span>Dibatalkan</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="refunded"><span>Refund</span><span class="dd-check"></span></div>
+</div>
+</div>
+<div class="dd ord-dd" id="orderRangeDD">
+<input type="hidden" id="orderRangeFilter" value="">
+<button type="button" class="dd-btn"><span id="orderRangeDDLabel">Semua Waktu</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item active" data-value=""><span>Semua Waktu</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="today"><span>Hari Ini</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="7d"><span>7 Hari</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="30d"><span>30 Hari</span><span class="dd-check"></span></div>
+</div>
+</div>
+<button id="btnRefreshOrders" type="button" class="ord-refresh" title="Muat ulang" aria-label="Muat ulang">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+</button>
+<input id="orderSearchInput" class="ord-search" type="text" placeholder="Kode / reseller / aplikasi / WA...">
+</div>
 </div>
 <div id="rsub-rprice" class="section">
 <div id="rpriceAccordion" class="data-list"></div>
 </div>
 <div id="rsub-rorders" class="section hidden">
-<div class="card">
-<div class="card-header-row"><h2 class="card-title">🧾 Pesanan Reseller</h2></div>
-<div class="toolbar-row">
-<div class="dd" id="orderStatusDD">
-<input type="hidden" id="orderStatusFilter" value="">
-<button type="button" class="dd-btn"><span id="orderStatusDDLabel">Semua Status</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
-<div class="dd-menu">
-<div class="dd-item active" data-value=""><span>Semua Status</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="pending_payment"><span>Pending Payment</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="delivered"><span>Delivered</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="needs_attention"><span>Needs Attention</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="cancelled"><span>Cancelled</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="refunded"><span>Refunded</span><span class="dd-check"></span></div>
-</div>
-</div>
-<button id="btnRefreshOrders" type="button" class="tool-btn sky">Refresh</button>
-</div>
-<div id="orderList" class="data-list"></div>
-</div>
+<div id="orderList" class="ord-list"></div>
+<button id="btnOrdersMore" type="button" class="ord-more hidden">Muat Lebih Banyak</button>
 </div>
 <div id="rsub-raccounts" class="section hidden">
 <div class="card" id="cardPendingResellers">
@@ -442,7 +454,7 @@
 <div class="modal-head"><div><h3>Form Pembeli</h3><p id="builderAppName" class="modal-sub"></p></div><button id="formBuilderClose" class="modal-close-btn" type="button">×</button></div>
 <div class="modal-body-scroll">
 <div id="formFieldsContainer" class="form-fields"></div>
-<button id="btnAddField" type="button" class="add-field-btn">＋ Tambah Kolon</button>
+<button id="btnAddField" type="button" class="add-field-btn">＋ Tambah Kolom</button>
 </div>
 <div class="modal-actions"><button id="formBuilderCancel" type="button" class="cancel-btn">Batal</button><button id="btnSaveForm" type="button" class="submit-btn">Simpan Form</button></div>
 </div>
@@ -540,14 +552,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=17" defer></script>
-<script src="js/admin-modules.js?v=17" defer></script>
-<script src="js/admin.js?v=17" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=17" defer></script>
-<script src="js/admin-stock.js?v=17" defer></script>
-<script src="js/admin-orders.js?v=17" defer></script>
-<script src="js/admin-resellers.js?v=17" defer></script>
-<script src="js/admin-dashboard.js?v=17" defer></script>
-<script src="js/admin-activity.js?v=17" defer></script>
+<script src="js/admin-ui.js?v=18" defer></script>
+<script src="js/admin-modules.js?v=18" defer></script>
+<script src="js/admin.js?v=18" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=18" defer></script>
+<script src="js/admin-stock.js?v=18" defer></script>
+<script src="js/admin-orders.js?v=18" defer></script>
+<script src="js/admin-resellers.js?v=18" defer></script>
+<script src="js/admin-dashboard.js?v=18" defer></script>
+<script src="js/admin-activity.js?v=18" defer></script>
 </body>
 </html>
