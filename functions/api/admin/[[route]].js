@@ -1,5 +1,5 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
-import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
+import{getVariant,listCatalog,createVariant,updateVariant,deleteVariant,getTemplate,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, x-admin-password'};
 function truncate(s,m){return s?String(s).slice(0,m):''}
