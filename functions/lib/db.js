@@ -1,5 +1,19 @@
 import{nowStr}from'./auth-reseller.js';
 function clampInt(v,d,m){const n=parseInt(v,10);if(isNaN(n))return d;return Math.max(0,Math.min(m,n))}
+
+async function generateOrderCode(env){
+const alphabet='0123456789';
+for(let attempt=0;attempt<10;attempt++){
+const arr=new Uint8Array(6);
+crypto.getRandomValues(arr);
+let code='CICCU-';
+for(let i=0;i<6;i++)code+=alphabet[arr[i]%10];
+const ex=await env.DB.prepare('SELECT 1 FROM rsl_orders WHERE order_code=?').bind(code).first();
+if(!ex)return code;
+}
+throw new Error('Gagal membuat kode order unik setelah 10 percobaan');
+}
+
 export async function getVariant(env,id){return env.DB.prepare('SELECT id,app_name,category,duration,price,status,notes FROM rsl_pricelist WHERE id=?').bind(id).first()}
 export async function listCatalog(env){
 const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,p.price,p.status,p.notes,p.sort_order,p.app_sort_order,(SELECT COUNT(*) FROM rsl_stock_items s WHERE s.variant_id=p.id AND s.status='available') AS stock_available FROM rsl_pricelist p ORDER BY COALESCE(p.app_sort_order,9999),COALESCE(p.sort_order,9999),p.id").all();
@@ -53,10 +67,11 @@ await env.DB.prepare("DELETE FROM rsl_stock_items WHERE id=? AND status='availab
 export async function createOrder(env,resellerId,lines,total,provider,idemKey){
 const existing=await env.DB.prepare('SELECT id FROM rsl_orders WHERE idempotency_key=?').bind(idemKey).first();
 if(existing)return existing.id;
-const r=await env.DB.prepare('INSERT INTO rsl_orders(reseller_id,total_amount,provider,idempotency_key) VALUES(?,?,?,?)').bind(resellerId,total,provider,idemKey).run();
+const orderCode=await generateOrderCode(env);
+const r=await env.DB.prepare('INSERT INTO rsl_orders(reseller_id,total_amount,provider,idempotency_key,order_code) VALUES(?,?,?,?,?)').bind(resellerId,total,provider,idemKey,orderCode).run();
 const orderId=r.meta.last_row_id;
 try{
-const stmts=lines.map(l=>env.DB.prepare('INSERT INTO rsl_order_items(order_id,variant_id,app_name,category,duration,qty,unit_price,line_total) VALUES(?,?,?,?,?,?,?,?)').bind(orderId,l.variant_id,l.app_name,l.category,l.duration,l.qty,l.unit_price,l.qty*l.unit_price));
+const stmts=lines.map(l=>env.DB.prepare('INSERT INTO rsl_order_items(order_id,variant_id,app_name,category,duration,qty,unit_price,line_total,form_data) VALUES(?,?,?,?,?,?,?,?,?)').bind(orderId,l.variant_id,l.app_name,l.category,l.duration,l.qty,l.unit_price,l.qty*l.unit_price,String(l.form_data||'')));
 if(stmts.length)await env.DB.batch(stmts);
 }catch(e){
 await env.DB.prepare('DELETE FROM rsl_orders WHERE id=?').bind(orderId).run();
@@ -90,4 +105,66 @@ await env.DB.prepare('INSERT INTO rsl_audit(actor_type,actor_id,action,entity_ty
 export async function lowStock(env,threshold){
 const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,COUNT(s.id) AS avail FROM rsl_pricelist p LEFT JOIN rsl_stock_items s ON s.variant_id=p.id AND s.status='available' GROUP BY p.id HAVING avail<=? ORDER BY avail ASC,p.app_name").bind(clampInt(threshold,5,1000)).all();
 return r.results;
+}
+export async function countNeedsAttention(env){
+const r=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_orders WHERE status='needs_attention'").first();
+return r?r.c:0;
+}
+export async function listOrdersAdmin(env,p){
+const status=String(p.status||'');
+const range=String(p.range||'');
+const q=String(p.q||'').trim();
+const lim=clampInt(p.limit,20,100);
+const off=clampInt(p.offset,0,100000);
+const where=[];
+const args=[];
+if(status){where.push('o.status=?');args.push(status)}
+if(range==='today'){where.push("DATE(o.created_at)=DATE('now')")}
+else if(range==='7d'){where.push("o.created_at>=datetime('now','-7 days')")}
+else if(range==='30d'){where.push("o.created_at>=datetime('now','-30 days')")}
+if(q){
+const like='%'+q+'%';
+where.push("(o.order_code LIKE ? OR r.username LIKE ? OR r.display_name LIKE ? OR r.whatsapp LIKE ? OR oi.app_name LIKE ? OR p.provider_tx_id LIKE ?)");
+args.push(like,like,like,like,like,like);
+}
+const whereSql=where.length?('WHERE '+where.join(' AND ')):'';
+const sql=`SELECT DISTINCT o.id,o.order_code,o.status,o.total_amount,o.provider,o.created_at,o.paid_at,o.delivered_at,r.username,r.display_name,r.whatsapp FROM rsl_orders o LEFT JOIN rsl_resellers r ON r.id=o.reseller_id LEFT JOIN rsl_order_items oi ON oi.order_id=o.id LEFT JOIN rsl_payments p ON p.order_id=o.id ${whereSql} ORDER BY o.id DESC LIMIT ? OFFSET ?`;
+args.push(lim,off);
+const r=await env.DB.prepare(sql).bind(...args).all();
+if(!r.results.length)return[];
+const ids=r.results.map(o=>o.id);
+const itSql=`SELECT order_id,app_name,category,duration,qty FROM rsl_order_items WHERE order_id IN (${ids.map(()=>'?').join(',')})`;
+const it=await env.DB.prepare(itSql).bind(...ids).all();
+const summary={};
+it.results.forEach(row=>{
+if(!summary[row.order_id])summary[row.order_id]=[];
+summary[row.order_id].push(row);
+});
+return r.results.map(o=>{
+const items=summary[o.id]||[];
+return Object.assign({},o,{items_summary:items.map(i=>({app_name:i.app_name,category:i.category,duration:i.duration,qty:i.qty}))});
+});
+}
+export async function getOrderAdmin(env,orderId){
+const o=await env.DB.prepare('SELECT * FROM rsl_orders WHERE id=?').bind(orderId).first();
+if(!o)return null;
+const reseller=await env.DB.prepare('SELECT id,username,display_name,whatsapp,x_username FROM rsl_resellers WHERE id=?').bind(o.reseller_id).first();
+o.reseller=reseller||null;
+const items=await env.DB.prepare('SELECT * FROM rsl_order_items WHERE order_id=? ORDER BY id').bind(orderId).all();
+o.items=items.results;
+const pays=await env.DB.prepare('SELECT provider,provider_tx_id,status,gross_amount,raw_status,created_at FROM rsl_payments WHERE order_id=? ORDER BY id').bind(orderId).all();
+o.payments=pays.results;
+o.credentials=await listOrderCredentials(env,orderId);
+for(const it of o.items){
+const rev=await env.DB.prepare('SELECT id,fields,note,created_by,created_at FROM rsl_order_revisions WHERE order_item_id=? ORDER BY id ASC').bind(it.id).all();
+it.revisions=rev.results;
+}
+return o;
+}
+export async function addOrderRevision(env,orderItemId,fieldsObj,note,createdBy){
+const r=await env.DB.prepare('INSERT INTO rsl_order_revisions(order_item_id,fields,note,created_by,created_at) VALUES(?,?,?,?,?)').bind(orderItemId,JSON.stringify(fieldsObj||{}),String(note||'').slice(0,1000),createdBy||'admin',nowStr()).run();
+return r.meta.last_row_id;
+}
+export async function setOrderStatus(env,orderId,status){
+await env.DB.prepare('UPDATE rsl_orders SET status=? WHERE id=?').bind(status,orderId).run();
 }
