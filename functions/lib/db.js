@@ -25,10 +25,10 @@ return r?r.c:0;
 export async function listStock(env,variantId,status,limit,offset){
 const lim=clampInt(limit,50,200),off=clampInt(offset,0,100000);
 if(!status||status===''){
-const r=await env.DB.prepare('SELECT id,fields,status,order_item_id,created_at,sold_at FROM rsl_stock_items WHERE variant_id=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(variantId,lim,off).all();
+const r=await env.DB.prepare('SELECT * FROM rsl_stock_items WHERE variant_id=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(variantId,lim,off).all();
 return r.results;
 }
-const r=await env.DB.prepare('SELECT id,fields,status,order_item_id,created_at,sold_at FROM rsl_stock_items WHERE variant_id=? AND status=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(variantId,status,lim,off).all();
+const r=await env.DB.prepare('SELECT * FROM rsl_stock_items WHERE variant_id=? AND status=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(variantId,status,lim,off).all();
 return r.results;
 }
 export async function addStock(env,variantId,fieldsObj){
@@ -74,7 +74,7 @@ return row;
 }
 export async function listOrders(env,resellerId,limit,offset){
 const lim=clampInt(limit,20,100),off=clampInt(offset,0,100000);
-const r=await env.DB.prepare('SELECT id,status,total_amount,provider,created_at,paid_at,delivered_at FROM rsl_orders WHERE reseller_id=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(resellerId,lim,off).all();
+const r=await env.DB.prepare('SELECT id,status,total_amount,provider,created_at,paid_at,delivered_at FROM rsl_orders WHERE reseller_id=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(resellerId,lim,offset).all();
 return r.results;
 }
 export async function listOrderCredentials(env,orderId){
@@ -91,4 +91,3 @@ export async function lowStock(env,threshold){
 const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,COUNT(s.id) AS avail FROM rsl_pricelist p LEFT JOIN rsl_stock_items s ON s.variant_id=p.id AND s.status='available' GROUP BY p.id HAVING avail<=? ORDER BY avail ASC,p.app_name").bind(clampInt(threshold,5,1000)).all();
 return r.results;
 }
-
