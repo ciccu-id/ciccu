@@ -69,8 +69,18 @@ idgrp.appendChild(ce('span','stk-card-id','#'+it.id));
 var pl=stockPill(it.status);
 idgrp.appendChild(ce('span','pill '+pl.cls,pl.txt));
 head.appendChild(idgrp);
-var dateTxt=(it.status==='sold'&&it.sold_at)?('terjual '+String(it.sold_at).slice(0,16)):('dibuat '+String(it.created_at||'').slice(0,16));
-head.appendChild(ce('span','stk-card-date',dateTxt));
+var kw=ce('div','kebab-wrap');
+var kb=ce('button','kebab-btn','⋮');
+kb.type='button';
+kb.setAttribute('aria-label','Menu aksi');
+kb.addEventListener('click',function(e){
+e.stopPropagation();
+var wasOpen=kw.classList.contains('open');
+closeAllKebab();
+if(!wasOpen)kw.classList.add('open');
+});
+kw.appendChild(kb);
+head.appendChild(kw);
 card.appendChild(head);
 var fields=ce('div','stk-fields');
 var obj={};
@@ -105,17 +115,7 @@ delBtn.type='button';
 delBtn.addEventListener('click',function(){deleteStockItem(it)});
 act.appendChild(delBtn);
 }
-var kw=ce('div','kebab-wrap stk-kebab');
-var kb=ce('button','kebab-btn','⋮');
-kb.type='button';
-kb.setAttribute('aria-label','Menu aksi');
-kb.addEventListener('click',function(e){
-e.stopPropagation();
-var wasOpen=kw.classList.contains('open');
-closeAllKebab();
-if(!wasOpen)kw.classList.add('open');
-});
-kw.appendChild(kb);
+card.appendChild(act);
 var menu=ce('div','kebab-menu');
 menu.appendChild(kebabItem('Lihat',false,function(){viewStockItem(it)}));
 if(it.status!=='sold'){
@@ -123,9 +123,9 @@ menu.appendChild(kebabItem('Edit',false,function(){stockOpenEdit(it)}));
 menu.appendChild(kebabItem(it.status==='available'?'Nonaktifkan':'Aktifkan',false,function(){toggleStockItem(it)}));
 }
 if(it.status==='available'){menu.appendChild(kebabItem('Hapus',true,function(){deleteStockItem(it)}))}
-kw.appendChild(menu);
-act.appendChild(kw);
-card.appendChild(act);
+card.appendChild(menu);
+var dateTxt=(it.status==='sold'&&it.sold_at)?('terjual '+String(it.sold_at).slice(0,16)):('dibuat '+String(it.created_at||'').slice(0,16));
+card.appendChild(ce('span','stk-card-date',dateTxt));
 return card;
 }
 function kebabItem(label,danger,fn){
@@ -249,7 +249,7 @@ uiAct('close:stockAdd',function(){closeModal('stockAddModal');stockCtx=null});
 }
 document.addEventListener('click',function(e){
 var t=e.target;
-var inside=t.closest?t.closest('.kebab-wrap'):null;
+var inside=t.closest?(t.closest('.kebab-wrap')||t.closest('.kebab-menu')):null;
 if(!inside)closeAllKebab();
 },true);
 setTimeout(healthCheck,1000);
