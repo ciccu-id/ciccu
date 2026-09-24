@@ -1,16 +1,13 @@
 @media(max-width:767px){
 body:has(#section-reseller:not(.hidden)) .adm-topbar{display:none}
 #section-reseller{gap:.5rem}
-.reseller-subtab-bar{display:flex;gap:.25rem;background:var(--w);border:1px solid var(--blue-200);padding:.25rem;border-radius:9999px;overflow-x:auto;box-shadow:var(--sh-sm);-ms-overflow-style:none;scrollbar-width:none;margin-bottom:.5rem}
-.reseller-subtab-bar::-webkit-scrollbar{display:none}
-.reseller-subtab-btn{flex-shrink:0;font-size:.625rem;font-weight:700;color:var(--choco-500);padding:.45rem .875rem;border-radius:9999px;transition:all .15s;white-space:nowrap;background:none;border:none;cursor:pointer}
-.reseller-subtab-btn:hover{background:var(--blue-50)}
-.reseller-subtab-btn.active{background:var(--choco-600);color:var(--butter-100);box-shadow:var(--sh-md)}
 .rsl-sticky-bar{display:flex;align-items:center;gap:.5rem;background:var(--w);border:1px solid var(--blue-200);border-radius:0;padding:.5rem .75rem;margin:-.5rem -.75rem .5rem;position:sticky;top:0;z-index:20;box-shadow:var(--sh-sm)}
+}
+@media(min-width:768px){
+.rsl-sticky-bar{display:flex;align-items:center;gap:.5rem;background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-lg);padding:.5rem .75rem;margin-bottom:.75rem;box-shadow:var(--sh-sm)}
+}
 .rsl-icon-btn{width:2.25rem;height:2.25rem;border-radius:10px;background:var(--blue-50);color:var(--choco-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;border:1px solid var(--blue-200);cursor:pointer}
 .rsl-icon-btn:hover{background:var(--blue-100);color:var(--choco-700)}
 .rsl-icon-btn svg{width:1.1rem;height:1.1rem}
 .rsl-search{flex:1;min-width:0;height:2.25rem;border:1px solid var(--blue-200);border-radius:10px;padding:0 .75rem;font-size:.8125rem;background:#fff;outline:none;font-weight:600;color:var(--choco-600);transition:border-color .2s,box-shadow .2s}
 .rsl-search:focus{border-color:var(--choco-600);box-shadow:0 0 0 3px rgba(67,47,46,.08)}
-}
-@media(min-width:768px){.reseller-subtab-bar{display:none}.rsl-sticky-bar{display:none}}
