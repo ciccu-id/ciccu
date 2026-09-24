@@ -1,9 +1,17 @@
-var RPRICE_DATA=[],RPRICE_META={},RPRICE_EXPANDED={},RPRICE_SEARCH='',RVAR_EDIT_ID=null;
+var RPRICE_DATA=[],RPRICE_META={},RPRICE_FORMS={},RPRICE_EXPANDED={},RPRICE_SEARCH='',RVAR_EDIT_ID=null;
 function rpriceHeaders(){return{'Content-Type':'application/json','x-admin-password':sessionPass}}
 function flashSaved(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},1500)}}
 function loadLowStock(){}
 function getRslMeta(name){return RPRICE_META[String(name).toLowerCase().trim()]||null}
 function rslLogoUrl(slug){return slug?'/api/logo/'+encodeURIComponent(slug):''}
+function setRpriceSearch(v){
+RPRICE_SEARCH=String(v||'').toLowerCase().trim();
+var a=document.getElementById('rpriceSearch');
+var b=document.getElementById('rpriceSearchTop');
+if(a&&a.value!==v)a.value=v;
+if(b&&b.value!==v)b.value=v;
+renderResellerPricelist();
+}
 function loadResellerPricelist(){
 var wrap=document.getElementById('rpriceAccordion');
 if(!wrap)return;
@@ -11,11 +19,14 @@ while(wrap.firstChild)wrap.removeChild(wrap.firstChild);
 wrap.appendChild(ce('div','loading-state','Memuat pricelist reseller...'));
 Promise.all([
 fetch('/api/admin/rpricelist',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}),
-fetch('/api/admin/app-metadata',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).catch(function(){return[]})
+fetch('/api/admin/app-metadata',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).catch(function(){return[]}),
+fetch('/api/admin/forms',{headers:{'x-admin-password':sessionPass}}).then(function(r){return r.json()}).catch(function(){return[]})
 ]).then(function(res){
 RPRICE_DATA=res[0]||[];
 RPRICE_META={};
 (res[1]||[]).forEach(function(m){RPRICE_META[String(m.app_name).toLowerCase().trim()]=m});
+RPRICE_FORMS={};
+(res[2]||[]).forEach(function(f){RPRICE_FORMS[String(f.app_name).toLowerCase().trim()]=f});
 renderResellerPricelist();
 }).catch(function(){while(wrap.firstChild)wrap.removeChild(wrap.firstChild);wrap.appendChild(ce('div','empty-state','Gagal memuat pricelist reseller.'))});
 }
@@ -48,6 +59,9 @@ apps.forEach(function(app){
 var isOpen=!!RPRICE_EXPANDED[app];
 var packages=grouped[app];
 var meta=getRslMeta(app);
+var formObj=RPRICE_FORMS[String(app).toLowerCase().trim()];
+var rawFields=formObj?formObj.form_fields:'';
+var parsedFields=(typeof parseFormFields==='function')?parseFormFields(rawFields):[];
 var isAllSold=packages.length>0&&packages.every(function(p){return p.status&&String(p.status).toLowerCase()!=='ready'});
 var group=ce('div','app-group');
 group.setAttribute('data-app',app);
@@ -57,6 +71,7 @@ var hinfo=ce('div','app-header-info');
 var nameRow=ce('h3','app-header-name'+(isAllSold?' sold':''),app);
 if(isAllSold){var sb=ce('span',null,'Habis');sb.style.cssText='font-size:.5rem;background:var(--brick-50);color:var(--brick-500);border:1px solid var(--brick-200);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;margin-left:.25rem';nameRow.appendChild(sb)}
 hinfo.appendChild(nameRow);
+hinfo.appendChild(ce('p','app-header-form',parsedFields.length>0?'📋 Formulir Pesanan: '+parsedFields.join(', '):'🌸 Tidak memakai formulir'));
 var countWrap=ce('div','app-header-count');
 if(meta&&meta.app_type&&meta.app_type!=='lainnya'){var tb=ce('span',null,meta.app_type);tb.style.cssText='font-size:.4375rem;background:var(--butter-100);color:var(--choco-700);border:1px solid var(--butter-300);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em';countWrap.appendChild(tb)}
 countWrap.appendChild(ce('span',null,packages.length+' Paket'));
@@ -74,9 +89,9 @@ var kmenu=ce('div','kebab-menu');
 var ki1=ce('button','kebab-item','✏️ Edit Aplikasi');
 ki1.setAttribute('type','button');
 ki1.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');if(typeof openEditAppModal==='function')openEditAppModal(app)});
-var ki2=ce('button','kebab-item','＋ Tambah Paket');
+var ki2=ce('button','kebab-item','📋 Formulir Pesanan');
 ki2.setAttribute('type','button');
-ki2.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');openRvarEdit(null,app)});
+ki2.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');if(typeof openFormModal==='function')openFormModal(app,encodeURIComponent(rawFields))});
 var ki3=ce('button','kebab-item danger','🗑 Hapus Aplikasi');
 ki3.setAttribute('type','button');
 ki3.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');deleteRslApp(app,packages.map(function(p){return p.id}))});
@@ -248,11 +263,11 @@ foot.appendChild(cancelBtn);foot.appendChild(saveBtn);
 box.appendChild(foot);
 overlay.appendChild(backdrop);overlay.appendChild(box);
 document.body.appendChild(overlay);
+var sortable=null;
 function shut(){if(sortable)sortable.destroy();overlay.remove()}
 closeBtn.addEventListener('click',shut);
 cancelBtn.addEventListener('click',shut);
 backdrop.addEventListener('click',shut);
-var sortable=null;
 if(typeof Sortable!=='undefined'){
 sortable=new Sortable(list,{animation:150,handle:'.reorder-handle',ghostClass:'sortable-ghost',onEnd:function(){
 var items=list.querySelectorAll('.reorder-item');
@@ -271,11 +286,15 @@ fetch('/api/admin/rpricelist/reorder-apps',{method:'PUT',headers:rpriceHeaders()
 }
 document.addEventListener('DOMContentLoaded',function(){
 var search=document.getElementById('rpriceSearch');
-if(search)search.addEventListener('input',function(){RPRICE_SEARCH=this.value.toLowerCase().trim();renderResellerPricelist()});
+if(search)search.addEventListener('input',function(){setRpriceSearch(this.value)});
+var searchTop=document.getElementById('rpriceSearchTop');
+if(searchTop)searchTop.addEventListener('input',function(){setRpriceSearch(this.value)});
 var form=document.getElementById('rvarEditForm');
 if(form)form.addEventListener('submit',submitRvarEdit);
 var btnReorder=document.getElementById('btnRslReorder');
 if(btnReorder)btnReorder.addEventListener('click',openRslReorderModal);
+var btnReorderTop=document.getElementById('btnRslReorderTop');
+if(btnReorderTop)btnReorderTop.addEventListener('click',openRslReorderModal);
 ['rvarEditClose','rvarEditCancel'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',function(){var m=document.getElementById('rvarEditModal');if(m)m.classList.add('hidden')})});
 var bdrop=document.getElementById('rvarEditBackdrop');
 if(bdrop)bdrop.addEventListener('click',function(){var m=document.getElementById('rvarEditModal');if(m)m.classList.add('hidden')});
