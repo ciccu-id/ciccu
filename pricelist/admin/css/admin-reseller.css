@@ -11,11 +11,7 @@ body:has(#section-reseller:not(.hidden)) .adm-topbar{display:none}
 #section-reseller:not(:has(#subtab-rprice.active)) .rsl-action-row{display:none}
 #section-reseller:not(:has(#subtab-rprice.active)) .rsl-subtab-row{border-bottom:none}
 }
-@media(min-width:768px){
-.rsl-header{display:flex;flex-direction:column;background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-lg);padding:0;margin-bottom:1rem;box-shadow:var(--sh-sm);overflow:hidden}
-.rsl-subtab-row{display:none}
-.rsl-action-row{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem}
-}
+@media(min-width:768px){.rsl-header{display:none}}
 .rsl-icon-btn{width:2.25rem;height:2.25rem;border-radius:10px;background:var(--blue-50);color:var(--choco-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;border:1px solid var(--blue-200);cursor:pointer}
 .rsl-icon-btn:hover{background:var(--blue-100);color:var(--choco-700)}
 .rsl-icon-btn svg{width:1.1rem;height:1.1rem}
