@@ -69,7 +69,9 @@ idgrp.appendChild(ce('span','stk-card-id','#'+it.id));
 var pl=stockPill(it.status);
 idgrp.appendChild(ce('span','pill '+pl.cls,pl.txt));
 head.appendChild(idgrp);
-var kw=ce('div','kebab-wrap');
+var kw=null,menu=null;
+if(it.status!=='sold'){
+kw=ce('div','kebab-wrap');
 var kb=ce('button','kebab-btn','⋮');
 kb.type='button';
 kb.setAttribute('aria-label','Menu aksi');
@@ -81,6 +83,11 @@ if(!wasOpen)kw.classList.add('open');
 });
 kw.appendChild(kb);
 head.appendChild(kw);
+menu=ce('div','kebab-menu');
+menu.appendChild(kebabItem('Edit',false,function(){stockOpenEdit(it)}));
+menu.appendChild(kebabItem(it.status==='available'?'Nonaktifkan':'Aktifkan',false,function(){toggleStockItem(it)}));
+if(it.status==='available'){menu.appendChild(kebabItem('Hapus',true,function(){deleteStockItem(it)}))}
+}
 card.appendChild(head);
 var fields=ce('div','stk-fields');
 var obj={};
@@ -94,36 +101,13 @@ f.appendChild(ce('span','stk-field-val',it.status==='available'?maskVal(obj[k]):
 fields.appendChild(f);
 });
 card.appendChild(fields);
-var act=ce('div','stk-actions');
-var viewBtn=ce('button','fs-edit-btn stk-inline','Lihat');
-viewBtn.type='button';
-viewBtn.addEventListener('click',function(){viewStockItem(it)});
-act.appendChild(viewBtn);
-if(it.status!=='sold'){
-var editBtn=ce('button','fs-edit-btn stk-inline','Edit');
-editBtn.type='button';
-editBtn.addEventListener('click',function(){stockOpenEdit(it)});
-act.appendChild(editBtn);
-var togBtn=ce('button','fs-edit-btn stk-inline',it.status==='available'?'Nonaktif':'Aktifkan');
-togBtn.type='button';
-togBtn.addEventListener('click',function(){toggleStockItem(it)});
-act.appendChild(togBtn);
+if(it.buyer_note&&String(it.buyer_note).trim()!==''){
+var note=ce('div','stk-note');
+note.appendChild(ce('span','stk-note-ico','📝'));
+note.appendChild(ce('span','stk-note-txt',String(it.buyer_note)));
+card.appendChild(note);
 }
-if(it.status==='available'){
-var delBtn=ce('button','fs-remove-btn stk-inline','Hapus');
-delBtn.type='button';
-delBtn.addEventListener('click',function(){deleteStockItem(it)});
-act.appendChild(delBtn);
-}
-card.appendChild(act);
-var menu=ce('div','kebab-menu');
-menu.appendChild(kebabItem('Lihat',false,function(){viewStockItem(it)}));
-if(it.status!=='sold'){
-menu.appendChild(kebabItem('Edit',false,function(){stockOpenEdit(it)}));
-menu.appendChild(kebabItem(it.status==='available'?'Nonaktifkan':'Aktifkan',false,function(){toggleStockItem(it)}));
-}
-if(it.status==='available'){menu.appendChild(kebabItem('Hapus',true,function(){deleteStockItem(it)}))}
-card.appendChild(menu);
+if(menu)card.appendChild(menu);
 var dateTxt=(it.status==='sold'&&it.sold_at)?('terjual '+String(it.sold_at).slice(0,16)):('dibuat '+String(it.created_at||'').slice(0,16));
 card.appendChild(ce('span','stk-card-date',dateTxt));
 return card;
@@ -133,9 +117,6 @@ var b=ce('button','kebab-item'+(danger?' danger':''),label);
 b.type='button';
 b.addEventListener('click',function(){closeAllKebab();fn()});
 return b;
-}
-function viewStockItem(it){
-try{var o=JSON.parse(it.fields);uiAlert(Object.keys(o).map(function(k){return k+': '+o[k]}).join('\n'),'Kredensial #'+it.id)}catch(e){uiAlert('Data tidak valid','Kesalahan')}
 }
 function toggleStockItem(it){
 if(it.status==='available'){
@@ -162,6 +143,7 @@ stockCtx={variant:stockMgrVariant,mode:'add',stockId:null,rows:rows};
 var t=document.getElementById('stockAddTitle');if(t)t.textContent='Tambah Stok';
 var sub=document.getElementById('stockAddVariantName');
 if(sub)sub.textContent=stockMgrVariant.app_name+' • '+stockMgrVariant.category+' • '+stockMgrVariant.duration;
+var noteEl=document.getElementById('stockBuyerNote');if(noteEl)noteEl.value='';
 renderBuilder();
 openModal('stockAddModal');
 }
@@ -174,6 +156,7 @@ stockCtx={variant:stockMgrVariant,mode:'edit',stockId:it.id,rows:rows};
 var t=document.getElementById('stockAddTitle');if(t)t.textContent='Edit Stok #'+it.id;
 var sub=document.getElementById('stockAddVariantName');
 if(sub)sub.textContent=stockMgrVariant.app_name+' • '+stockMgrVariant.category+' • '+stockMgrVariant.duration;
+var noteEl=document.getElementById('stockBuyerNote');if(noteEl)noteEl.value=it.buyer_note||'';
 renderBuilder();
 openModal('stockAddModal');
 }
@@ -216,9 +199,11 @@ obj[name]=val;
 if(!Object.keys(obj).length)return uiAlert('Minimal satu baris diperlukan.','Data Belum Lengkap');
 var btn=document.getElementById('btnSubmitStockAdd');
 if(btn){btn.disabled=true;btn.textContent='Menyimpan...'}
+var noteEl=document.getElementById('stockBuyerNote');
+var buyerNote=noteEl?noteEl.value:'';
 var isEdit=stockCtx.mode==='edit';
 var url=isEdit?('/api/admin/stock/'+stockCtx.stockId):('/api/admin/stock/'+stockCtx.variant.id);
-fetch(url,{method:isEdit?'PUT':'POST',headers:stockHeaders(),body:JSON.stringify({fields:obj})})
+fetch(url,{method:isEdit?'PUT':'POST',headers:stockHeaders(),body:JSON.stringify({fields:obj,buyer_note:buyerNote})})
 .then(okJson)
 .then(function(){closeModal('stockAddModal');uiToast(isEdit?'Stok diperbarui.':'Stok ditambahkan.');stockCtx=null;stockAfterChange()})
 .catch(function(e){uiAlert(e.message||'Gagal menyimpan stok.','Kesalahan')})
