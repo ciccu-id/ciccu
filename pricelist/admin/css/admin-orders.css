@@ -16,16 +16,12 @@
 .ord-search:focus{border-color:var(--choco-600);box-shadow:0 0 0 3px rgba(67,47,46,.08)}
 .tab-badge{min-width:1rem;height:1rem;border-radius:9999px;background:var(--brick-500);color:var(--w);font-size:.5rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;padding:0 .25rem;margin-left:.25rem}
 .tab-badge.hidden{display:none}
-.ord-list{display:flex;flex-direction:column;gap:.875rem}
-.ord-card{position:relative;background:var(--w);border:1px solid var(--blue-200);border-left:3px solid var(--g400);border-radius:var(--r-lg);padding:1.125rem .875rem .75rem;box-shadow:var(--sh-sm);cursor:pointer;transition:box-shadow .15s,transform .1s}
+.ord-list{display:flex;flex-direction:column;gap:.75rem}
+.ord-card{background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-lg);padding:.875rem;box-shadow:var(--sh-sm);cursor:pointer;transition:box-shadow .15s,transform .1s}
 .ord-card:active{transform:scale(.99);box-shadow:var(--sh-md)}
-.ord-card.urg-red{border-left-color:var(--brick-500);background:var(--brick-50)}
-.ord-card.urg-amber{border-left-color:var(--butter-400)}
-.ord-card.urg-green{border-left-color:var(--sage-500)}
-.ord-head{position:absolute;top:0;left:0;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;pointer-events:none}
-.ord-head-left{display:flex;align-items:center;gap:.375rem;background:var(--w);padding:0 .375rem}
+.ord-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem}
+.ord-head-left,.ord-head-right{display:flex;align-items:center;gap:.375rem;min-width:0}
 .ord-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.75rem;font-weight:900;color:var(--choco-700);letter-spacing:.02em}
-.ord-head-right{background:var(--w);padding:0 .375rem}
 .ord-body{display:flex;flex-direction:column;gap:.375rem}
 .ord-meta{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem .75rem}
 .ord-meta-item{display:flex;align-items:center;gap:.25rem;font-size:.5625rem;font-weight:700;color:var(--choco-500)}
@@ -65,4 +61,3 @@
 .rcp-rev-head{font-size:.5625rem;font-weight:900;color:var(--choco-700)}
 .rcp-rev-note{font-size:.625rem;color:var(--choco-500);font-weight:600;font-style:italic}
 .rcp-actions{display:flex;flex-wrap:wrap;gap:.4rem;padding-top:.75rem;border-top:1px dashed var(--blue-200)}
-
