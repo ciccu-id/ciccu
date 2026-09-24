@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=18">
-<link rel="stylesheet" href="css/admin-katalog.css?v=18">
-<link rel="stylesheet" href="css/admin-reseller.css?v=18">
-<link rel="stylesheet" href="css/admin-orders.css?v=18">
+<link rel="stylesheet" href="css/admin.css?v=19">
+<link rel="stylesheet" href="css/admin-katalog.css?v=19">
+<link rel="stylesheet" href="css/admin-reseller.css?v=19">
+<link rel="stylesheet" href="css/admin-orders.css?v=19">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -178,9 +178,9 @@
 <input id="rpriceSearch" class="rsl-search" type="text" placeholder="Cari aplikasi / kategori / durasi...">
 </div>
 <div class="rsl-orders-row">
-<div class="dd ord-dd" id="orderStatusDD">
+<div class="dd ord-dd ord-dd-icon" id="orderStatusDD">
 <input type="hidden" id="orderStatusFilter" value="">
-<button type="button" class="dd-btn"><span id="orderStatusDDLabel">Semua Status</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<button type="button" class="dd-btn" title="Filter status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg><span id="orderStatusDDLabel">Semua Status</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
 <div class="dd-menu">
 <div class="dd-item active" data-value=""><span>Semua Status</span><span class="dd-check"></span></div>
 <div class="dd-item" data-value="pending_payment"><span>Menunggu</span><span class="dd-check"></span></div>
@@ -190,9 +190,9 @@
 <div class="dd-item" data-value="refunded"><span>Refund</span><span class="dd-check"></span></div>
 </div>
 </div>
-<div class="dd ord-dd" id="orderRangeDD">
+<div class="dd ord-dd ord-dd-icon" id="orderRangeDD">
 <input type="hidden" id="orderRangeFilter" value="">
-<button type="button" class="dd-btn"><span id="orderRangeDDLabel">Semua Waktu</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<button type="button" class="dd-btn" title="Filter waktu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span id="orderRangeDDLabel">Semua Waktu</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
 <div class="dd-menu">
 <div class="dd-item active" data-value=""><span>Semua Waktu</span><span class="dd-check"></span></div>
 <div class="dd-item" data-value="today"><span>Hari Ini</span><span class="dd-check"></span></div>
@@ -552,14 +552,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=18" defer></script>
-<script src="js/admin-modules.js?v=18" defer></script>
-<script src="js/admin.js?v=18" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=18" defer></script>
-<script src="js/admin-stock.js?v=18" defer></script>
-<script src="js/admin-orders.js?v=18" defer></script>
-<script src="js/admin-resellers.js?v=18" defer></script>
-<script src="js/admin-dashboard.js?v=18" defer></script>
-<script src="js/admin-activity.js?v=18" defer></script>
+<script src="js/admin-ui.js?v=19" defer></script>
+<script src="js/admin-modules.js?v=19" defer></script>
+<script src="js/admin.js?v=19" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=19" defer></script>
+<script src="js/admin-stock.js?v=19" defer></script>
+<script src="js/admin-orders.js?v=19" defer></script>
+<script src="js/admin-resellers.js?v=19" defer></script>
+<script src="js/admin-dashboard.js?v=19" defer></script>
+<script src="js/admin-activity.js?v=19" defer></script>
 </body>
 </html>
