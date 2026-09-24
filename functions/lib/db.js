@@ -1,6 +1,5 @@
 import{nowStr}from'./auth-reseller.js';
 function clampInt(v,d,m){const n=parseInt(v,10);if(isNaN(n))return d;return Math.max(0,Math.min(m,n))}
-
 async function generateOrderCode(env){
 const alphabet='0123456789';
 for(let attempt=0;attempt<10;attempt++){
@@ -13,10 +12,9 @@ if(!ex)return code;
 }
 throw new Error('Gagal membuat kode order unik setelah 10 percobaan');
 }
-
 export async function getVariant(env,id){return env.DB.prepare('SELECT id,app_name,category,duration,price,status,notes FROM rsl_pricelist WHERE id=?').bind(id).first()}
 export async function listCatalog(env){
-const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,p.price,p.status,p.notes,p.sort_order,p.app_sort_order,(SELECT COUNT(*) FROM rsl_stock_items s WHERE s.variant_id=p.id AND s.status='available') AS stock_available FROM rsl_pricelist p ORDER BY COALESCE(p.app_sort_order,9999),COALESCE(p.sort_order,9999),p.id").all();
+const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,p.price,p.status,p.notes,p.sort_order,p.app_sort_order,(SELECT COUNT(*) FROM rsl_stock_items s WHERE s.variant_id=p.id AND s.status='available') AS stock_available,f.form_fields FROM rsl_pricelist p LEFT JOIN app_forms f ON p.app_name=f.app_name ORDER BY COALESCE(p.app_sort_order,9999),COALESCE(p.sort_order,9999),p.id").all();
 return r.results;
 }
 export async function createVariant(env,data){
