@@ -144,7 +144,11 @@ category:c.category,
 duration:c.duration,
 price_str:c.price,
 unit:resNum(c.price),
-qty:1
+qty:1,
+form_fields:c.form_fields||'',
+separateForms:false,
+useFirstItemData:false,
+formData:[{}]
 });
 }
 persistCart();
