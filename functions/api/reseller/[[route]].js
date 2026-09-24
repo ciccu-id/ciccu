@@ -4,6 +4,36 @@ import{getProvider}from'../../lib/payment/provider.js';
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
+function parseFormFieldsList(str){
+if(!str)return[];
+try{if(String(str).trim().startsWith('['))return JSON.parse(str).map(function(i){return i.name||i})}catch(e){}
+return String(str).split(',').map(function(s){return s.trim()}).filter(Boolean);
+}
+function cleanFormData(raw,requiredFields){
+if(!Array.isArray(raw))return null;
+if(!raw.length)return null;
+if(raw.length>99)return null;
+const out=[];
+for(const el of raw){
+if(!el||typeof el!=='object'||Array.isArray(el))return null;
+const obj={};
+for(const f of requiredFields){
+const v=String(el[f]==null?'':el[f]).trim();
+if(!v)return null;
+obj[f]=v.slice(0,500);
+}
+out.push(obj);
+}
+return out;
+}
+async function getAppFormFields(env,appName,cache){
+const key=String(appName).toLowerCase().trim();
+if(Object.prototype.hasOwnProperty.call(cache,key))return cache[key];
+const row=await env.DB.prepare('SELECT form_fields FROM app_forms WHERE app_name=?').bind(appName).first();
+const val=row?row.form_fields:'';
+cache[key]=val;
+return val;
+}
 async function sha256hex(s){
 const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
 return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -105,6 +135,7 @@ if(p==='/checkout'&&m==='POST'){
 const b=await body(request)||{};
 const raw=Array.isArray(b.items)?b.items:[];
 if(!raw.length||raw.length>50)return err('Item tidak valid',400);
+const formCache={};
 const lines=[];let total=0;
 for(const it of raw){
 const vid=parseInt(it.variant_id,10);const qty=parseInt(it.qty,10);
@@ -115,7 +146,16 @@ const unit=parsePrice(v.price);
 if(unit<=0)return err('Harga tidak valid',400);
 const avail=await countAvailable(env,vid);
 if(avail<qty)return err('Stok tidak cukup untuk '+v.app_name+' '+v.category+' '+v.duration,400);
-lines.push({variant_id:vid,app_name:v.app_name,category:v.category,duration:v.duration,qty:qty,unit_price:unit});
+const ff=await getAppFormFields(env,v.app_name,formCache);
+const req=parseFormFieldsList(ff);
+let formJson='';
+if(req.length){
+const cleaned=cleanFormData(it.form_data,req);
+if(!cleaned)return err('Data formulir belum lengkap untuk '+v.app_name+' '+v.category+' '+v.duration,400);
+if(cleaned.length>qty)return err('Jumlah data formulir melebihi qty untuk '+v.app_name+' '+v.category+' '+v.duration,400);
+formJson=JSON.stringify(cleaned);
+}
+lines.push({variant_id:vid,app_name:v.app_name,category:v.category,duration:v.duration,qty:qty,unit_price:unit,form_data:formJson});
 total+=unit*qty;
 }
 const idem=String(b.idempotency_key||'').slice(0,128)||randomHex(16);
