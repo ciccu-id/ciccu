@@ -10,8 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=11">
-<link rel="stylesheet" href="css/admin-katalog.css?v=11">
+<link rel="stylesheet" href="css/admin.css?v=12">
+<link rel="stylesheet" href="css/admin-katalog.css?v=12">
+<link rel="stylesheet" href="css/admin-reseller.css?v=12">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -267,13 +268,15 @@
 <button id="subtab-raccounts" class="subtab-btn" type="button">Manajemen Reseller</button>
 </div>
 <div id="rsub-rprice" class="section">
-<div class="toolbar-row">
-<button id="btnExpandAllR" type="button" class="tool-btn">Buka Semua</button>
-<button id="btnCollapseAllR" type="button" class="tool-btn">Tutup Semua</button>
-<span class="tool-sep"></span>
-<button id="btnAddRVariant" type="button" class="tool-btn green">＋ Tambah Paket</button>
+<div class="rsl-sticky-bar">
+<label for="addAppSheetToggle" class="rsl-icon-btn" title="Tambah Aplikasi" aria-label="Tambah Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+</label>
+<button id="btnRslReorder" type="button" class="rsl-icon-btn" title="Urutan Aplikasi" aria-label="Urutan Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m16 16 4 4 4-4"/><path d="M20 8V20"/></svg>
+</button>
+<input id="rpriceSearch" class="rsl-search" type="text" placeholder="Cari aplikasi / kategori / durasi...">
 </div>
-<div class="search-row"><input id="rpriceSearch" class="search-input" type="text" placeholder="Cari aplikasi / kategori / durasi..."></div>
 <div id="rpriceAccordion" class="data-list"></div>
 </div>
 <div id="rsub-rorders" class="section hidden">
@@ -438,7 +441,16 @@
 <input id="rvarCategory" class="form-input" placeholder="Kategori" required>
 <input id="rvarDuration" class="form-input" placeholder="Durasi" required>
 <input id="rvarPrice" class="form-input" placeholder="Harga reseller (mis. 40K)" required>
-<select id="rvarStatus" class="form-input"><option value="Ready">Ready</option><option value="Sold">Sold</option></select>
+<div class="adm-field" style="margin:0"><label for="rvarStatus">STATUS</label><div class="adm-input">
+<div class="dd" id="rvarStatusDD">
+<input type="hidden" id="rvarStatus" value="Ready">
+<button type="button" class="dd-btn"><span id="rvarStatusLabel">Ready</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item active" data-value="Ready"><span>Ready</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="Sold"><span>Sold</span><span class="dd-check"></span></div>
+</div>
+</div>
+</div></div>
 <textarea id="rvarNotes" class="form-input" rows="2" placeholder="Catatan (opsional)"></textarea>
 <div class="modal-actions"><button id="rvarEditCancel" type="button" class="cancel-btn">Batal</button><button id="btnSubmitRvarEdit" type="submit" class="submit-btn">Simpan</button></div>
 </form>
@@ -515,14 +527,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=11" defer></script>
-<script src="js/admin-modules.js?v=11" defer></script>
-<script src="js/admin.js?v=11" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=11" defer></script>
-<script src="js/admin-stock.js?v=11" defer></script>
-<script src="js/admin-orders.js?v=11" defer></script>
-<script src="js/admin-resellers.js?v=11" defer></script>
-<script src="js/admin-dashboard.js?v=11" defer></script>
-<script src="js/admin-activity.js?v=11" defer></script>
+<script src="js/admin-ui.js?v=12" defer></script>
+<script src="js/admin-modules.js?v=12" defer></script>
+<script src="js/admin.js?v=12" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=12" defer></script>
+<script src="js/admin-stock.js?v=12" defer></script>
+<script src="js/admin-orders.js?v=12" defer></script>
+<script src="js/admin-resellers.js?v=12" defer></script>
+<script src="js/admin-dashboard.js?v=12" defer></script>
+<script src="js/admin-activity.js?v=12" defer></script>
 </body>
 </html>
