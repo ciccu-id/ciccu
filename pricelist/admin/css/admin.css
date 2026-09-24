@@ -221,9 +221,6 @@ body:has(#section-reseller:not(.hidden)):has(#subtab-rprice.active) .topbar-rsl{
 .kebab-item:hover{background:var(--blue-50)}
 .kebab-item.danger{color:var(--brick-500)}
 .kebab-item.danger:hover{background:var(--brick-50)}
-.stk-kebab{display:none}
-@media(max-width:767px){.stk-inline{display:none!important}.stk-kebab{display:block}}
-@media(min-width:768px){.stk-kebab{display:none!important}}
 #rsub-rorders .card{display:flex;flex-direction:column;gap:.75rem;overflow:visible}
 #rsub-rorders .card-header-row{margin-bottom:0}
 @media(max-width:767px){
@@ -367,8 +364,9 @@ body:has(.modal-overlay:not(.hidden)),body:has(.sheet-toggle:checked){overflow:h
 .modal-box{max-width:36rem}
 #stockManagerModal .modal-box,#reorderModal .modal-box,#formBuilderModal .modal-box,#importModal .modal-box{max-width:42rem}
 }
-.modal-head{padding:.75rem .875rem;border-bottom:1px solid var(--blue-100);display:flex;justify-content:space-between;align-items:center;background:var(--blue-50);border-radius:var(--r-xl) var(--r-xl) 0 0}
+.modal-head{padding:.75rem .875rem;border-bottom:1px solid var(--blue-100);display:flex;justify-content:space-between;align-items:center;gap:.5rem;background:var(--blue-50);border-radius:var(--r-xl) var(--r-xl) 0 0}
 .modal-head h3{font-size:.9375rem;font-weight:900;color:var(--choco-600)}
+.modal-head-actions{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
 .modal-sub{font-size:.5625rem;color:var(--choco-400);font-weight:700;margin-top:.1rem}
 .modal-sub.italic{font-style:italic}
 .modal-close-btn{width:1.75rem;height:1.75rem;border-radius:50%;background:var(--blue-50);color:var(--choco-400);font-size:.875rem;display:flex;align-items:center;justify-content:center;transition:all .15s;cursor:pointer;border:1px solid var(--blue-200);flex-shrink:0;line-height:1}
@@ -400,8 +398,9 @@ body:has(.modal-overlay:not(.hidden)),body:has(.sheet-toggle:checked){overflow:h
 .stk-field{display:flex;align-items:baseline;gap:.5rem}
 .stk-field-label{flex:0 0 5.5rem;color:var(--choco-400);font-weight:700;text-transform:uppercase;font-size:.5625rem;letter-spacing:.05em}
 .stk-field-val{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;font-size:.6875rem;color:var(--choco-600);word-break:break-all}
-.stk-actions{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;justify-content:flex-start;margin-top:.625rem}
+.stk-note{display:flex;align-items:flex-start;gap:.375rem;margin-top:.5rem;padding:.5rem .625rem;background:var(--butter-50);border:1px dashed var(--butter-300);border-radius:var(--r-md)}
+.stk-note-ico{font-size:.75rem;line-height:1.2}
+.stk-note-txt{flex:1;min-width:0;font-size:.6875rem;font-weight:600;color:var(--choco-600);line-height:1.4;word-break:break-word}
 .stk-card-date{position:absolute;bottom:0;right:.75rem;transform:translateY(50%);background:var(--w);padding:0 .375rem;font-size:.5rem;color:var(--choco-400);font-weight:700}
-@media(max-width:767px){.stk-actions{display:none}}
 @media(max-width:767px){#stockManagerModal .modal-box,#stockAddModal .modal-box{max-height:94vh;max-width:30rem}}
 ::selection{background:var(--butter-200);color:var(--choco-600)}
