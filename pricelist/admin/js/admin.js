@@ -1,5 +1,6 @@
 var selectedItems=new Set(),expandedApps={},currentEditId=null,builderCurrentApp='',builderFields=[],sortableReorder=null,globalAppMeta={};
 var logoPickerState={target:null,currentUrl:'',currentSlug:'',isEdit:false};
+var searchKeyword='';
 function admSvg(d,w,h){var ns='http://www.w3.org/2000/svg',s=document.createElementNS(ns,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');if(w)s.style.width=w;if(h)s.style.height=h;var p=document.createElementNS(ns,'path');p.setAttribute('d',d);s.appendChild(p);return s}
 function parseFormFields(str){
 if(!str)return[];
@@ -21,6 +22,14 @@ var on=(items[i].getAttribute('data-value')===value);
 items[i].classList.toggle('active',on);
 if(on&&lbl){var sp=items[i].querySelector('span');if(sp)lbl.textContent=sp.textContent}
 }
+}
+function setSearchKeyword(v){
+searchKeyword=v;
+var a=document.getElementById('adminSearchInput');
+var b=document.getElementById('adminSearchInputTop');
+if(a&&a.value!==v)a.value=v;
+if(b&&b.value!==v)b.value=v;
+filterAdminList();
 }
 function loadData(){
 if(!sessionPass)return;
@@ -61,8 +70,7 @@ list.appendChild(ce('div','empty-state','Gagal memuat data! '+e.message));
 });
 }
 function filterAdminList(){
-var searchEl=document.getElementById('adminSearchInput');
-var keyword=searchEl?searchEl.value.toLowerCase():'';
+var keyword=searchKeyword.toLowerCase();
 var filtered=globalAdminData.filter(function(item){
 return item.app_name.toLowerCase().includes(keyword)||item.category.toLowerCase().includes(keyword)||item.status.toLowerCase().includes(keyword);
 });
@@ -421,8 +429,7 @@ processNext();
 reader.readAsText(file);
 }
 function exportCSV(){
-var searchEl=document.getElementById('adminSearchInput');
-var keyword=searchEl?searchEl.value.toLowerCase():'';
+var keyword=searchKeyword.toLowerCase();
 var dataToExport=globalAdminData.filter(function(item){
 return item.app_name.toLowerCase().includes(keyword)||item.category.toLowerCase().includes(keyword)||item.status.toLowerCase().includes(keyword);
 });
@@ -534,8 +541,7 @@ fetch('/api/admin/pricelist',{method:'POST',headers:{'Content-Type':'application
 .then(function(){
 var form=document.getElementById('addForm');
 if(form)form.reset();
-var searchEl=document.getElementById('adminSearchInput');
-if(searchEl)searchEl.value='';
+setSearchKeyword('');
 loadData();
 })
 .catch(function(){})
@@ -796,7 +802,9 @@ if(btnAddField)btnAddField.addEventListener('click',addFormFieldBuilder);
 var btnSaveForm=document.getElementById('btnSaveForm');
 if(btnSaveForm)btnSaveForm.addEventListener('click',saveFormBuilderConfig);
 var adminSearch=document.getElementById('adminSearchInput');
-if(adminSearch)adminSearch.addEventListener('input',filterAdminList);
+if(adminSearch)adminSearch.addEventListener('input',function(){setSearchKeyword(this.value)});
+var adminSearchTop=document.getElementById('adminSearchInputTop');
+if(adminSearchTop)adminSearchTop.addEventListener('input',function(){setSearchKeyword(this.value)});
 var btnBulkReady=document.getElementById('btnBulkReady');
 if(btnBulkReady)btnBulkReady.addEventListener('click',function(){bulkUpdateStatus('Ready')});
 var btnBulkSold=document.getElementById('btnBulkSold');
