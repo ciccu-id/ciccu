@@ -1,6 +1,5 @@
 var ORD_OFFSET=0,ORD_LIMIT=20,ORD_LOADED=[],ORD_SEARCH='',ORD_SEARCH_TIMER=null;
 function ordHeaders(){return{'x-admin-password':sessionPass}}
-function ordMask(v){v=String(v==null?'':v);if(!v)return'';if(v.length<=4)return'•'.repeat(v.length);return v.slice(0,2)+'•'.repeat(Math.min(8,v.length-4))+v.slice(-2)}
 function ordFmtRp(n){return'Rp '+Number(n||0).toLocaleString('id-ID')}
 function ordFmtDT(s){
 if(!s)return'-';
@@ -23,13 +22,17 @@ if(st==='pending_payment')return'urg-amber';
 if(st==='delivered')return'urg-green';
 return'';
 }
-function ordCopy(text,btn){
-function done(){if(!btn)return;var old=btn.textContent;btn.textContent='✓ Tersalin';setTimeout(function(){btn.textContent=old},1200)}
-if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done).catch(function(){done()})}else{done()}
-}
 function ordConfirm(msg,fn){
 if(typeof uiConfirm==='function')uiConfirm(msg,'Konfirmasi',function(){fn()});
 else if(confirm(msg))fn();
+}
+function ordSyncFilterIcons(){
+var pairs=[['orderStatusDD','orderStatusFilter'],['orderRangeDD','orderRangeFilter']];
+pairs.forEach(function(pr){
+var dd=document.getElementById(pr[0]);
+var hid=document.getElementById(pr[1]);
+if(dd&&hid)dd.classList.toggle('dd-active',!!hid.value);
+});
 }
 function refreshOrdersBadge(){
 fetch('/api/admin/orders/needs-count',{headers:ordHeaders()}).then(function(r){return r.json()}).then(function(d){
@@ -51,6 +54,7 @@ return u;
 }
 function loadOrders(){
 ORD_OFFSET=0;ORD_LOADED=[];
+ordSyncFilterIcons();
 var list=document.getElementById('orderList');
 if(!list)return;
 while(list.firstChild)list.removeChild(list.firstChild);
@@ -100,29 +104,32 @@ card.appendChild(cdw);
 card.addEventListener('click',function(){openOrderDetail(o.id)});
 return card;
 }
-function rcpRow(l,v){
+function rcpRow(l,v,mono){
 var r=ce('div','rcp-row');
 r.appendChild(ce('span','rcp-lbl',l));
-r.appendChild(ce('span','rcp-val',String(v)));
+var val=ce('span','rcp-val',String(v));
+if(mono)val.classList.add('mono');
+r.appendChild(val);
+return r;
+}
+function rcpLinkRow(l,href,text){
+var r=ce('div','rcp-row');
+r.appendChild(ce('span','rcp-lbl',l));
+var val=ce('span','rcp-val');
+var a=document.createElement('a');
+a.href=href;
+a.target='_blank';
+a.rel='noopener';
+a.textContent=text;
+val.appendChild(a);
+r.appendChild(val);
 return r;
 }
 function rcpTitle(t){return ce('p','rcp-title',t)}
-function credRow(k,v,maskable){
+function credRow(k,v){
 var row=ce('div','rcp-cred-row');
 row.appendChild(ce('span','rcp-cred-lbl',k));
-var val=ce('span','rcp-cred-val',maskable?ordMask(v):String(v));
-row.appendChild(val);
-if(maskable){
-var shown=false;
-var eye=ce('button','rcp-mini','Lihat');
-eye.type='button';
-eye.addEventListener('click',function(){shown=!shown;val.textContent=shown?String(v):ordMask(v);eye.textContent=shown?'Tutup':'Lihat'});
-row.appendChild(eye);
-var cp=ce('button','rcp-mini','Salin');
-cp.type='button';
-cp.addEventListener('click',function(){ordCopy(String(v),cp)});
-row.appendChild(cp);
-}
+row.appendChild(ce('span','rcp-cred-val',String(v)));
 return row;
 }
 function buildReceiptItem(o,it){
@@ -145,7 +152,7 @@ var fk=Object.keys(fd);
 if(fk.length){
 var sub=ce('div','rcp-sub');
 sub.appendChild(rcpTitle('Data Pesanan'));
-fk.forEach(function(k){sub.appendChild(credRow(k,fd[k],false))});
+fk.forEach(function(k){sub.appendChild(credRow(k,fd[k]))});
 box.appendChild(sub);
 }
 var creds=(o.credentials||[]).filter(function(c){return c.order_item_id===it.id&&c.fields});
@@ -154,8 +161,8 @@ var sub2=ce('div','rcp-sub');
 sub2.appendChild(rcpTitle('Kredensial Terkirim'));
 creds.forEach(function(c){
 var obj=ordParse(c.fields);
-Object.keys(obj).forEach(function(k){sub2.appendChild(credRow(k,obj[k],true))});
-if(c.buyer_note)sub2.appendChild(credRow('Info Pembeli',c.buyer_note,false));
+Object.keys(obj).forEach(function(k){sub2.appendChild(credRow(k,obj[k]))});
+if(c.buyer_note)sub2.appendChild(credRow('Info Pembeli',c.buyer_note));
 });
 box.appendChild(sub2);
 }
@@ -166,7 +173,7 @@ it.revisions.forEach(function(rv,idx){
 var rev=ce('div','rcp-rev');
 rev.appendChild(ce('p','rcp-rev-head','Revisi '+(idx+1)+' • '+ordFmtDT(rv.created_at)+' • '+rv.created_by));
 var ro=ordParse(rv.fields);
-Object.keys(ro).forEach(function(k){rev.appendChild(credRow(k,ro[k],false))});
+Object.keys(ro).forEach(function(k){rev.appendChild(credRow(k,ro[k]))});
 rev.appendChild(ce('p','rcp-rev-note','“'+rv.note+'”'));
 sub3.appendChild(rev);
 });
@@ -239,7 +246,8 @@ var s2=ce('div','rcp-sec');
 s2.appendChild(rcpTitle('Pembayaran'));
 if(o.payments&&o.payments.length){
 o.payments.forEach(function(py){
-s2.appendChild(rcpRow(py.provider+' • '+py.status,ordFmtRp(py.gross_amount)+(py.provider_tx_id?(' • '+py.provider_tx_id):'')));
+s2.appendChild(rcpRow(py.provider+' • '+py.status,ordFmtRp(py.gross_amount)));
+if(py.provider_tx_id)s2.appendChild(rcpRow('ID Pembayaran',py.provider_tx_id,true));
 });
 }else{
 s2.appendChild(rcpRow('Pembayaran','Belum ada'));
@@ -251,17 +259,10 @@ var rs=o.reseller;
 s3.appendChild(rcpRow('Username',rs?rs.username:'-'));
 s3.appendChild(rcpRow('Nama',rs&&rs.display_name?rs.display_name:'-'));
 if(rs&&rs.whatsapp){
-var waRow=ce('div','rcp-row');
-waRow.appendChild(ce('span','rcp-lbl','WhatsApp'));
-var waVal=ce('span','rcp-val',rs.whatsapp);
-waRow.appendChild(waVal);
-var waCp=ce('button','rcp-mini','Salin');
-waCp.type='button';
-waCp.addEventListener('click',function(){ordCopy(rs.whatsapp,waCp)});
-waRow.appendChild(waCp);
-s3.appendChild(waRow);
+var waDigits=String(rs.whatsapp).replace(/^0/,'');
+s3.appendChild(rcpLinkRow('WhatsApp','https://wa.me/62'+waDigits,rs.whatsapp));
 }
-if(rs&&rs.x_username)s3.appendChild(rcpRow('Akun X',rs.x_username));
+if(rs&&rs.x_username)s3.appendChild(rcpLinkRow('Akun X','https://x.com/'+encodeURIComponent(rs.x_username),rs.x_username));
 wrap.appendChild(s3);
 var s4=ce('div','rcp-sec');
 s4.appendChild(rcpTitle('Item'));
@@ -404,4 +405,5 @@ var dc=document.getElementById('orderDetailClose');
 if(dc)dc.addEventListener('click',closeOrderDetail);
 var db=document.getElementById('orderDetailBackdrop');
 if(db)db.addEventListener('click',closeOrderDetail);
+ordSyncFilterIcons();
 });
