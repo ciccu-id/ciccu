@@ -276,6 +276,25 @@ fetch('/api/admin/pricelist/reorder',{method:'PUT',headers:{'Content-Type':'appl
 });
 });
 }
+function initReorderSortable(list,tries){
+if(sortableReorder){sortableReorder.destroy();sortableReorder=null}
+if(typeof Sortable!=='undefined'){
+sortableReorder=new Sortable(list,{
+animation:150,handle:'.reorder-handle',ghostClass:'sortable-ghost',dragClass:'sortable-drag',
+onEnd:function(){
+var items=list.querySelectorAll('.reorder-item');
+items.forEach(function(el,idx){el.querySelector('.reorder-num').textContent=String(idx+1)});
+}
+});
+return;
+}
+if((tries||0)<5){
+setTimeout(function(){
+var m=document.getElementById('reorderModal');
+if(m&&!m.classList.contains('hidden'))initReorderSortable(list,(tries||0)+1);
+},400);
+}
+}
 function openReorderModal(){
 var modal=document.getElementById('reorderModal');
 var list=document.getElementById('reorderAppList');
@@ -303,18 +322,12 @@ item.appendChild(handle);
 list.appendChild(item);
 });
 modal.classList.remove('hidden');
-if(sortableReorder)sortableReorder.destroy();
-sortableReorder=new Sortable(list,{
-animation:150,handle:'.reorder-handle',ghostClass:'sortable-ghost',dragClass:'sortable-drag',
-onEnd:function(){
-var items=list.querySelectorAll('.reorder-item');
-items.forEach(function(el,idx){el.querySelector('.reorder-num').textContent=String(idx+1)});
-}
-});
+initReorderSortable(list,0);
 }
 function closeReorderModal(){
 var modal=document.getElementById('reorderModal');
 if(modal)modal.classList.add('hidden');
+if(sortableReorder){sortableReorder.destroy();sortableReorder=null}
 }
 function saveReorderModal(){
 var btn=document.getElementById('btnSaveReorder');
