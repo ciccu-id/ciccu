@@ -10,9 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=12">
-<link rel="stylesheet" href="css/admin-katalog.css?v=12">
-<link rel="stylesheet" href="css/admin-reseller.css?v=12">
+<link rel="stylesheet" href="css/admin.css?v=13">
+<link rel="stylesheet" href="css/admin-katalog.css?v=13">
+<link rel="stylesheet" href="css/admin-reseller.css?v=13">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -124,124 +124,6 @@
 <input id="adminSearchInput" class="prod-search" type="text" placeholder="Cari aplikasi / kategori / status...">
 </div>
 <div id="dataList" class="data-list"></div>
-
-<input type="checkbox" id="addAppSheetToggle" class="sheet-toggle">
-<label for="addAppSheetToggle" class="sheet-backdrop"></label>
-<aside class="sheet" id="addAppSheet">
-<div class="sheet-head">
-<h3>Tambah Aplikasi Baru</h3>
-<label for="addAppSheetToggle" class="sheet-close" aria-label="Tutup">✕</label>
-</div>
-<form id="addAppForm" class="sheet-body" novalidate>
-<div class="adm-field"><label for="newAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="newAppName" required autocomplete="off"></div></div>
-<div class="adm-field">
-<label for="newAppLogoUrl">LOGO</label>
-<div class="adm-input">
-<div class="logo-picker-wrap">
-<div class="logo-picker-preview" id="newAppLogoPreview"><span>Belum dipilih</span></div>
-<div class="logo-picker-actions">
-<button type="button" id="newAppLogoPickBtn" class="logo-picker-btn">Pilih</button>
-<button type="button" id="newAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
-</div>
-</div>
-<input type="hidden" id="newAppLogoUrl" value="">
-</div>
-</div>
-<div class="adm-field">
-<label for="newAppType">JENIS</label>
-<div class="adm-input">
-<div class="dd" id="newAppTypeDD">
-<input type="hidden" id="newAppType" value="lainnya">
-<button type="button" class="dd-btn"><span id="newAppTypeLabel">Lainnya</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
-<div class="dd-menu">
-<div class="dd-item" data-value="streaming"><span>Streaming</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="music"><span>Music</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="editing"><span>Editing</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="study"><span>Study</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="game"><span>Game</span><span class="dd-check"></span></div>
-<div class="dd-item active" data-value="lainnya"><span>Lainnya</span><span class="dd-check"></span></div>
-</div>
-</div>
-</div>
-</div>
-<p class="sheet-hint">Paket dan detail lainnya dapat ditambahkan setelah aplikasi dibuat, lewat tombol <b>＋ Tambah Paket</b> di header grup aplikasi.</p>
-<button type="submit" id="btnSubmitApp" class="sheet-submit">BUAT APLIKASI</button>
-</form>
-</aside>
-
-<div id="logoPickerModal" class="modal-overlay hidden">
-<div class="logo-picker-backdrop"></div>
-<div class="logo-picker-box">
-<div class="modal-head">
-<div><h3>Pilih Logo</h3><p class="modal-sub">Cari atau tempel URL gambar</p></div>
-<button type="button" class="modal-close-btn" id="logoPickerClose">×</button>
-</div>
-<div class="logo-picker-body">
-<div class="logo-picker-tabs">
-<button type="button" class="logo-tab active" data-tab="search">Dari daftar</button>
-<button type="button" class="logo-tab" data-tab="url">Tempel URL</button>
-</div>
-<div class="logo-tab-pane active" data-pane="search">
-<input type="text" id="logoSearchInput" class="form-input" placeholder="Cari aplikasi (mis. netflix)...">
-<div id="logoSearchResults" class="logo-search-grid"></div>
-<p class="logo-search-hint" id="logoSearchHint">Menampilkan saran bawaan.</p>
-</div>
-<div class="logo-tab-pane" data-pane="url">
-<input type="text" id="logoUrlInput" class="form-input" placeholder="https://contoh.com/logo.png">
-<p class="logo-search-hint">Tempel URL gambar apa pun. Maksimal 300 KB.</p>
-</div>
-</div>
-<div class="modal-actions">
-<button type="button" class="cancel-btn" id="logoPickerCancel">Batal</button>
-<button type="button" class="submit-btn" id="logoPickerConfirm" disabled>Konfirmasi</button>
-</div>
-</div>
-</div>
-
-<div id="editAppModal" class="modal-overlay hidden">
-<div class="modal-backdrop"></div>
-<div class="modal-box">
-<div class="modal-head"><div><h3>Edit Aplikasi</h3><p id="editAppNameDisplay" class="modal-sub"></p></div><button id="editAppClose" class="modal-close-btn" type="button">×</button></div>
-<form id="editAppForm" class="modal-form" novalidate>
-<div class="adm-field"><label for="editAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="editAppName" required autocomplete="off"></div></div>
-<div class="adm-field">
-<label for="editAppLogoUrl">LOGO</label>
-<div class="adm-input">
-<div class="logo-picker-wrap">
-<div class="logo-picker-preview" id="editAppLogoPreview"><span>Belum dipilih</span></div>
-<div class="logo-picker-actions">
-<button type="button" id="editAppLogoPickBtn" class="logo-picker-btn">Pilih</button>
-<button type="button" id="editAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
-</div>
-</div>
-<input type="hidden" id="editAppLogoUrl" value="">
-</div>
-</div>
-<div class="adm-field">
-<label for="editAppType">JENIS</label>
-<div class="adm-input">
-<div class="dd" id="editAppTypeDD">
-<input type="hidden" id="editAppType" value="lainnya">
-<button type="button" class="dd-btn"><span id="editAppTypeLabel">Lainnya</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
-<div class="dd-menu">
-<div class="dd-item" data-value="streaming"><span>Streaming</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="music"><span>Music</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="editing"><span>Editing</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="study"><span>Study</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="game"><span>Game</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="lainnya"><span>Lainnya</span><span class="dd-check"></span></div>
-</div>
-</div>
-</div>
-</div>
-<div class="modal-actions">
-<button type="button" class="cancel-btn" id="editAppCancelBtn">Batal</button>
-<button type="submit" class="submit-btn">Simpan</button>
-</div>
-</form>
-</div>
-</div>
-
 </section>
 <section id="section-flashsale" class="section hidden">
 <div class="card">
@@ -262,10 +144,10 @@
 </div>
 </section>
 <section id="section-reseller" class="section hidden">
-<div class="subtab-bar">
-<button id="subtab-rprice" class="subtab-btn active" type="button">Pricelist</button>
-<button id="subtab-rorders" class="subtab-btn" type="button">Pesanan</button>
-<button id="subtab-raccounts" class="subtab-btn" type="button">Manajemen Reseller</button>
+<div class="rsl-subtab-bar">
+<button id="subtab-rprice" class="rsl-subtab-btn active" type="button">Pricelist</button>
+<button id="subtab-rorders" class="rsl-subtab-btn" type="button">Pesanan</button>
+<button id="subtab-raccounts" class="rsl-subtab-btn" type="button">Manajemen Reseller</button>
 </div>
 <div id="rsub-rprice" class="section">
 <div class="rsl-sticky-bar">
@@ -371,6 +253,120 @@
 <label for="navToggle" class="bnav-item" id="bnav-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></label>
 </nav>
 </div>
+<input type="checkbox" id="addAppSheetToggle" class="sheet-toggle">
+<label for="addAppSheetToggle" class="sheet-backdrop"></label>
+<aside class="sheet" id="addAppSheet">
+<div class="sheet-head">
+<h3>Tambah Aplikasi Baru</h3>
+<label for="addAppSheetToggle" class="sheet-close" aria-label="Tutup">✕</label>
+</div>
+<form id="addAppForm" class="sheet-body" novalidate>
+<div class="adm-field"><label for="newAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="newAppName" required autocomplete="off"></div></div>
+<div class="adm-field">
+<label for="newAppLogoUrl">LOGO</label>
+<div class="adm-input">
+<div class="logo-picker-wrap">
+<div class="logo-picker-preview" id="newAppLogoPreview"><span>Belum dipilih</span></div>
+<div class="logo-picker-actions">
+<button type="button" id="newAppLogoPickBtn" class="logo-picker-btn">Pilih</button>
+<button type="button" id="newAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
+</div>
+</div>
+<input type="hidden" id="newAppLogoUrl" value="">
+</div>
+</div>
+<div class="adm-field">
+<label for="newAppType">JENIS</label>
+<div class="adm-input">
+<div class="dd" id="newAppTypeDD">
+<input type="hidden" id="newAppType" value="lainnya">
+<button type="button" class="dd-btn"><span id="newAppTypeLabel">Lainnya</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item" data-value="streaming"><span>Streaming</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="music"><span>Music</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="editing"><span>Editing</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="study"><span>Study</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="game"><span>Game</span><span class="dd-check"></span></div>
+<div class="dd-item active" data-value="lainnya"><span>Lainnya</span><span class="dd-check"></span></div>
+</div>
+</div>
+</div>
+</div>
+<p class="sheet-hint">Paket dan detail lainnya dapat ditambahkan setelah aplikasi dibuat, lewat tombol <b>＋ Tambah Paket</b> di header grup aplikasi.</p>
+<button type="submit" id="btnSubmitApp" class="sheet-submit">BUAT APLIKASI</button>
+</form>
+</aside>
+<div id="logoPickerModal" class="modal-overlay hidden">
+<div class="logo-picker-backdrop"></div>
+<div class="logo-picker-box">
+<div class="modal-head">
+<div><h3>Pilih Logo</h3><p class="modal-sub">Cari atau tempel URL gambar</p></div>
+<button type="button" class="modal-close-btn" id="logoPickerClose">×</button>
+</div>
+<div class="logo-picker-body">
+<div class="logo-picker-tabs">
+<button type="button" class="logo-tab active" data-tab="search">Dari daftar</button>
+<button type="button" class="logo-tab" data-tab="url">Tempel URL</button>
+</div>
+<div class="logo-tab-pane active" data-pane="search">
+<input type="text" id="logoSearchInput" class="form-input" placeholder="Cari aplikasi (mis. netflix)...">
+<div id="logoSearchResults" class="logo-search-grid"></div>
+<p class="logo-search-hint" id="logoSearchHint">Menampilkan saran bawaan.</p>
+</div>
+<div class="logo-tab-pane" data-pane="url">
+<input type="text" id="logoUrlInput" class="form-input" placeholder="https://contoh.com/logo.png">
+<p class="logo-search-hint">Tempel URL gambar apa pun. Maksimal 300 KB.</p>
+</div>
+</div>
+<div class="modal-actions">
+<button type="button" class="cancel-btn" id="logoPickerCancel">Batal</button>
+<button type="button" class="submit-btn" id="logoPickerConfirm" disabled>Konfirmasi</button>
+</div>
+</div>
+</div>
+<div id="editAppModal" class="modal-overlay hidden">
+<div class="modal-backdrop"></div>
+<div class="modal-box">
+<div class="modal-head"><div><h3>Edit Aplikasi</h3><p id="editAppNameDisplay" class="modal-sub"></p></div><button id="editAppClose" class="modal-close-btn" type="button">×</button></div>
+<form id="editAppForm" class="modal-form" novalidate>
+<div class="adm-field"><label for="editAppName">NAMA APLIKASI</label><div class="adm-input"><input type="text" id="editAppName" required autocomplete="off"></div></div>
+<div class="adm-field">
+<label for="editAppLogoUrl">LOGO</label>
+<div class="adm-input">
+<div class="logo-picker-wrap">
+<div class="logo-picker-preview" id="editAppLogoPreview"><span>Belum dipilih</span></div>
+<div class="logo-picker-actions">
+<button type="button" id="editAppLogoPickBtn" class="logo-picker-btn">Pilih</button>
+<button type="button" id="editAppLogoClearBtn" class="logo-picker-btn secondary" style="display:none">Hapus</button>
+</div>
+</div>
+<input type="hidden" id="editAppLogoUrl" value="">
+</div>
+</div>
+<div class="adm-field">
+<label for="editAppType">JENIS</label>
+<div class="adm-input">
+<div class="dd" id="editAppTypeDD">
+<input type="hidden" id="editAppType" value="lainnya">
+<button type="button" class="dd-btn"><span id="editAppTypeLabel">Lainnya</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item" data-value="streaming"><span>Streaming</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="music"><span>Music</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="editing"><span>Editing</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="study"><span>Study</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="game"><span>Game</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="lainnya"><span>Lainnya</span><span class="dd-check"></span></div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-actions">
+<button type="button" class="cancel-btn" id="editAppCancelBtn">Batal</button>
+<button type="submit" class="submit-btn">Simpan</button>
+</div>
+</form>
+</div>
+</div>
 <div id="editModal" class="modal-overlay hidden">
 <div id="editModalBackdrop" class="modal-backdrop"></div>
 <div class="modal-box">
@@ -437,11 +433,11 @@
 <div class="modal-box">
 <div class="modal-head"><div><h3 id="rvarEditTitle">Tambah Paket Reseller</h3><p id="rvarEditSub" class="modal-sub"></p></div><button id="rvarEditClose" class="modal-close-btn" type="button">×</button></div>
 <form id="rvarEditForm" class="modal-form">
-<input id="rvarAppName" class="form-input" placeholder="Nama Aplikasi" required>
-<input id="rvarCategory" class="form-input" placeholder="Kategori" required>
-<input id="rvarDuration" class="form-input" placeholder="Durasi" required>
-<input id="rvarPrice" class="form-input" placeholder="Harga reseller (mis. 40K)" required>
-<div class="adm-field" style="margin:0"><label for="rvarStatus">STATUS</label><div class="adm-input">
+<div class="adm-field"><label for="rvarAppName">NAMA APLIKASI</label><div class="adm-input"><input id="rvarAppName" required></div></div>
+<div class="adm-field"><label for="rvarCategory">KATEGORI</label><div class="adm-input"><input id="rvarCategory" required></div></div>
+<div class="adm-field"><label for="rvarDuration">DURASI</label><div class="adm-input"><input id="rvarDuration" required></div></div>
+<div class="adm-field"><label for="rvarPrice">HARGA</label><div class="adm-input"><input id="rvarPrice" required></div></div>
+<div class="adm-field"><label for="rvarStatus">STATUS</label><div class="adm-input">
 <div class="dd" id="rvarStatusDD">
 <input type="hidden" id="rvarStatus" value="Ready">
 <button type="button" class="dd-btn"><span id="rvarStatusLabel">Ready</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
@@ -451,7 +447,7 @@
 </div>
 </div>
 </div></div>
-<textarea id="rvarNotes" class="form-input" rows="2" placeholder="Catatan (opsional)"></textarea>
+<div class="adm-field"><label for="rvarNotes">CATATAN</label><div class="adm-input"><textarea id="rvarNotes" rows="2"></textarea></div></div>
 <div class="modal-actions"><button id="rvarEditCancel" type="button" class="cancel-btn">Batal</button><button id="btnSubmitRvarEdit" type="submit" class="submit-btn">Simpan</button></div>
 </form>
 </div>
@@ -527,14 +523,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=12" defer></script>
-<script src="js/admin-modules.js?v=12" defer></script>
-<script src="js/admin.js?v=12" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=12" defer></script>
-<script src="js/admin-stock.js?v=12" defer></script>
-<script src="js/admin-orders.js?v=12" defer></script>
-<script src="js/admin-resellers.js?v=12" defer></script>
-<script src="js/admin-dashboard.js?v=12" defer></script>
-<script src="js/admin-activity.js?v=12" defer></script>
+<script src="js/admin-ui.js?v=13" defer></script>
+<script src="js/admin-modules.js?v=13" defer></script>
+<script src="js/admin.js?v=13" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=13" defer></script>
+<script src="js/admin-stock.js?v=13" defer></script>
+<script src="js/admin-orders.js?v=13" defer></script>
+<script src="js/admin-resellers.js?v=13" defer></script>
+<script src="js/admin-dashboard.js?v=13" defer></script>
+<script src="js/admin-activity.js?v=13" defer></script>
 </body>
 </html>
