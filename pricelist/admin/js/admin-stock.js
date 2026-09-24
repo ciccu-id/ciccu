@@ -62,18 +62,29 @@ list.appendChild(box);
 });
 }
 function buildStockRow(it){
-var row=ce('div','fs-item');
-var info=ce('div','fs-item-info');
-var preview='';
-try{var obj=JSON.parse(it.fields);preview=Object.keys(obj).map(function(k){return k+': '+(it.status==='available'?maskVal(obj[k]):'•••')}).join(' | ')}catch(e){preview='(data tidak valid)'}
-info.appendChild(ce('p','fs-item-name','#'+it.id+' — '+preview));
-var metaP=ce('p','fs-item-price');
+var card=ce('div','stk-card');
+var head=ce('div','stk-card-head');
+var idgrp=ce('div','stk-card-idgrp');
+idgrp.appendChild(ce('span','stk-card-id','#'+it.id));
 var pl=stockPill(it.status);
-metaP.appendChild(ce('span','pill '+pl.cls,pl.txt));
-if(it.sold_at)metaP.appendChild(document.createTextNode(' • terjual '+it.sold_at));
-info.appendChild(metaP);
-row.appendChild(info);
-var act=ce('div','fs-item-actions');
+idgrp.appendChild(ce('span','pill '+pl.cls,pl.txt));
+head.appendChild(idgrp);
+var dateTxt=(it.status==='sold'&&it.sold_at)?('terjual '+String(it.sold_at).slice(0,16)):('dibuat '+String(it.created_at||'').slice(0,16));
+head.appendChild(ce('span','stk-card-date',dateTxt));
+card.appendChild(head);
+var fields=ce('div','stk-fields');
+var obj={};
+try{obj=JSON.parse(it.fields)||{}}catch(e){obj={}}
+var keys=Object.keys(obj);
+if(!keys.length)fields.appendChild(ce('div','empty-state','Data tidak valid'));
+keys.forEach(function(k){
+var f=ce('div','stk-field');
+f.appendChild(ce('span','stk-field-label',k));
+f.appendChild(ce('span','stk-field-val',it.status==='available'?maskVal(obj[k]):'•••'));
+fields.appendChild(f);
+});
+card.appendChild(fields);
+var act=ce('div','stk-actions');
 var viewBtn=ce('button','fs-edit-btn stk-inline','Lihat');
 viewBtn.type='button';
 viewBtn.addEventListener('click',function(){viewStockItem(it)});
@@ -111,13 +122,11 @@ if(it.status!=='sold'){
 menu.appendChild(kebabItem('Edit',false,function(){stockOpenEdit(it)}));
 menu.appendChild(kebabItem(it.status==='available'?'Nonaktifkan':'Aktifkan',false,function(){toggleStockItem(it)}));
 }
-if(it.status==='available'){
-menu.appendChild(kebabItem('Hapus',true,function(){deleteStockItem(it)}));
-}
+if(it.status==='available'){menu.appendChild(kebabItem('Hapus',true,function(){deleteStockItem(it)}))}
 kw.appendChild(menu);
 act.appendChild(kw);
-row.appendChild(act);
-return row;
+card.appendChild(act);
+return card;
 }
 function kebabItem(label,danger,fn){
 var b=ce('button','kebab-item'+(danger?' danger':''),label);
