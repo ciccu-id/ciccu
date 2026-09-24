@@ -1,4 +1,4 @@
-import{listStock,countAvailable}from'../../lib/db.js';
+import{listStock,countAvailable}from'../lib/db.js';
 export async function onRequest(context){
 const{request,env}=context;
 const url=new URL(request.url);
