@@ -789,6 +789,8 @@ var btnCollapseAll=document.getElementById('btnCollapseAll');
 if(btnCollapseAll)btnCollapseAll.addEventListener('click',collapseAll);
 var btnReorder=document.getElementById('btnReorder');
 if(btnReorder)btnReorder.addEventListener('click',openReorderModal);
+var btnReorderTop=document.getElementById('btnReorderTop');
+if(btnReorderTop)btnReorderTop.addEventListener('click',openReorderModal);
 var btnSaveReorder=document.getElementById('btnSaveReorder');
 if(btnSaveReorder)btnSaveReorder.addEventListener('click',saveReorderModal);
 var btnImport=document.getElementById('btnImport');
