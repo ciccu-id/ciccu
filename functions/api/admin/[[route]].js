@@ -1,5 +1,6 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
-import{getVariant,listCatalog,createVariant,updateVariant,deleteVariant,getTemplate,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
+import{getVariant,listCatalog,createVariant,updateVariant,deleteVariant,getTemplate,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
+import{manualSettle,retryFulfill,refundOrder,allocateStock}from'../../lib/fulfillment.js';
 import{getProvider}from'../../lib/payment/provider.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, x-admin-password'};
 function truncate(s,m){return s?String(s).slice(0,m):''}
@@ -68,7 +69,7 @@ const to=setTimeout(function(){ctl.abort()},8000);
 let res;
 try{res=await fetch(u.href,{redirect:'follow',signal:ctl.signal,headers:{'User-Agent':'CiccuLogoBot/1.0'}})}catch(e){clearTimeout(to);return{ok:false,error:'Gagal mengambil gambar: sumber tidak terjangkau'}}
 clearTimeout(to);
-if(!res.ok)return err('Sumber mengembalikan status '+res.status,502);
+if(!res.ok)return{ok:false,error:'Sumber mengembalikan status '+res.status};
 const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
 if(LOGO_CT.indexOf(ct)<0)return{ok:false,error:'URL bukan gambar ('+ct+')'};
 const buf=await res.arrayBuffer();
@@ -98,6 +99,7 @@ if(q==='/stats'&&m==='GET'){
 const oc=await env.DB.prepare('SELECT COUNT(*) AS c FROM rsl_orders').first();
 const dv=await env.DB.prepare("SELECT COUNT(*) AS c, COALESCE(SUM(total_amount),0) AS rev FROM rsl_orders WHERE status='delivered'").first();
 const pd=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_orders WHERE status='pending_payment'").first();
+const na=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_orders WHERE status='needs_attention'").first();
 const sa=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_stock_items WHERE status='available'").first();
 const ls=await env.DB.prepare("SELECT COUNT(*) AS c FROM (SELECT p.id FROM rsl_pricelist p JOIN rsl_stock_items s ON s.variant_id=p.id GROUP BY p.id HAVING SUM(CASE WHEN s.status='available' THEN 1 ELSE 0 END)<=5)").first();
 const ro=await env.DB.prepare("SELECT o.id,o.total_amount,o.status,o.created_at,COALESCE(r.username,'') AS username FROM rsl_orders o LEFT JOIN rsl_resellers r ON r.id=o.reseller_id ORDER BY o.id DESC LIMIT 5").all();
@@ -111,7 +113,7 @@ const nnow=nowStr().slice(0,16);
 const ns=norm(st.flash_sale_start),ne=norm(st.flash_sale_end);
 flash={name:st.flash_sale_name||'Flash Sale',start:st.flash_sale_start||'',end:st.flash_sale_end||'',active:!!(ns&&ne&&ns<=nnow&&nnow<=ne),items:fi?fi.c:0};
 }
-return json({orders:{total:oc?oc.c:0,delivered:dv?dv.c:0,pending:pd?pd.c:0},revenue:dv?dv.rev:0,stock:{available:sa?sa.c:0,low:ls?ls.c:0},recent_orders:ro.results,low_stock:lsl.results,flash_sale:flash});
+return json({orders:{total:oc?oc.c:0,delivered:dv?dv.c:0,pending:pd?pd.c:0,needs_attention:na?na.c:0},revenue:dv?dv.rev:0,stock:{available:sa?sa.c:0,low:ls?ls.c:0},recent_orders:ro.results,low_stock:lsl.results,flash_sale:flash});
 }
 if(q==='/pricelist'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM pricelist').all();return json(results)}
 if(q==='/forms'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM app_forms').all();return json(results)}
@@ -288,10 +290,11 @@ if(m==='DELETE'&&!sub){await deleteAvailableStock(env,id);await audit(env,'admin
 if(q.startsWith('/low-stock')&&m==='GET'){const rows=await lowStock(env,url.searchParams.get('threshold'));return json(rows)}
 if(q==='/orders'&&m==='GET'){
 const st=url.searchParams.get('status')||'';
+const qq=url.searchParams.get('q')||'';
+const rg=url.searchParams.get('range')||'';
 const lim=Math.min(num(url.searchParams.get('limit'))||20,100);
 const off=Math.max(num(url.searchParams.get('offset'))||0,0);
-const r=await env.DB.prepare("SELECT o.id,o.reseller_id,o.status,o.total_amount,o.provider,o.created_at,o.paid_at,o.delivered_at,COALESCE(r.username,'') AS username FROM rsl_orders o LEFT JOIN rsl_resellers r ON r.id=o.reseller_id WHERE (?='' OR o.status=?) ORDER BY o.id DESC LIMIT ? OFFSET ?").bind(st,st,lim,off).all();
-const orders=r.results;
+const orders=await listOrdersAdmin(env,{status:st,q:qq,range:rg,limit:lim,offset:off});
 if(orders.length){
 const ids=orders.map(o=>o.id);
 const it=await env.DB.prepare(`SELECT order_id,duration FROM rsl_order_items WHERE order_id IN (${ids.map(()=>'?').join(',')})`).bind(...ids).all();
@@ -304,13 +307,43 @@ else o.expires_at=null;
 }
 return json(orders);
 }
-const om=q.match(/^\/orders\/(\d+)(\/(settle|fulfill|refund))?$/);
+if(q==='/orders/needs-count'&&m==='GET'){
+const c=await countNeedsAttention(env);
+return json({count:c});
+}
+const orm=q.match(/^\/orders\/(\d+)\/items\/(\d+)\/revisions$/);
+if(orm&&m==='POST'){
+const orderId=num(orm[1]);const itemId=num(orm[2]);
+const raw=b.fields;
+if(!raw||typeof raw!=='object'||Array.isArray(raw))return err('fields wajib objek',400);
+const f=cleanFields(raw);
+if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
+const note=truncate(b.note||'',1000);
+if(!note)return err('Catatan revisi wajib diisi',400);
+const chk=await env.DB.prepare('SELECT id FROM rsl_order_items WHERE id=? AND order_id=?').bind(itemId,orderId).first();
+if(!chk)return err('Item order tidak ditemukan',404);
+const rid=await addOrderRevision(env,itemId,f,note,'admin');
+await audit(env,'admin',null,'order.revision','order_item',itemId,{order:orderId,fields:Object.keys(f).length},ip);
+return json({success:true,id:rid},201);
+}
+const om=q.match(/^\/orders\/(\d+)(\/(settle|fulfill|refund|process|set-status))?$/);
 if(om){
 const id=num(om[1]);const act=om[3];
-if(m==='GET'&&!act){const o=await getOrder(env,id,null);if(!o)return err('Order tidak ditemukan',404);const pays=await env.DB.prepare('SELECT provider,provider_tx_id,status,gross_amount,raw_status,created_at FROM rsl_payments WHERE order_id=? ORDER BY id').bind(id).all();o.payments=pays.results;o.credentials=await listOrderCredentials(env,id);if(o.delivered_at&&o.items)o.items.forEach(it=>{const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});return json(o)}
+if(m==='GET'&&!act){const o=await getOrderAdmin(env,id);if(!o)return err('Order tidak ditemukan',404);if(o.delivered_at&&o.items)o.items.forEach(it=>{const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});return json(o)}
 if(m==='POST'&&act==='settle'){const r=await manualSettle(env,id,null,ip);return json(r)}
 if(m==='POST'&&act==='fulfill'){const r=await retryFulfill(env,id,null,ip);return json(r)}
 if(m==='POST'&&act==='refund'){const r=await refundOrder(env,id,null,ip,!!b.return_stock);return json(r)}
+if(m==='POST'&&act==='process'){const r=await allocateStock(env,id);await audit(env,'admin',null,'order.manual_process','order',id,r,ip);return json(r)}
+if(m==='POST'&&act==='set-status'){
+const st=String(b.status||'');
+if(st!=='pending_payment'&&st!=='cancelled')return err('Status tujuan tidak valid',400);
+const cur=await env.DB.prepare('SELECT status FROM rsl_orders WHERE id=?').bind(id).first();
+if(!cur)return err('Order tidak ditemukan',404);
+if(st==='pending_payment'){await setOrderStatus(env,id,'pending_payment')}
+else{await env.DB.prepare("UPDATE rsl_orders SET status='cancelled',cancelled_at=? WHERE id=?").bind(nowStr(),id).run()}
+await audit(env,'admin',null,'order.set_status','order',id,{from:cur.status,to:st},ip);
+return json({success:true});
+}
 }
 if(q==='/audit'&&m==='GET'){
 const lim=Math.min(num(url.searchParams.get('limit'))||50,200);
