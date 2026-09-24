@@ -68,7 +68,7 @@ const to=setTimeout(function(){ctl.abort()},8000);
 let res;
 try{res=await fetch(u.href,{redirect:'follow',signal:ctl.signal,headers:{'User-Agent':'CiccuLogoBot/1.0'}})}catch(e){clearTimeout(to);return{ok:false,error:'Gagal mengambil gambar: sumber tidak terjangkau'}}
 clearTimeout(to);
-if(!res.ok)return{ok:false,error:'Sumber mengembalikan status '+res.status};
+if(!res.ok)return err('Sumber mengembalikan status '+res.status,502);
 const ct=(res.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
 if(LOGO_CT.indexOf(ct)<0)return{ok:false,error:'URL bukan gambar ('+ct+')'};
 const buf=await res.arrayBuffer();
@@ -258,7 +258,7 @@ const raw=b.fields;
 if(!raw||typeof raw!=='object'||Array.isArray(raw))return err('fields wajib objek',400);
 const f=cleanFields(raw);
 if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
-const nid=await addStock(env,id,f);
+const nid=await addStock(env,id,f,b.buyer_note);
 const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(id).first();
 if(v)await setTemplate(env,v.app_name,Object.keys(f));
 await audit(env,'admin',null,'stock.add','variant',id,{stock:nid,fields:Object.keys(f).length},ip);
@@ -269,7 +269,7 @@ const raw=b.fields;
 if(!raw||typeof raw!=='object'||Array.isArray(raw))return err('fields wajib objek',400);
 const f=cleanFields(raw);
 if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
-const up=await env.DB.prepare("UPDATE rsl_stock_items SET fields=? WHERE id=? AND status IN ('available','disabled')").bind(JSON.stringify(f),id).run();
+const up=await env.DB.prepare("UPDATE rsl_stock_items SET fields=?,buyer_note=? WHERE id=? AND status IN ('available','disabled')").bind(JSON.stringify(f),String(b.buyer_note||'').slice(0,500),id).run();
 if(!up.meta||!up.meta.changes)return err('Stok terkunci (terjual) atau tidak ditemukan',409);
 const si=await env.DB.prepare('SELECT variant_id FROM rsl_stock_items WHERE id=?').bind(id).first();
 if(si){const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(si.variant_id).first();if(v)await setTemplate(env,v.app_name,Object.keys(f));}
