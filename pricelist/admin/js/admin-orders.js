@@ -82,25 +82,41 @@ if(more){more.disabled=false;more.textContent='Muat Lebih Banyak'}
 function buildOrderCard(o){
 var card=ce('div','ord-card '+ordUrg(o.status));
 card.setAttribute('data-id',o.id);
-var top=ce('div','ord-top');
-top.appendChild(ce('span','ord-code',o.order_code||('#'+o.id)));
+var head=ce('div','ord-head');
+var hl=ce('div','ord-head-left');
+hl.appendChild(ce('span','ord-code',o.order_code||('#'+o.id)));
+head.appendChild(hl);
+var hr=ce('div','ord-head-right');
 var sp=ordStatusPill(o.status);
-top.appendChild(ce('span',sp.cls,sp.txt));
-card.appendChild(top);
-card.appendChild(ce('p','ord-res',(o.username||'?')+(o.display_name?(' • '+o.display_name):'')));
+hr.appendChild(ce('span',sp.cls,sp.txt));
+head.appendChild(hr);
+card.appendChild(head);
+var body=ce('div','ord-body');
+var res=ce('div','ord-res');
+res.appendChild(admSvg('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z','.75rem','.75rem'));
+res.appendChild(ce('span','ord-res-txt',(o.username||'?')+(o.display_name?(' • '+o.display_name):'')));
+body.appendChild(res);
 var sum=(o.items_summary||[]).map(function(i){return i.app_name+' ×'+i.qty}).join(', ');
-card.appendChild(ce('p','ord-sum',sum||'Tidak ada item'));
-var bot=ce('div','ord-bot');
-bot.appendChild(ce('span','ord-date',ordFmtDT(o.created_at)));
-bot.appendChild(ce('span','ord-total',ordFmtRp(o.total_amount)));
-card.appendChild(bot);
+body.appendChild(ce('p','ord-sum',sum||'Tidak ada item'));
 if(o.status==='delivered'&&o.expires_at){
-var cdw=ce('div','ord-cd');
-var t=ce('span','cd-tag');
-t.setAttribute('data-cd',o.expires_at);
-cdw.appendChild(t);
-card.appendChild(cdw);
+var cd=ce('div','ord-cd');
+cd.appendChild(document.createTextNode('Masa aktif: '));
+var ct=ce('span','cd-tag');
+ct.setAttribute('data-cd',o.expires_at);
+cd.appendChild(ct);
+body.appendChild(cd);
 }
+var tr=ce('div','ord-total-row');
+tr.appendChild(ce('span','ord-total-lbl','Total'));
+tr.appendChild(ce('span','ord-total',ordFmtRp(o.total_amount)));
+body.appendChild(tr);
+card.appendChild(body);
+var foot=ce('div','ord-foot');
+foot.appendChild(ce('span','ord-date',ordFmtDT(o.created_at)));
+var open=ce('span','ord-open');
+open.appendChild(admSvg('M9 18l6-6-6-6','.75rem','.75rem'));
+foot.appendChild(open);
+card.appendChild(foot);
 card.addEventListener('click',function(){openOrderDetail(o.id)});
 return card;
 }
