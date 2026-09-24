@@ -10,9 +10,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=15">
-<link rel="stylesheet" href="css/admin-katalog.css?v=15">
-<link rel="stylesheet" href="css/admin-reseller.css?v=15">
+<link rel="stylesheet" href="css/admin.css?v=16">
+<link rel="stylesheet" href="css/admin-katalog.css?v=16">
+<link rel="stylesheet" href="css/admin-reseller.css?v=16">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -59,7 +59,24 @@
 <header class="adm-topbar">
 <label for="navToggle" class="adm-burger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></label>
 <h1 id="admTopbarTitle" class="adm-topbar-title">Dashboard</h1>
+<div class="topbar-prod">
+<label for="addAppSheetToggle" class="topbar-icon-btn" title="Tambah Aplikasi" aria-label="Tambah Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+</label>
+<button id="btnReorderTop" type="button" class="topbar-icon-btn" title="Urutan Aplikasi" aria-label="Urutan Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m16 16 4 4 4-4"/><path d="M20 8V20"/></svg>
+</button>
+</div>
 <input id="adminSearchInputTop" class="topbar-search" type="text" placeholder="Cari aplikasi / kategori / status...">
+<div class="topbar-rsl">
+<label for="addAppSheetToggle" class="topbar-icon-btn" title="Tambah Aplikasi" aria-label="Tambah Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+</label>
+<button id="btnRslReorderTop" type="button" class="topbar-icon-btn" title="Urutan Aplikasi" aria-label="Urutan Aplikasi">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h13M3 12h9M3 18h5"/><path d="m16 16 4 4 4-4"/><path d="M20 8V20"/></svg>
+</button>
+<input id="rpriceSearchTop" class="topbar-search" type="text" placeholder="Cari aplikasi / kategori / durasi...">
+</div>
 <span id="savingIndicator" class="saving-ind hidden"><span class="saving-dot"></span>Tersimpan</span>
 <button id="btnLogout" type="button" class="adm-logout">Keluar</button>
 </header>
@@ -525,14 +542,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=15" defer></script>
-<script src="js/admin-modules.js?v=15" defer></script>
-<script src="js/admin.js?v=15" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=15" defer></script>
-<script src="js/admin-stock.js?v=15" defer></script>
-<script src="js/admin-orders.js?v=15" defer></script>
-<script src="js/admin-resellers.js?v=15" defer></script>
-<script src="js/admin-dashboard.js?v=15" defer></script>
-<script src="js/admin-activity.js?v=15" defer></script>
+<script src="js/admin-ui.js?v=16" defer></script>
+<script src="js/admin-modules.js?v=16" defer></script>
+<script src="js/admin.js?v=16" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=16" defer></script>
+<script src="js/admin-stock.js?v=16" defer></script>
+<script src="js/admin-orders.js?v=16" defer></script>
+<script src="js/admin-resellers.js?v=16" defer></script>
+<script src="js/admin-dashboard.js?v=16" defer></script>
+<script src="js/admin-activity.js?v=16" defer></script>
 </body>
 </html>
