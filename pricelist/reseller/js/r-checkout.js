@@ -6,7 +6,13 @@ try{if(String(str).trim().startsWith('['))return JSON.parse(str).map(function(i)
 return String(str).split(',').map(function(s){return s.trim()}).filter(Boolean);
 }
 function ensureItemForm(item){
-if(!item.form_fields)item.form_fields='';
+if(!item.form_fields){
+var found=null;
+for(var i=0;i<RES.catalog.length;i++){
+if(RES.catalog[i].id===item.variant_id){found=RES.catalog[i];break}
+}
+item.form_fields=found?(found.form_fields||''):'';
+}
 if(!Array.isArray(item.formData))item.formData=[{}];
 if(typeof item.separateForms!=='boolean')item.separateForms=false;
 if(typeof item.useFirstItemData!=='boolean')item.useFirstItemData=false;
@@ -168,6 +174,7 @@ function buildItems(){
 const firstByApp={};
 for(let i=0;i<RES.cart.length;i++){
 const it=RES.cart[i];
+ensureItemForm(it);
 const key=it.app_name;
 if(firstByApp[key]===undefined&&parseFormFields(it.form_fields).length&&!it.useFirstItemData)firstByApp[key]=i;
 }
