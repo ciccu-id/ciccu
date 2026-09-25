@@ -2,6 +2,10 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Quicksand',sans-serif;background:var(--blue-50);color:var(--choco-600);min-height:100vh;font-size:13px;-webkit-tap-highlight-color:transparent;padding-bottom:4.5rem}
 @media(min-width:768px){body{padding-bottom:0}}
+@media(max-width:767px){
+body:has(#mainContent[style*="flex"] #section-dashboard:not(.hidden)),body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)){background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-size:100% 100%}
+body:has(#mainContent[style*="flex"] #section-dashboard:not(.hidden)) .adm-shell,body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)) .adm-shell,body:has(#mainContent[style*="flex"] #section-dashboard:not(.hidden)) .adm-main,body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)) .adm-main,body:has(#mainContent[style*="flex"] #section-dashboard:not(.hidden)) .adm-content,body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)) .adm-content{background:transparent}
+}
 img{max-width:100%;display:block}
 button{cursor:pointer;font-family:inherit;border:none;background:none}
 input,textarea,select{font-family:inherit}
@@ -33,7 +37,7 @@ input,textarea,select{font-family:inherit}
 .adm-main{flex:1;min-width:0;display:flex;flex-direction:column}
 @media(min-width:768px){.adm-main{margin-left:var(--sbw)}}
 .adm-topbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--blue-200);display:flex;align-items:center;gap:.625rem;padding:.625rem .75rem}
-@media(max-width:767px){body:has(#section-produk:not(.hidden)) .adm-topbar{display:none}}
+@media(max-width:767px){body:has(#section-produk:not(.hidden)) .adm-topbar,body:has(#section-dashboard:not(.hidden)) .adm-topbar{display:none}}
 @media(min-width:768px){.adm-topbar{padding:.75rem 1.5rem}}
 @media(min-width:1024px){.adm-topbar{padding:.75rem 2rem}}
 .adm-burger{display:flex;align-items:center;justify-content:center;width:2.25rem;height:2.25rem;border-radius:var(--r-md);border:1px solid var(--blue-200);background:var(--w);color:var(--choco-600);cursor:pointer;box-shadow:var(--sh-sm);flex-shrink:0}
