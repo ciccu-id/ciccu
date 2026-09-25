@@ -42,15 +42,16 @@
 .dp-tbl-zone{position:relative;margin-top:.55rem}
 .dp-tbl-wrap{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .dp-tbl-wrap::-webkit-scrollbar{display:none}
-.dp-tbl{display:grid;grid-template-columns:.7fr 1.5fr 1.2fr 1.1fr .8fr;min-width:27rem}
+.dp-tbl{display:grid;grid-template-columns:1.15fr 1.05fr 1fr .95fr 1.1fr;min-width:30rem}
 .dp-tbl-fade{position:absolute;top:0;bottom:0;right:-.9rem;width:2.4rem;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),var(--w))}
-.dp-th{font-size:.56rem;letter-spacing:.8px;font-weight:800;color:var(--choco-400);padding:.4rem .2rem;text-transform:uppercase}
+.dp-th{font-size:.56rem;letter-spacing:.8px;font-weight:800;color:var(--choco-400);padding:.4rem .2rem;text-transform:uppercase;white-space:nowrap}
 .dp-tr{display:contents}
 .dp-tr>*{display:flex;align-items:center;gap:.35rem;padding:.55rem .2rem;border-top:1px dashed var(--blue-100);font-size:.7rem;font-weight:700;color:var(--choco-500)}
-.dp-tr .oid{color:var(--choco-700);font-weight:800}
+.dp-tr .oid{color:var(--choco-700);font-weight:800;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.62rem;letter-spacing:.02em;white-space:nowrap}
 .dp-tr .tot{color:var(--choco-700)}
+.dp-tr .when{font-size:.62rem;white-space:nowrap}
 .dp-ava{width:1.35rem;height:1.35rem;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--butter-100);border:1px solid var(--butter-300);color:var(--choco-700);font-size:.5rem;font-weight:800}
-.dp-chip{padding:.22rem .55rem;border-radius:.6rem;font-size:.58rem;font-weight:800;letter-spacing:.4px}
+.dp-chip{padding:.22rem .55rem;border-radius:.6rem;font-size:.58rem;font-weight:800;letter-spacing:.4px;white-space:nowrap}
 .dp-chip.ok{background:var(--sage-50);border:1px solid var(--sage-200);color:var(--sage-600)}
 .dp-chip.off{background:var(--g100);border:1px solid var(--g200);color:var(--g600)}
 .dp-chip.bad{background:var(--brick-50);border:1px solid var(--brick-200);color:var(--brick-500)}
@@ -96,7 +97,7 @@
 .dash-titlehead h2{font-size:1.75rem}
 .dash-hero{padding:1.125rem 1.25rem}
 .dash-stats{grid-template-columns:repeat(4,1fr);gap:1rem}
-.dp-tbl{min-width:32rem}
+.dp-tbl{min-width:34rem}
 .dp-qa-grid{grid-template-columns:repeat(4,1fr);gap:.75rem}
 }
 @media(min-width:1024px){
