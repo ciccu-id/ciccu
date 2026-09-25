@@ -211,7 +211,7 @@ onEnd:function(){
 var items=list.querySelectorAll('.fs-item');
 var newOrder=[];
 items.forEach(function(el,index){newOrder.push({id:parseInt(el.getAttribute('data-id'),10),flash_sort_order:index+1})});
-newOrder.forEach(function(o){var d=globalAdminData.find(function(x){return x.id===o.id});if(d)d.flash_sort_order=o.flash_sort_order});
+newOrder.forEach(function(o){var d=globalAdminData.find(function(x){return x.id===o.id});if(d)d.flash_sort_order=o.newOrder||d.flash_sort_order});
 fetch('/api/admin/flashsale/reorder',{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({order:newOrder})})
 .then(handleResponseStatus)
 .then(function(){var ind=document.getElementById('savingIndicator');if(ind){ind.classList.remove('hidden');setTimeout(function(){ind.classList.add('hidden')},2000)}})
@@ -301,7 +301,7 @@ if(!replyText||!replyText.value)return;
 var btn=e.target.querySelector('button[type="submit"]');
 var oldText=btn?btn.textContent:'';
 if(btn){btn.textContent='Menyimpan...';btn.disabled=true}
-fetch('/api/admin/testimoni/'+currentReplyId,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({balasan_admin:replyText.value})})
+fetch('/api/admin/testimoni/'+currentReplyId,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-password':sessionPass},body:JSON.stringify({balasan_admin:replyText})})
 .then(handleResponseStatus)
 .then(function(){closeAdminReplyModal();loadAdminTestimoni();uiToast('Balasan tersimpan.')})
 .catch(function(){uiAlert('Gagal menyimpan balasan.','Kesalahan')})
@@ -315,6 +315,21 @@ fetch('/api/admin/testimoni/'+id,{method:'DELETE',headers:{'x-admin-password':se
 .catch(function(){uiAlert('Gagal menghapus testimoni.','Kesalahan')});
 },{danger:true,okText:'Hapus'});
 }
+(function(){
+var _sheetY=0;
+function grabSheetScroll(){_sheetY=window.scrollY||window.pageYOffset||0}
+function restoreSheetScroll(){window.scrollTo(0,_sheetY)}
+document.addEventListener('click',function(e){
+var t=e.target;
+if(!t)return;
+var hit=(t.closest&&t.closest('label[for="addAppSheetToggle"]'))||(t.id==='addAppSheetToggle');
+if(!hit)return;
+grabSheetScroll();
+setTimeout(restoreSheetScroll,0);
+setTimeout(restoreSheetScroll,60);
+setTimeout(restoreSheetScroll,140);
+},true);
+})();
 document.addEventListener('DOMContentLoaded',function(){
 var btnLogin=document.getElementById('btnLogin');if(btnLogin)btnLogin.addEventListener('click',loginAdmin);
 var passInput=document.getElementById('adminPasswordInput');if(passInput)passInput.addEventListener('keydown',function(e){if(e.key==='Enter')loginAdmin()});
