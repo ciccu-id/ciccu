@@ -10,12 +10,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=21">
-<link rel="stylesheet" href="css/admin-katalog.css?v=21">
-<link rel="stylesheet" href="css/admin-reseller.css?v=21">
-<link rel="stylesheet" href="css/admin-resellers.css?v=21">
-<link rel="stylesheet" href="css/admin-orders.css?v=21">
-<link rel="stylesheet" href="css/admin-dashboard.css?v=21">
+<link rel="stylesheet" href="css/admin.css?v=22">
+<link rel="stylesheet" href="css/admin-katalog.css?v=22">
+<link rel="stylesheet" href="css/admin-reseller.css?v=22">
+<link rel="stylesheet" href="css/admin-resellers.css?v=22">
+<link rel="stylesheet" href="css/admin-orders.css?v=22">
+<link rel="stylesheet" href="css/admin-dashboard.css?v=22">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -236,8 +236,8 @@
 <input id="orderSearchInput" class="ord-search" type="text" placeholder="Kode / reseller / aplikasi / WA...">
 </div>
 <div class="rsl-accounts-row">
-<a href="#cardTokens" class="rsl-hbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg>Token</a>
-<a href="#cardAddReseller" class="rsl-hbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Reseller</a>
+<button type="button" class="rsl-hbtn" data-racc-toggle="cardTokens"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg>Token</button>
+<button type="button" class="rsl-hbtn" data-racc-toggle="cardAddReseller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Reseller</button>
 <input id="resellerSearchInput" class="racc-search" type="text" placeholder="Cari reseller / username / WA...">
 </div>
 </div>
@@ -257,7 +257,7 @@
 </div>
 <div id="pendingResellerList" class="racc-prof-list"></div>
 </section>
-<section id="cardTokens" class="racc-panel">
+<section id="cardTokens" class="racc-panel collapsed">
 <div class="racc-phead">
 <span class="racc-hic warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></span>
 <span class="racc-ptitle">TOKEN PENDAFTARAN</span>
@@ -265,22 +265,23 @@
 </div>
 <div class="racc-tform">
 <div class="racc-trow">
-<div class="racc-sel">
-<select id="tokenDuration">
-<option value="24">24 Jam</option>
-<option value="168" selected>7 Hari</option>
-<option value="720">30 Hari</option>
-</select>
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+<div class="dd" id="tokenDurationDD">
+<input type="hidden" id="tokenDuration" value="168">
+<button type="button" class="dd-btn"><span id="tokenDurationLabel">7 Hari</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+<div class="dd-menu">
+<div class="dd-item" data-value="24"><span>24 Jam</span><span class="dd-check"></span></div>
+<div class="dd-item active" data-value="168"><span>7 Hari</span><span class="dd-check"></span></div>
+<div class="dd-item" data-value="720"><span>30 Hari</span><span class="dd-check"></span></div>
+</div>
 </div>
 <button id="btnCreateToken" type="button" class="racc-btn-butter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Buat Token</button>
 </div>
 <input id="tokenLabelInput" class="racc-inp" type="text" placeholder="Label (opsional, mis. untuk Budi)">
 </div>
 <p class="racc-note">Token hanya ditampilkan sekali saat dibuat. Token sekali pakai dan terhapus otomatis saat kedaluwarsa atau terpakai. Pendaftaran tetap memerlukan konfirmasi admin.</p>
-<div id="regTokenList" class="racc-empty">Tidak ada token aktif.</div>
+<div id="regTokenList" class="racc-tlist"></div>
 </section>
-<section id="cardAddReseller" class="racc-panel">
+<section id="cardAddReseller" class="racc-panel collapsed">
 <div class="racc-phead">
 <span class="racc-hic choco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
 <span class="racc-ptitle">TAMBAH RESELLER</span>
@@ -603,14 +604,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=21" defer></script>
-<script src="js/admin-modules.js?v=21" defer></script>
-<script src="js/admin.js?v=21" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=21" defer></script>
-<script src="js/admin-stock.js?v=21" defer></script>
-<script src="js/admin-orders.js?v=21" defer></script>
-<script src="js/admin-resellers.js?v=21" defer></script>
-<script src="js/admin-dashboard.js?v=21" defer></script>
-<script src="js/admin-activity.js?v=21" defer></script>
+<script src="js/admin-ui.js?v=22" defer></script>
+<script src="js/admin-modules.js?v=22" defer></script>
+<script src="js/admin.js?v=22" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=22" defer></script>
+<script src="js/admin-stock.js?v=22" defer></script>
+<script src="js/admin-orders.js?v=22" defer></script>
+<script src="js/admin-resellers.js?v=22" defer></script>
+<script src="js/admin-dashboard.js?v=22" defer></script>
+<script src="js/admin-activity.js?v=22" defer></script>
 </body>
 </html>
