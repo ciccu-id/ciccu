@@ -1,4 +1,5 @@
 var ORD_OFFSET=0,ORD_LIMIT=20,ORD_LOADED=[],ORD_SEARCH='',ORD_SEARCH_TIMER=null;
+var ORD_CD_REG={},ORD_CD_TIMER=null,ORD_CD_SEQ=0;
 function ordHeaders(){return{'x-admin-password':sessionPass}}
 function ordFmtRp(n){return'Rp '+Number(n||0).toLocaleString('id-ID')}
 function ordFmtDT(s){
@@ -41,11 +42,71 @@ if(st==='cancelled')return'BATAL';
 if(st==='refunded')return'REFUND';
 return String(st||'-').toUpperCase();
 }
-function ordUrg(st){
-if(st==='needs_attention')return'urg-red';
-if(st==='pending_payment')return'urg-amber';
-if(st==='delivered')return'urg-green';
-return'';
+function ordBadgeSvg(mod){
+var ns='http://www.w3.org/2000/svg';
+var s=document.createElementNS(ns,'svg');
+s.setAttribute('viewBox','0 0 24 24');
+var c=document.createElementNS(ns,'circle');
+c.setAttribute('cx','12');c.setAttribute('cy','12');c.setAttribute('r','10');
+c.setAttribute('fill','#432f2e');
+s.appendChild(c);
+var p=document.createElementNS(ns,'path');
+var d;
+if(mod==='ok')d='M8 12.5l2.6 2.6L16 9.5';
+else if(mod==='amber')d='M12 7.5V12l3 1.8';
+else if(mod==='bad')d='M12 8v5M12 16h.01';
+else d='M9 9l6 6M15 9l-6 6';
+p.setAttribute('d',d);
+p.setAttribute('fill','none');
+p.setAttribute('stroke','#feefb8');
+p.setAttribute('stroke-width','2.4');
+p.setAttribute('stroke-linecap','round');
+p.setAttribute('stroke-linejoin','round');
+s.appendChild(p);
+return s;
+}
+function ordCdTick(){
+var now=Date.now();
+for(var k in ORD_CD_REG){
+var rec=ORD_CD_REG[k];
+var el=document.getElementById(k);
+if(!el||!document.body.contains(el)){delete ORD_CD_REG[k];continue}
+var rem=rec.end-now;
+if(rem<0)rem=0;
+var d=Math.floor(rem/86400000);
+var h=Math.floor((rem%86400000)/3600000);
+var m=Math.floor((rem%3600000)/60000);
+var ns=el.querySelectorAll('.n');
+if(ns.length>=3){ns[0].textContent=d;ns[1].textContent=h;ns[2].textContent=m}
+el.classList.toggle('warn',rem>0&&rem<86400000);
+if(rem<=0)el.classList.add('exp');
+}
+if(!Object.keys(ORD_CD_REG).length&&ORD_CD_TIMER){clearInterval(ORD_CD_TIMER);ORD_CD_TIMER=null}
+}
+function ordCdStart(){
+if(ORD_CD_TIMER)return;
+ORD_CD_TIMER=setInterval(ordCdTick,1000);
+}
+function ordCdAdd(el,endIso){
+var t=Date.parse(String(endIso).replace(' ','T')+'Z');
+if(isNaN(t))return;
+var id='ordcd_'+(ORD_CD_SEQ++);
+el.id=id;
+ORD_CD_REG[id]={end:t};
+ordCdTick();
+ordCdStart();
+}
+function ordCdBuild(){
+var wrap=ce('span','ord-cd');
+['h','j','m'].forEach(function(u){
+var i=document.createElement('i');
+i.appendChild(ce('span','n','0'));
+var b=document.createElement('b');
+b.textContent=u;
+i.appendChild(b);
+wrap.appendChild(i);
+});
+return wrap;
 }
 function ordConfirm(msg,fn){
 if(typeof uiConfirm==='function')uiConfirm(msg,'Konfirmasi',function(){fn()});
@@ -105,7 +166,7 @@ if(more){more.disabled=false;more.textContent='Muat Lebih Banyak'}
 });
 }
 function buildOrderCard(o){
-var card=ce('div','ord-card '+ordUrg(o.status));
+var card=ce('div','ord-card');
 card.setAttribute('data-id',o.id);
 var chead=ce('div','ord-chead');
 var doc=ce('span','ord-doc');
@@ -113,10 +174,16 @@ doc.appendChild(admSvg('M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V
 chead.appendChild(doc);
 chead.appendChild(ce('div','ord-code',o.order_code||('#'+o.id)));
 var cside=ce('span','ord-cside');
-cside.appendChild(ce('span','ord-badge '+ordBadgeMod(o.status),ordBadgeTxt(o.status)));
+var mod=ordBadgeMod(o.status);
+var badge=ce('span','ord-badge '+mod);
+var tick=ce('span','tick');
+tick.appendChild(ordBadgeSvg(mod));
+badge.appendChild(tick);
+badge.appendChild(document.createTextNode(ordBadgeTxt(o.status)));
+cside.appendChild(badge);
 if(o.status==='delivered'&&o.expires_at){
-var cd=ce('span','ord-cd');
-cd.setAttribute('data-cd',o.expires_at);
+var cd=ordCdBuild();
+ordCdAdd(cd,o.expires_at);
 cside.appendChild(cd);
 }
 chead.appendChild(cside);
@@ -132,14 +199,16 @@ m2.appendChild(document.createTextNode(ordFmtDT(o.created_at)));
 meta.appendChild(m2);
 card.appendChild(meta);
 var items=o.items_summary||[];
-items.slice(0,2).forEach(function(it){
+if(items.length){
+var it=items[0];
 var row=ce('div','ord-item');
 row.appendChild(ce('span','ord-nf',String(it.app_name||'?').charAt(0).toUpperCase()));
 row.appendChild(ce('span','ord-name',it.app_name+' ×'+it.qty));
 card.appendChild(row);
-});
-if(items.length>2)card.appendChild(ce('div','ord-extra','+'+(items.length-2)+' item lainnya'));
-if(!items.length)card.appendChild(ce('div','ord-extra','Tidak ada item'));
+if(items.length>1)card.appendChild(ce('div','ord-extra','+'+(items.length-1)+' item lainnya'));
+}else{
+card.appendChild(ce('div','ord-extra','Tidak ada item'));
+}
 var trow=ce('div','ord-trow');
 trow.appendChild(ce('span',null,'TOTAL'));
 trow.appendChild(ce('strong',null,ordFmtRp(o.total_amount)));
