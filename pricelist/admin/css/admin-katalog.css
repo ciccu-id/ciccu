@@ -1,11 +1,9 @@
 body:has(.sheet-toggle:checked){overflow:hidden}
 @media(max-width:767px){
 html:has(body #mainContent[style*="flex"] #section-produk:not(.hidden)){font-size:clamp(10.5px,3.55vw,14px)}
-body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)){background-color:var(--blue-300)}
-body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)) .adm-content,body:has(#mainContent[style*="flex"] #section-produk:not(.hidden)) .adm-main{background:transparent}
 }
-#section-produk{gap:.5rem;background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-attachment:fixed;margin:-1rem -.75rem 0;padding:0 .75rem 1rem;min-height:calc(100vh - 4rem)}
-@media(min-width:768px){#section-produk{margin:-1.25rem -1.5rem 0;padding:0 1.5rem 1rem;background:transparent}}
+#section-produk{gap:.5rem;background:transparent;margin:-1rem -.75rem 0;padding:0 .75rem 1rem;min-height:calc(100vh - 4rem)}
+@media(min-width:768px){#section-produk{margin:-1.25rem -1.5rem 0;padding:0 1.5rem 1rem}}
 .prod-bar{display:flex;align-items:center;gap:.45rem;background:var(--choco-600);border:none;border-radius:0 0 1.1rem 1.1rem;padding:calc(.6rem + env(safe-area-inset-top,0px)) .7rem .6rem;margin:0 -.75rem 0;position:sticky;top:0;z-index:20;box-shadow:0 .35rem .9rem rgba(67,47,46,.35)}
 @media(min-width:768px){.prod-bar{display:none}}
 .prod-icon-btn{width:2.6rem;height:2.6rem;border-radius:.9rem;background:rgba(254,239,184,.12);color:var(--butter-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;border:1px solid rgba(254,239,184,.28);cursor:pointer}
