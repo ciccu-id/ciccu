@@ -28,7 +28,7 @@ else v.appendChild(valNode);
 row.appendChild(v);
 return row;
 }
-function raccChipSpan(text,mod){var c=ce('span','racc-chip '+mod,text);return c}
+function raccChipSpan(text,mod){return ce('span','racc-chip '+mod,text)}
 function raccMenuBtn(label,iconPath,act,danger){
 var b=ce('button');b.type='button';
 b.appendChild(admSvg(iconPath,'.9rem','.9rem'));
@@ -39,17 +39,11 @@ return b;
 }
 function raccBuildMenu(r,isPending){
 var m=ce('div','racc-menu');
+m.appendChild(raccMenuBtn('Edit Profil','M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z','edit'));
 if(!isPending){
-if(r.whatsapp){var bw=ce('a');bw.href=waHref(r.whatsapp);bw.target='_blank';bw.rel='noopener';bw.appendChild(admSvg('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z','.9rem','.9rem'));bw.appendChild(document.createTextNode('WhatsApp'));m.appendChild(bw)}
-if(r.x_username){var bx=ce('a');bx.href=xHref(r.x_username);bx.target='_blank';bx.rel='noopener';bx.appendChild(admSvg('M4 4l6.5 8L4 20h2l5.5-6.8L16 20h4l-6.8-8.5L19.5 4H18l-5 6.2L9 4H4z','.9rem','.9rem'));bx.appendChild(document.createTextNode('X / Twitter'));m.appendChild(bx)}
-m.appendChild(raccMenuBtn('Edit Profil','M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z','edit'));
-if(!isPending)m.appendChild(raccMenuBtn('Reset Password','M3 11h10a2 2 0 0 1 2 2v8H3v-8a2 2 0 0 1 2-2zM7 11V7a5 5 0 0 1 10 0','reset'));
-if(!isPending)m.appendChild(raccMenuBtn(r.status==='suspended'?'Aktifkan Kembali':'Nonaktifkan','M12 3a9 9 0 1 0 9 9','toggle'));
-if(!isPending)m.appendChild(raccMenuBtn('Hapus','M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6z','delete',true));
-}else{
-if(r.whatsapp){var bw2=ce('a');bw2.href=waHref(r.whatsapp);bw2.target='_blank';bw2.rel='noopener';bw2.appendChild(admSvg('M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z','.9rem','.9rem'));bw2.appendChild(document.createTextNode('WhatsApp'));m.appendChild(bw2)}
-if(r.x_username){var bx2=ce('a');bx2.href=xHref(r.x_username);bx2.target='_blank';bx2.rel='noopener';bx2.appendChild(admSvg('M4 4l6.5 8L4 20h2l5.5-6.8L16 20h4l-6.8-8.5L19.5 4H18l-5 6.2L9 4H4z','.9rem','.9rem'));bx2.appendChild(document.createTextNode('X / Twitter'));m.appendChild(bx2)}
-m.appendChild(raccMenuBtn('Edit Profil','M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z','edit'));
+m.appendChild(raccMenuBtn('Reset Password','M3 11h10a2 2 0 0 1 2 2v8H3v-8a2 2 0 0 1 2-2zM7 11V7a5 5 0 0 1 10 0','reset'));
+m.appendChild(raccMenuBtn(r.status==='suspended'?'Aktifkan Kembali':'Nonaktifkan','M12 3a9 9 0 1 0 9 9','toggle'));
+m.appendChild(raccMenuBtn('Hapus','M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6z','delete',true));
 }
 return m;
 }
@@ -64,15 +58,11 @@ menu.addEventListener('click',function(e){var b=e.target.closest('button[data-ac
 function raccBuildReseller(r){
 var prof=ce('div','racc-prof');
 var prow=ce('div','racc-prow');
-var ava=ce('span','racc-ava'+(r.status==='suspended'?' off':''),raccIni(r.username,r.display_name));
-prow.appendChild(ava);
+prow.appendChild(ce('span','racc-ava'+(r.status==='suspended'?' off':''),raccIni(r.username,r.display_name)));
 var who=ce('span','racc-pwho');
-var b=ce('b',null,r.username);
-who.appendChild(b);
-var meta=ce('small','racc-pmeta',(r.display_name?(r.display_name+' • '):'')+'login '+fmtDTLocal(r.last_login_at));
-who.appendChild(meta);
+who.appendChild(ce('b',null,r.username));
+who.appendChild(ce('small','racc-pmeta',(r.display_name?(r.display_name+' • '):'')+'login '+fmtDTLocal(r.last_login_at)));
 prow.appendChild(who);
-prow.appendChild(raccChipSpan(r.status==='active'?'AKTIF':'NONAKTIF',r.status==='active'?'ok':'off'));
 var keb=ce('button','racc-kebab');keb.type='button';keb.appendChild(admSvg('M12 5.5a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4zM12 13.7a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4zM12 22a1.7 1.7 0 1 0 0-3.4 1.7 1.7 0 0 0 0 3.4z','1rem','1rem'));
 prow.appendChild(keb);
 var chev=ce('span','racc-chev');chev.appendChild(admSvg('M6 9l6 6 6-6','1rem','1rem'));
@@ -88,12 +78,13 @@ dlist.appendChild(raccDrow('Mendaftar','M3 4.5h18v17H3zM3 9.5h18M8 2.5v4M16 2.5v
 if(r.approved_at)dlist.appendChild(raccDrow('Disetujui','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8.5 12.5l2.5 2.5 4.5-5',fmtDTLocal(r.approved_at)));
 dlist.appendChild(raccDrow('Terakhir login','M12 3a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17zM12 7.5V12l3 1.8',fmtDTLocal(r.last_login_at)));
 var failInd=ce('span','racc-ind'+((r.failed_attempts||0)>0?' bad':''));
-var fi=ce('i');failInd.appendChild(fi);failInd.appendChild(document.createTextNode((r.failed_attempts||0)+' kali'));
+failInd.appendChild(ce('i'));
+failInd.appendChild(document.createTextNode((r.failed_attempts||0)+' kali'));
 dlist.appendChild(raccDrow('Login gagal','M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10zM12 8v4M12 16h.01',failInd));
 dlist.appendChild(raccDrow('Status','M12 3v9M18.4 6.6a9 9 0 1 1-12.8 0',raccChipSpan(r.status==='active'?'AKTIF':'NONAKTIF',r.status==='active'?'ok':'off')));
 pbody.appendChild(dlist);
 prof.appendChild(pbody);
-var handlers={
+raccBind(prof,r,{
 edit:function(){openProfileModal(r)},
 toggle:function(){
 var next=r.status==='suspended'?'active':'suspended';
@@ -113,15 +104,13 @@ uiConfirm('Hapus permanen reseller "'+r.username+'"? \nSemua sesinya dicabut. Ri
 fetch('/api/admin/resellers/'+r.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(okJsonRes).then(function(){uiToast('Reseller dihapus.');loadResellers()}).catch(function(e){uiAlert(e.message||'Gagal menghapus.','Kesalahan')});
 },{danger:true,okText:'Hapus'});
 }
-};
-raccBind(prof,r,handlers);
+});
 return prof;
 }
 function raccBuildPending(r){
 var prof=ce('div','racc-prof');
 var prow=ce('div','racc-prow');
-var ava=ce('span','racc-ava warn',raccIni(r.username,r.display_name));
-prow.appendChild(ava);
+prow.appendChild(ce('span','racc-ava warn',raccIni(r.username,r.display_name)));
 var who=ce('span','racc-pwho');
 who.appendChild(ce('b',null,r.username));
 who.appendChild(ce('small','racc-pmeta',(r.display_name?(r.display_name+' • '):'')+'mendaftar '+fmtDTLocal(r.created_at)));
@@ -201,6 +190,18 @@ if(!show.length){list.appendChild(ce('div','racc-empty','Belum ada reseller.'));
 show.forEach(function(r){list.appendChild(raccBuildReseller(r))});
 }
 function raccSetFilter(v){RACC_FILTER=String(v||'').trim();raccRenderPending();raccRenderOthers()}
+function raccBindHeaderToggles(){
+document.querySelectorAll('.rsl-hbtn[data-racc-toggle]').forEach(function(b){
+b.addEventListener('click',function(){
+var p=document.getElementById(b.getAttribute('data-racc-toggle'));
+if(!p)return;
+p.style.scrollMarginTop='4.2rem';
+var was=p.classList.contains('collapsed');
+p.classList.toggle('collapsed');
+if(was)setTimeout(function(){p.scrollIntoView({behavior:'smooth',block:'start'})},60);
+});
+});
+}
 function openProfileModal(r){
 var overlay=ce('div','modal-overlay');
 var backdrop=ce('div','modal-backdrop');
@@ -252,13 +253,13 @@ fetch('/api/admin/reg-tokens',{headers:{'x-admin-password':sessionPass}}).then(o
 rows=rows||[];
 if(badge)badge.textContent=rows.length+' aktif';
 while(list.firstChild)list.removeChild(list.firstChild);
-if(!rows.length){list.appendChild(ce('div','racc-empty','Tidak ada token aktif.'));return}
+if(!rows.length){list.style.marginTop='';list.appendChild(ce('div','racc-empty','Tidak ada token aktif.'));return}
+list.style.marginTop='.6rem';
 rows.forEach(function(t){
 var item=ce('div','racc-titem');
 var head=ce('div','racc-titem-head');
-var pre=ce('span','racc-titem-prefix',t.token_prefix+'…••••');
-head.appendChild(pre);
-if(t.label){var lab=ce('span','racc-titem-label',' — '+t.label);head.appendChild(lab)}
+head.appendChild(ce('span','racc-titem-prefix',t.token_prefix+'…••••'));
+if(t.label)head.appendChild(ce('span','racc-titem-label',' — '+t.label));
 item.appendChild(head);
 var meta=ce('p','racc-titem-meta');
 meta.appendChild(document.createTextNode(durLabel(t.duration_hours)+' • dibuat '+fmtDTLocal(t.created_at)+' • sisa '));
@@ -343,4 +344,5 @@ var ct=document.getElementById('btnCreateToken');
 if(ct)ct.addEventListener('click',createToken);
 var se=document.getElementById('resellerSearchInput');
 if(se)se.addEventListener('input',function(){raccSetFilter(this.value)});
+raccBindHeaderToggles();
 });
