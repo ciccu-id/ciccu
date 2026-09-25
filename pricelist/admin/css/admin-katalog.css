@@ -13,7 +13,7 @@ html:has(body #mainContent[style*="flex"] #section-produk:not(.hidden)){font-siz
 .prod-search:focus{border-color:rgba(254,239,184,.55);box-shadow:0 0 0 3px rgba(254,239,184,.15)}
 .prod-search::placeholder{color:rgba(254,239,184,.55)}
 #section-produk>.prod-bar~#dataList{margin-top:.85rem}
-.sheet-toggle{position:absolute;opacity:0;pointer-events:none}
+.sheet-toggle{position:fixed;top:0;left:0;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}
 .sheet-backdrop{position:fixed;inset:0;background:rgba(20,28,43,.45);z-index:90;opacity:0;pointer-events:none;transition:opacity .3s;touch-action:none}
 .sheet-toggle:checked~.sheet-backdrop{opacity:1;pointer-events:auto}
 .sheet{position:fixed;bottom:0;left:0;right:0;max-width:30rem;margin:0 auto;background:var(--cream,#fffdf6);border-radius:1.4rem 1.4rem 0 0;z-index:91;transform:translateY(100%);transition:transform .4s cubic-bezier(.22,1,.36,1);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 -20px 60px -20px rgba(23,43,80,.3);touch-action:none}
