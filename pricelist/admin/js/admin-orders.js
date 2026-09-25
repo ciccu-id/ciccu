@@ -90,11 +90,21 @@ ORD_CD_TIMER=setInterval(ordCdTick,1000);
 function ordCdAdd(el,endIso){
 var t=Date.parse(String(endIso).replace(' ','T')+'Z');
 if(isNaN(t))return;
-var id='ordcd_'+(ORD_CD_SEQ++);
+if(el.id&&ORD_CD_REG[el.id])return;
+var id=el.id||('ordcd_'+(ORD_CD_SEQ++));
 el.id=id;
 ORD_CD_REG[id]={end:t};
-ordCdTick();
 ordCdStart();
+ordCdTick();
+}
+function ordCdScan(root){
+if(!root)return;
+var els=root.querySelectorAll('.ord-cd[data-end]');
+for(var i=0;i<els.length;i++){
+var el=els[i];
+if(el.id&&ORD_CD_REG[el.id])continue;
+ordCdAdd(el,el.getAttribute('data-end'));
+}
 }
 function ordCdBuild(){
 var wrap=ce('span','ord-cd');
@@ -155,6 +165,7 @@ fetch(ordersQuery(),{headers:ordHeaders()}).then(function(r){return r.json()}).t
 if(reset){while(list.firstChild)list.removeChild(list.firstChild);ORD_LOADED=[]}
 rows=rows||[];
 rows.forEach(function(o){ORD_LOADED.push(o);list.appendChild(buildOrderCard(o))});
+ordCdScan(list);
 var more=document.getElementById('btnOrdersMore');
 if(more){more.classList.toggle('hidden',rows.length<ORD_LIMIT);more.disabled=false;more.textContent='Muat Lebih Banyak'}
 if(!ORD_LOADED.length)list.appendChild(ce('div','empty-state','Tidak ada pesanan yang cocok.'));
@@ -183,7 +194,7 @@ badge.appendChild(document.createTextNode(ordBadgeTxt(o.status)));
 cside.appendChild(badge);
 if(o.status==='delivered'&&o.expires_at){
 var cd=ordCdBuild();
-ordCdAdd(cd,o.expires_at);
+cd.setAttribute('data-end',o.expires_at);
 cside.appendChild(cd);
 }
 chead.appendChild(cside);
@@ -215,7 +226,7 @@ trow.appendChild(ce('strong',null,ordFmtRp(o.total_amount)));
 card.appendChild(trow);
 var det=ce('button','ord-detail','KETUK UNTUK DETAIL');
 det.type='button';
-det.appendChild(admSvg('M9 5l7 7-7 7','.85rem','.85rem'));
+det.appendChild(admSvg('9 5l7 7-7 7','.85rem','.85rem'));
 card.appendChild(det);
 card.addEventListener('click',function(){openOrderDetail(o.id)});
 return card;
