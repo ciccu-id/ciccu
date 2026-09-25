@@ -3,29 +3,11 @@ function dashHeaders(){return{'x-admin-password':sessionPass}}
 function fmtRpFull(n){n=n||0;return'Rp '+Number(n).toLocaleString('id-ID')}
 function fmtRpShort(n){n=n||0;if(n>=1e9)return'Rp '+(n/1e9).toFixed(1)+' M';if(n>=1e6)return'Rp '+(n/1e6).toFixed(1)+' jt';if(n>=1e3)return'Rp '+Math.round(n/1e3)+' rb';return'Rp '+n}
 function pad2(n){return String(n).padStart(2,'0')}
-function relTime(s){
-var t=Date.parse(String(s||'').replace(' ','T')+'Z');
-if(isNaN(t))return'-';
-var diff=Date.now()-t;
-if(diff<0)diff=0;
-var m=Math.floor(diff/60000);
-if(m<1)return'baru';
-if(m<60)return m+' mnt';
-var h=Math.floor(m/60);
-if(h<24)return h+' jam';
-var d=Math.floor(h/24);
-return d+' hri';
-}
-function fmtDTshort(s){
-if(!s)return'-';
-var d=new Date(s);
-if(isNaN(d))return s;
-return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' • '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-}
-function goRes(sub){
-if(typeof switchTab==='function')switchTab(sub);
-}
+function relTime(s){var t=Date.parse(String(s||'').replace(' ','T')+'Z');if(isNaN(t))return'-';var diff=Date.now()-t;if(diff<0)diff=0;var m=Math.floor(diff/60000);if(m<1)return'baru';if(m<60)return m+' mnt';var h=Math.floor(m/60);if(h<24)return h+' jam';var d=Math.floor(h/24);return d+' hri'}
+function fmtDTshort(s){if(!s)return'-';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' • '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+function goRes(sub){if(typeof switchTab==='function')switchTab(sub)}
 function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v}
+function dashSvg(d){var NS='http://www.w3.org/2000/svg';var s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');var p=document.createElementNS(NS,'path');p.setAttribute('d',d);s.appendChild(p);return s}
 function loadDashboard(){
 if(!sessionPass)return;
 var d=new Date();
@@ -49,46 +31,32 @@ setText('statStock',(st.available||0).toLocaleString('id-ID'));
 setText('statStockSub','unit siap kirim');
 setText('statLow',(st.low||0).toLocaleString('id-ID'));
 var lowSub=document.getElementById('statLowSub');
-if(lowSub){lowSub.textContent=(st.low>0)?'varian perlu restock':'semua stok aman';lowSub.className='stat-sub'+(st.low>0?' red':'')}
+if(lowSub){lowSub.textContent=(st.low>0)?'varian perlu restock':'semua stok aman';lowSub.className='ds-s'+(st.low>0?' warn':' ok')}
 }
 function renderDashOrders(rows){
-var tb=document.getElementById('dashOrdersBody');
+var tb=document.getElementById('dashOrdersTable');
 if(!tb)return;
-while(tb.firstChild)tb.removeChild(tb.firstChild);
+var olds=tb.querySelectorAll('.dp-tr,.dp-empty');
+for(var i=0;i<olds.length;i++)olds[i].remove();
 if(!rows.length){
-var tr0=document.createElement('tr');
-var td0=document.createElement('td');
-td0.setAttribute('colspan','5');
-td0.style.textAlign='center';
-td0.style.color='var(--choco-400)';
-td0.textContent='Belum ada order.';
-tr0.appendChild(td0);tb.appendChild(tr0);return;
+var e=ce('div','dp-empty','Belum ada order.');
+e.style.gridColumn='1/-1';e.style.textAlign='center';e.style.padding='1rem 0';e.style.color='var(--choco-400)';e.style.fontSize='.7rem';e.style.fontWeight='700';
+tb.appendChild(e);return;
 }
+var map={delivered:['SELESAI','ok'],pending_payment:['MENUNGGU','amber'],needs_attention:['PERHATIAN','bad'],cancelled:['BATAL','off'],refunded:['REFUND','bad']};
 rows.forEach(function(r){
-var tr=document.createElement('tr');
-var c1=document.createElement('td');
-var oid=document.createElement('span');oid.className='order-id';oid.textContent='#'+r.id;c1.appendChild(oid);
-tr.appendChild(c1);
-var c2=document.createElement('td');
-var wrap=document.createElement('span');wrap.className='mini-avatar';
-var circ=document.createElement('span');circ.className='mini-circle';
-var uname=r.username||'?';
-circ.textContent=uname.slice(0,2).toUpperCase();
-var info=document.createElement('span');info.className='mini-info';
-var nm=document.createElement('span');nm.className='mini-name';nm.textContent=uname;
-info.appendChild(nm);
-wrap.appendChild(circ);wrap.appendChild(info);
-c2.appendChild(wrap);tr.appendChild(c2);
-var c3=document.createElement('td');c3.textContent=fmtRpFull(r.total_amount);tr.appendChild(c3);
-var c4=document.createElement('td');
-var pill=document.createElement('span');
-var map={delivered:['Selesai','green'],pending_payment:['Menunggu','amber'],needs_attention:['Perhatian','amber'],cancelled:['Dibatalkan','gray'],refunded:['Refund','red']};
-var m=map[r.status]||[r.status,'gray'];
-pill.className='pill '+m[1];pill.textContent=m[0];
-c4.appendChild(pill);tr.appendChild(c4);
-var c5=document.createElement('td');
-var tm=document.createElement('span');tm.className='order-time';tm.textContent=relTime(r.created_at);
-c5.appendChild(tm);tr.appendChild(c5);
+var tr=ce('div','dp-tr');
+tr.appendChild(ce('span','oid','#'+r.id));
+var c2=ce('span');
+c2.appendChild(ce('i','dp-ava',(r.username||'?').slice(0,2).toUpperCase()));
+c2.appendChild(document.createTextNode(r.username||'?'));
+tr.appendChild(c2);
+tr.appendChild(ce('span','tot',fmtRpFull(r.total_amount)));
+var c4=ce('span');
+var m=map[r.status]||[r.status,'off'];
+c4.appendChild(ce('span','dp-chip '+m[1],m[0]));
+tr.appendChild(c4);
+tr.appendChild(ce('span',null,relTime(r.created_at)));
 tb.appendChild(tr);
 });
 }
@@ -96,17 +64,28 @@ function renderDashLowStock(rows){
 var box=document.getElementById('dashLowStockBody');
 if(!box)return;
 while(box.firstChild)box.removeChild(box.firstChild);
-if(!rows.length){box.appendChild(ce('div','flash-box-empty','Semua stok aman 👍'));return}
+if(!rows.length){
+var ok=ce('div','dp-srow');
+var ol=ce('div');
+ol.appendChild(ce('b',null,'Semua stok aman'));
+ol.appendChild(ce('small',null,'TIDAK ADA YANG PERLU RESTOCK'));
+ok.appendChild(ol);
+var orr=ce('div','dp-srow-r');
+orr.appendChild(ce('span','dp-chip ok','AMAN'));
+ok.appendChild(orr);
+box.appendChild(ok);
+return;
+}
 rows.forEach(function(r){
-var row=ce('div','stock-row');
-var info=ce('div','stock-row-info');
-info.appendChild(ce('div','stock-row-name',r.app_name+' • '+r.duration));
-info.appendChild(ce('div','stock-row-meta',r.category));
-row.appendChild(info);
-var cnt=ce('span','stock-row-count'+((r.avail<=5)?' low':''),String(r.avail));
-row.appendChild(cnt);
-var badge=ce('span','pill '+(r.avail===0?'red':(r.avail<=5?'amber':'green')),r.avail===0?'Habis':(r.avail<=5?'Rendah':'Aman'));
-row.appendChild(badge);
+var row=ce('div','dp-srow');
+var l=ce('div');
+l.appendChild(ce('b',null,r.app_name+' • '+r.duration));
+l.appendChild(ce('small',null,r.category));
+row.appendChild(l);
+var rt=ce('div','dp-srow-r');
+rt.appendChild(ce('span','n',String(r.avail)));
+rt.appendChild(ce('span','dp-chip '+(r.avail===0?'bad':(r.avail<=5?'amber':'ok')),r.avail===0?'HABIS':(r.avail<=5?'RENDAH':'AMAN')));
+row.appendChild(rt);
 box.appendChild(row);
 });
 }
@@ -115,19 +94,37 @@ var box=document.getElementById('dashFlashBody');
 if(!box)return;
 while(box.firstChild)box.removeChild(box.firstChild);
 if(DASH_TIMER){clearInterval(DASH_TIMER);DASH_TIMER=null}
-if(!f||(!f.name&&!f.start)){box.appendChild(ce('div','flash-box-empty','Belum ada flash sale.'));return}
-box.appendChild(ce('div','flash-name',f.name||'Flash Sale'));
-var st=ce('div','flash-status');
-if(f.active){st.appendChild(ce('span','flash-live','LIVE'));st.appendChild(ce('span',null,'Berakhir dalam:'))}
-else{st.appendChild(ce('span','pill gray','Tidak aktif'))}
-box.appendChild(st);
-if(f.active&&f.end){
-var cd=ce('div','flash-cd');cd.id='dashFlashCd';box.appendChild(cd);
-startFlashTimer(f.end);
-}else if(f.start&&f.end){
-box.appendChild(ce('div','flash-end','Jadwal: '+fmtDTshort(f.start)+' → '+fmtDTshort(f.end)));
+if(!f||!f.active){
+var em=ce('div','dp-fs-empty');
+var ic=ce('span','dp-fs-ic');
+ic.appendChild(dashSvg('M13 2 4 14h6l-1 8 9-12h-6z'));
+em.appendChild(ic);
+em.appendChild(ce('b',null,'Belum ada flash sale berjalan'));
+em.appendChild(ce('p',null,(f&&f.items?f.items:0)+' item terdaftar siap dipromosikan. Aktifkan flash sale untuk menarik lebih banyak pembeli hari ini.'));
+var act=ce('div','dp-fs-act');
+var b1=ce('button','dp-btn-fs','Aktifkan Flash Sale');
+b1.type='button';
+b1.addEventListener('click',function(){if(typeof switchTab==='function')switchTab('flashsale')});
+var b2=ce('button','dp-btn-fs2','Lihat '+(f&&f.items?f.items:0)+' Item');
+b2.type='button';
+b2.addEventListener('click',function(){if(typeof switchTab==='function')switchTab('flashsale')});
+act.appendChild(b1);act.appendChild(b2);
+em.appendChild(act);
+box.appendChild(em);
+return;
 }
-box.appendChild(ce('div','flash-end',(f.items||0)+' item terdaftar'));
+var lv=ce('div','dp-fs-live');
+lv.appendChild(ce('div','dp-fs-name',f.name||'Flash Sale'));
+var st=ce('div','dp-fs-status');
+st.appendChild(ce('span','dp-fs-live-pill','LIVE'));
+st.appendChild(document.createTextNode('Berakhir dalam:'));
+lv.appendChild(st);
+var cd=ce('div','dp-fs-cd');
+cd.id='dashFlashCd';
+lv.appendChild(cd);
+lv.appendChild(ce('div','dp-fs-end','Jadwal: '+fmtDTshort(f.start)+' → '+fmtDTshort(f.end)+' • '+(f.items||0)+' item'));
+box.appendChild(lv);
+startFlashTimer(f.end);
 }
 function startFlashTimer(endStr){
 var el=document.getElementById('dashFlashCd');
