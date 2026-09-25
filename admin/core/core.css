@@ -31,6 +31,9 @@ input,textarea,select{font-family:inherit}
 .sb-user-info{flex:1;min-width:0}
 .sb-user-name{font-size:.6875rem;font-weight:900;color:var(--w);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb-user-role{font-size:.5625rem;color:rgba(255,255,255,.5);font-weight:700}
+.sb-logout{width:2rem;height:2rem;border-radius:var(--r-md);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:var(--blue-200);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;cursor:pointer}
+.sb-logout:hover{background:var(--brick-500);border-color:var(--brick-400);color:var(--w)}
+.sb-logout svg{width:1rem;height:1rem}
 .adm-main{flex:1;min-width:0;display:flex;flex-direction:column}
 @media(min-width:768px){.adm-main{margin-left:var(--sbw)}}
 .adm-topbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--blue-200);display:flex;align-items:center;gap:.625rem;padding:.625rem .75rem}
