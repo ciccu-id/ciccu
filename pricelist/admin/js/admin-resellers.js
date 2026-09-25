@@ -1,4 +1,4 @@
-var RACC_FILTER='';
+var RACC_FILTER='',RACC_TOKEN_FULL={};
 function resHeaders(){return{'Content-Type':'application/json','x-admin-password':sessionPass}}
 function okJsonRes(r){if(!r.ok)return r.text().then(function(tx){var msg='HTTP '+r.status;try{var d=JSON.parse(tx);if(d&&d.error)msg=d.error}catch(e){}throw new Error(msg)});return r.json()}
 function fmtDTLocal(s){if(!s)return'-';var t=Date.parse(String(s).replace(' ','T')+'Z');if(isNaN(t))return s;return new Date(t).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
@@ -215,15 +215,17 @@ var closeBtn=ce('button','modal-close-btn','×');closeBtn.type='button';
 head.appendChild(closeBtn);
 box.appendChild(head);
 var body=ce('div','modal-body-scroll');
+var formWrap=ce('div','modal-form');
 var fName=ce('div','field');fName.appendChild(ce('label',null,'Nama (maks 30)'));
 var iName=ce('input','form-input');iName.type='text';iName.maxLength=30;iName.value=r.display_name||'';
-fName.appendChild(iName);body.appendChild(fName);
+fName.appendChild(iName);formWrap.appendChild(fName);
 var fWa=ce('div','field');fWa.appendChild(ce('label',null,'WhatsApp (awalan 08, maks 20 digit)'));
 var iWa=ce('input','form-input');iWa.type='tel';iWa.maxLength=20;iWa.value=r.whatsapp||'';
-fWa.appendChild(iWa);body.appendChild(fWa);
+fWa.appendChild(iWa);formWrap.appendChild(fWa);
 var fX=ce('div','field');fX.appendChild(ce('label',null,'Akun X (tanpa @, 1-15 karakter)'));
 var iX=ce('input','form-input');iX.type='text';iX.maxLength=15;iX.value=r.x_username||'';
-fX.appendChild(iX);body.appendChild(fX);
+fX.appendChild(iX);formWrap.appendChild(fX);
+body.appendChild(formWrap);
 box.appendChild(body);
 var foot=ce('div','modal-actions');
 var cancelBtn=ce('button','cancel-btn','Batal');cancelBtn.type='button';
@@ -256,9 +258,11 @@ while(list.firstChild)list.removeChild(list.firstChild);
 if(!rows.length){list.style.marginTop='';list.appendChild(ce('div','racc-empty','Tidak ada token aktif.'));return}
 list.style.marginTop='.6rem';
 rows.forEach(function(t){
+var full=RACC_TOKEN_FULL[t.token_prefix]||'';
 var item=ce('div','racc-titem');
 var head=ce('div','racc-titem-head');
-head.appendChild(ce('span','racc-titem-prefix',t.token_prefix+'…••••'));
+head.appendChild(ce('span','racc-titem-prefix',full||t.token_prefix));
+if(!full)head.appendChild(ce('span','racc-titem-label','•••• (salin saat dibuat)'));
 if(t.label)head.appendChild(ce('span','racc-titem-label',' — '+t.label));
 item.appendChild(head);
 var meta=ce('p','racc-titem-meta');
@@ -267,10 +271,15 @@ var rm=window.fmtRemain?window.fmtRemain(t.expires_at):{text:'-',mod:'dead'};
 meta.appendChild(ce('span','cd-tag '+rm.mod,rm.text));
 item.appendChild(meta);
 var act=ce('div','racc-titem-act');
+if(full){
+var cpBtn=ce('button','racc-btn-butter','Salin');cpBtn.type='button';
+cpBtn.addEventListener('click',function(){copyTextRes(full,cpBtn)});
+act.appendChild(cpBtn);
+}
 var rvBtn=ce('button','racc-btn-butter danger','Cabut');rvBtn.type='button';
 rvBtn.addEventListener('click',function(){
 uiConfirm('Cabut token '+t.token_prefix+'…?\nToken tidak akan bisa dipakai mendaftar.','Cabut Token',function(){
-fetch('/api/admin/reg-tokens/'+t.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(okJsonRes).then(function(){uiToast('Token dicabut.');loadRegTokens()}).catch(function(e){uiAlert(e.message||'Gagal mencabut.','Kesalahan')});
+fetch('/api/admin/reg-tokens/'+t.id,{method:'DELETE',headers:{'x-admin-password':sessionPass}}).then(okJsonRes).then(function(){delete RACC_TOKEN_FULL[t.token_prefix];uiToast('Token dicabut.');loadRegTokens()}).catch(function(e){uiAlert(e.message||'Gagal mencabut.','Kesalahan')});
 },{danger:true,okText:'Cabut'});
 });
 act.appendChild(rvBtn);
@@ -288,6 +297,7 @@ var label=labelEl?labelEl.value.trim():'';
 if(btn){btn.disabled=true;btn.textContent='Membuat...'}
 fetch('/api/admin/reg-tokens',{method:'POST',headers:resHeaders(),body:JSON.stringify({duration_hours:dh,label:label})}).then(okJsonRes).then(function(d){
 if(labelEl)labelEl.value='';
+RACC_TOKEN_FULL[String(d.token).slice(0,10)]=d.token;
 showTokenDialog(d.token,d.expires_at);
 loadRegTokens();
 }).catch(function(e){uiAlert(e.message||'Gagal membuat token.','Kesalahan')}).finally(function(){if(btn){btn.disabled=false;btn.textContent='＋ Buat Token'}});
@@ -305,17 +315,21 @@ var closeBtn=ce('button','modal-close-btn','×');closeBtn.type='button';
 head.appendChild(closeBtn);
 box.appendChild(head);
 var body=ce('div','modal-body-scroll');
-body.appendChild(ce('p','field-hint','Salin sekarang. Token ini TIDAK akan ditampilkan lagi setelah dialog ditutup.'));
-var tokenBox=ce('div','sf-row');tokenBox.style.marginTop='.5rem';
-var tv=ce('span','r-cred-val');tv.style.flex='1';tv.style.wordBreak='break-all';tv.style.fontWeight='900';tv.textContent=token;
-tokenBox.appendChild(tv);
-var cpBtn=ce('button','tool-btn sky','Salin');cpBtn.type='button';
+body.appendChild(ce('p','field-hint','Salin sekarang. Token ini TIDAK akan ditampilkan lagi setelah halaman dimuat ulang.'));
+var titem=ce('div','racc-titem');
+titem.style.marginTop='.5rem';
+var thead=ce('div','racc-titem-head');
+thead.appendChild(ce('span','racc-titem-prefix',token));
+titem.appendChild(thead);
+var tact=ce('div','racc-titem-act');
+var cpBtn=ce('button','racc-btn-butter','Salin Token');cpBtn.type='button';
 cpBtn.addEventListener('click',function(){copyTextRes(token,cpBtn)});
-tokenBox.appendChild(cpBtn);
-body.appendChild(tokenBox);
+tact.appendChild(cpBtn);
+titem.appendChild(tact);
+body.appendChild(titem);
 box.appendChild(body);
 var foot=ce('div','modal-actions');
-var doneBtn=ce('button','submit-btn','Sudah Saya Salin');doneBtn.type='button';
+var doneBtn=ce('button','submit-btn','Tutup');doneBtn.type='button';
 foot.appendChild(doneBtn);
 box.appendChild(foot);
 overlay.appendChild(backdrop);overlay.appendChild(box);
