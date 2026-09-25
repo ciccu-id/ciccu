@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/admin.css?v=21">
 <link rel="stylesheet" href="css/admin-katalog.css?v=21">
 <link rel="stylesheet" href="css/admin-reseller.css?v=21">
+<link rel="stylesheet" href="css/admin-resellers.css?v=21">
 <link rel="stylesheet" href="css/admin-orders.css?v=21">
 <link rel="stylesheet" href="css/admin-dashboard.css?v=21">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -234,6 +235,11 @@
 </button>
 <input id="orderSearchInput" class="ord-search" type="text" placeholder="Kode / reseller / aplikasi / WA...">
 </div>
+<div class="rsl-accounts-row">
+<a href="#cardTokens" class="rsl-hbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg>Token</a>
+<a href="#cardAddReseller" class="rsl-hbtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Reseller</a>
+<input id="resellerSearchInput" class="racc-search" type="text" placeholder="Cari reseller / username / WA...">
+</div>
 </div>
 <div id="rsub-rprice" class="section">
 <div id="rpriceAccordion" class="data-list"></div>
@@ -243,41 +249,57 @@
 <button id="btnOrdersMore" type="button" class="ord-more hidden">Muat Lebih Banyak</button>
 </div>
 <div id="rsub-raccounts" class="section hidden">
-<div class="card" id="cardPendingResellers">
-<div class="card-header-row"><h2 class="card-title">⏳ Menunggu Konfirmasi</h2><span id="pendingResellerCount" class="item-count">0</span></div>
-<div id="pendingResellerList" class="data-list"></div>
+<section id="cardPendingResellers" class="racc-panel">
+<div class="racc-phead">
+<span class="racc-hic warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+<span class="racc-ptitle">MENUNGGU KONFIRMASI</span>
+<span id="pendingResellerCount" class="racc-chip ok">0</span>
 </div>
-<div class="card">
-<div class="card-header-row"><h2 class="card-title">🎟 Token Pendaftaran</h2><span id="regTokenCount" class="item-count">0 aktif</span></div>
-<div class="toolbar-row">
-<div class="dd" id="tokenDurationDD">
-<input type="hidden" id="tokenDuration" value="168">
-<button type="button" class="dd-btn"><span id="tokenDurationLabel">7 Hari</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></button>
-<div class="dd-menu">
-<div class="dd-item" data-value="24"><span>24 Jam</span><span class="dd-check"></span></div>
-<div class="dd-item active" data-value="168"><span>7 Hari</span><span class="dd-check"></span></div>
-<div class="dd-item" data-value="720"><span>30 Hari</span><span class="dd-check"></span></div>
+<div id="pendingResellerList" class="racc-prof-list"></div>
+</section>
+<section id="cardTokens" class="racc-panel">
+<div class="racc-phead">
+<span class="racc-hic warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/><path d="M13 5v2M13 11v2M13 17v2"/></svg></span>
+<span class="racc-ptitle">TOKEN PENDAFTARAN</span>
+<span id="regTokenCount" class="racc-chip ok">0 aktif</span>
 </div>
+<div class="racc-tform">
+<div class="racc-trow">
+<div class="racc-sel">
+<select id="tokenDuration">
+<option value="24">24 Jam</option>
+<option value="168" selected>7 Hari</option>
+<option value="720">30 Hari</option>
+</select>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
 </div>
-<div style="flex:1;min-width:8rem"><input id="tokenLabelInput" class="form-input" type="text" placeholder="Label (opsional, mis. untuk Budi)"></div>
-<button id="btnCreateToken" type="button" class="tool-btn green">＋ Buat Token</button>
+<button id="btnCreateToken" type="button" class="racc-btn-butter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Buat Token</button>
 </div>
-<p class="field-hint" style="margin-top:.5rem">Token hanya ditampilkan sekali saat dibuat. Token sekali pakai dan terhapus otomatis saat kedaluwarsa atau terpakai. Pendaftaran tetap memerlukan konfirmasi admin.</p>
-<div id="regTokenList" class="data-list" style="margin-top:.75rem"></div>
+<input id="tokenLabelInput" class="racc-inp" type="text" placeholder="Label (opsional, mis. untuk Budi)">
 </div>
-<div class="card">
-<h2 class="card-title">➕ Tambah Reseller</h2>
-<form id="resellerForm" class="add-form">
-<input id="resUsername" class="form-input" placeholder="username" required>
-<input id="resDisplayName" class="form-input" placeholder="nama tampilan">
-<input id="resPassword" class="form-input span-2" type="password" placeholder="password minimal 8 karakter" required>
-<button type="submit" class="submit-btn">Buat Akun</button>
+<p class="racc-note">Token hanya ditampilkan sekali saat dibuat. Token sekali pakai dan terhapus otomatis saat kedaluwarsa atau terpakai. Pendaftaran tetap memerlukan konfirmasi admin.</p>
+<div id="regTokenList" class="racc-empty">Tidak ada token aktif.</div>
+</section>
+<section id="cardAddReseller" class="racc-panel">
+<div class="racc-phead">
+<span class="racc-hic choco"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+<span class="racc-ptitle">TAMBAH RESELLER</span>
+</div>
+<form id="resellerForm" class="racc-tform" novalidate>
+<input id="resUsername" class="racc-inp" type="text" placeholder="username" required autocomplete="off">
+<input id="resDisplayName" class="racc-inp" type="text" placeholder="nama tampilan" autocomplete="off">
+<input id="resPassword" class="racc-inp" type="password" placeholder="password minimal 8 karakter" required autocomplete="new-password">
+<button type="submit" class="racc-btn-primary">Buat Akun</button>
 </form>
+</section>
+<section id="cardResellerList" class="racc-panel">
+<div class="racc-phead">
+<span class="racc-hic blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+<span class="racc-ptitle">DAFTAR RESELLER</span>
+<span id="resellerCount" class="racc-chip off">0 akun</span>
 </div>
-<div class="card">
-<h2 class="card-title">👥 Daftar Reseller</h2>
-<div id="resellerList" class="data-list"></div>
-</div>
+<div id="resellerList" class="racc-prof-list"></div>
+</section>
 </div>
 </section>
 <section id="section-testimoni" class="section hidden">
