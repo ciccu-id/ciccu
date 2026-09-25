@@ -21,12 +21,14 @@ body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav-item.
 .rsl-search{flex:1;min-width:0;height:2.6rem;border:1px solid rgba(254,239,184,.3);border-radius:.9rem;padding:0 .85rem;font-size:.8125rem;background:rgba(254,239,184,.14);outline:none;font-weight:600;color:var(--butter-100);transition:border-color .2s,box-shadow .2s}
 .rsl-search:focus{border-color:rgba(254,239,184,.55);box-shadow:0 0 0 3px rgba(254,239,184,.15)}
 .rsl-search::placeholder{color:rgba(254,239,184,.55)}
-#section-reseller:has(#subtab-rorders.active) .rsl-orders-row{position:sticky;top:0;z-index:20;background:var(--choco-600);border-top:none;border-radius:0 0 1.1rem 1.1rem;padding:calc(.6rem + env(safe-area-inset-top,0px)) .7rem .6rem;margin:0 -.75rem .85rem;box-shadow:0 .35rem .9rem rgba(67,47,46,.35)}
-#section-reseller:has(#subtab-rorders.active) .ord-dd .dd-btn{width:2rem;height:2rem;padding:0;justify-content:center;background:rgba(254,239,184,.12);border-color:rgba(254,239,184,.28);color:var(--butter-100)}
-#section-reseller:has(#subtab-rorders.active) .ord-dd .dd-btn svg{color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .rsl-orders-row{position:sticky;top:0;z-index:20;background:var(--choco-600);border-top:none;border-radius:0 0 1.1rem 1.1rem;padding:calc(.6rem + env(safe-area-inset-top,0px)) .7rem .6rem;margin:0 -.75rem .85rem;box-shadow:0 .35rem .9rem rgba(67,47,46,.35);gap:.45rem}
+#section-reseller:has(#subtab-rorders.active) .ord-dd .dd-btn{width:2.6rem;height:2.6rem;padding:0;justify-content:center;border-radius:.9rem;background:rgba(254,239,184,.12);border-color:rgba(254,239,184,.28);color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-dd .dd-btn svg{width:1.12rem;height:1.12rem;color:var(--butter-100)}
 #section-reseller:has(#subtab-rorders.active) .ord-dd.dd-active .dd-btn{background:var(--butter-200);border-color:var(--butter-300);color:var(--choco-700)}
-#section-reseller:has(#subtab-rorders.active) .ord-refresh{background:rgba(254,239,184,.12);border-color:rgba(254,239,184,.28);color:var(--butter-100)}
-#section-reseller:has(#subtab-rorders.active) .ord-search{background:rgba(254,239,184,.14);border-color:rgba(254,239,184,.3);color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-dd.dd-active .dd-btn svg{color:var(--choco-700)}
+#section-reseller:has(#subtab-rorders.active) .ord-refresh{width:2.6rem;height:2.6rem;border-radius:.9rem;background:rgba(254,239,184,.12);border-color:rgba(254,239,184,.28);color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-refresh svg{width:1.12rem;height:1.12rem}
+#section-reseller:has(#subtab-rorders.active) .ord-search{flex:1;min-width:0;height:2.6rem;border:1px solid rgba(254,239,184,.3);border-radius:.9rem;padding:0 .85rem;font-size:.8125rem;background:rgba(254,239,184,.14);color:var(--butter-100)}
 #section-reseller:has(#subtab-rorders.active) .ord-search::placeholder{color:rgba(254,239,184,.55)}
 #section-reseller:has(#subtab-raccounts.active) .rsl-header{display:none}
 #section-reseller .pkg-status-col{display:flex}
