@@ -10,10 +10,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Quicksand:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css?v=19">
-<link rel="stylesheet" href="css/admin-katalog.css?v=19">
-<link rel="stylesheet" href="css/admin-reseller.css?v=19">
-<link rel="stylesheet" href="css/admin-orders.css?v=19">
+<link rel="stylesheet" href="css/admin.css?v=20">
+<link rel="stylesheet" href="css/admin-katalog.css?v=20">
+<link rel="stylesheet" href="css/admin-reseller.css?v=20">
+<link rel="stylesheet" href="css/admin-orders.css?v=20">
+<link rel="stylesheet" href="css/admin-dashboard.css?v=20">
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
@@ -83,53 +84,81 @@
 </header>
 <div class="adm-content">
 <section id="section-dashboard" class="section">
-<div class="dash-header">
-<div><h2 class="dash-title">Dashboard</h2><p class="dash-sub">Overview toko hari ini</p></div>
-<div class="dash-header-right"><a href="../" target="_blank" rel="noopener" class="dash-link">↗ Lihat Toko</a><span id="dashDate" class="dash-date"></span></div>
+<div class="dash-titlehead">
+<h2>Dashboard<svg class="spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.1 6.9L21 12l-6.9 2.1L12 21l-2.1-6.9L3 12l6.9-2.1z"/></svg></h2>
+<p class="dash-desc">Pantau <b>pesanan</b>, <b>stok</b>, dan <b>pendapatan</b> toko dalam satu tampilan ringkas — diperbarui langsung hari ini.</p>
 </div>
-<div class="card dash-welcome"><p class="dash-welcome-title">Selamat datang, Admin.</p><p class="dash-welcome-sub">Berikut ringkasan aktivitas toko Anda.</p></div>
-<div class="stat-grid">
-<div class="stat-card"><div class="stat-icon">⌑</div><div class="stat-info"><p class="stat-label">Total Order</p><p class="stat-value" id="statOrders">0</p><p class="stat-sub" id="statOrdersSub">-</p></div></div>
-<div class="stat-card"><div class="stat-icon">◈</div><div class="stat-info"><p class="stat-label">Pendapatan</p><p class="stat-value" id="statRevenue">0</p><p class="stat-sub" id="statRevenueSub">-</p></div></div>
-<div class="stat-card"><div class="stat-icon">◫</div><div class="stat-info"><p class="stat-label">Stok Tersedia</p><p class="stat-value" id="statStock">0</p><p class="stat-sub" id="statStockSub">-</p></div></div>
-<div class="stat-card"><div class="stat-icon">⚠</div><div class="stat-info"><p class="stat-label">Stok Rendah</p><p class="stat-value" id="statLow">0</p><p class="stat-sub" id="statLowSub">-</p></div></div>
+<section class="dash-hero">
+<div><b>Selamat datang, Admin.</b><p>Berikut ringkasan aktivitas toko Anda.</p></div>
+<div class="dash-hero-r">
+<a href="../" target="_blank" rel="noopener" class="dash-btn-toko"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>Lihat Toko</a>
+<span id="dashDate" class="dash-hero-date"></span>
 </div>
-<div class="dash-cols">
-<div class="card dash-panel">
-<div class="panel-head"><div><p class="panel-title">Order Terbaru</p><p class="panel-sub">Aktivitas pesanan terbaru</p></div><button id="dashOrdersAll" type="button" class="panel-link">Lihat semua →</button></div>
-<div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Order</th><th>Reseller</th><th>Total</th><th>Status</th><th>Waktu</th></tr></thead><tbody id="dashOrdersBody"></tbody></table></div>
+</section>
+<section class="dash-stats">
+<div class="dash-stat ds-choco">
+<span class="ds-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 8.5H8"/><path d="M6 6 5 3H2"/><circle cx="9.5" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg></span>
+<div><span class="ds-lb">TOTAL ORDER</span><strong id="statOrders" class="ds-v">0</strong><span id="statOrdersSub" class="ds-s ok">-</span></div>
 </div>
-<div class="dash-side">
-<div class="card dash-panel">
-<div class="panel-head"><div><p class="panel-title">Kondisi Stok</p><p class="panel-sub">Perlu perhatian</p></div><button id="dashStockAll" type="button" class="panel-link">Kelola →</button></div>
-<div id="dashLowStockBody" class="stock-list"></div>
+<div class="dash-stat ds-butter">
+<span class="ds-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></span>
+<div><span class="ds-lb">PENDAPATAN</span><strong id="statRevenue" class="ds-v">0</strong><span id="statRevenueSub" class="ds-s ok">-</span></div>
 </div>
-<div class="card dash-panel">
-<div class="panel-head"><div><p class="panel-title">Flash Sale</p><p class="panel-sub">Promo toko</p></div><button id="dashFlashAll" type="button" class="panel-link">Kelola →</button></div>
-<div id="dashFlashBody" class="flash-box"></div>
+<div class="dash-stat ds-blue">
+<span class="ds-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg></span>
+<div><span class="ds-lb">STOK TERSEDIA</span><strong id="statStock" class="ds-v">0</strong><span id="statStockSub" class="ds-s">unit siap kirim</span></div>
 </div>
+<div class="dash-stat ds-warn">
+<span class="ds-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 9.5v4.5"/><path d="M12 17h.01"/></svg></span>
+<div><span class="ds-lb">STOK RENDAH</span><strong id="statLow" class="ds-v">0</strong><span id="statLowSub" class="ds-s">-</span></div>
 </div>
+</section>
+<section class="dash-panel">
+<div class="dp-head">
+<div><h3>Order Terbaru</h3><p>Aktivitas pesanan terbaru</p></div>
+<button id="dashOrdersAll" type="button" class="dp-link">Lihat semua →</button>
 </div>
-<div class="card dash-quick">
-<p class="panel-title">Akses Cepat</p>
-<div class="quick-grid">
-<button id="quickAddPublic" type="button" class="quick-tile"><span class="quick-ico">▣</span><span class="quick-txt">Tambah Paket Publik<small>Kelola katalog publik</small></span></button>
-<button id="quickAddReseller" type="button" class="quick-tile"><span class="quick-ico">◫</span><span class="quick-txt">Tambah Paket Reseller<small>Kelola katalog reseller</small></span></button>
-<button id="quickAddStock" type="button" class="quick-tile"><span class="quick-ico">＋</span><span class="quick-txt">Tambah Stok<small>Isi data kredensial</small></span></button>
-<button id="quickSettings" type="button" class="quick-tile"><span class="quick-ico">⚙</span><span class="quick-txt">Pengaturan<small>Konfigurasi toko</small></span></button>
-</div>
-</div>
-<div class="card dash-manage">
-<div class="panel-head"><div><p class="panel-title">Manajemen</p><p class="panel-sub">Modul toko</p></div></div>
-<div class="manage-grid">
-<button id="mod-produk" type="button" class="manage-card"><span class="manage-ico">▣</span><span class="manage-txt"><b>Katalog Publik</b><small>Atur paket yang terlihat pelanggan umum.</small></span><span class="manage-go">Kelola →</span></button>
-<button id="mod-rprice" type="button" class="manage-card"><span class="manage-ico">◫</span><span class="manage-txt"><b>Pricelist & Stok Reseller</b><small>Kelola harga dan stok khusus reseller.</small></span><span class="manage-go">Kelola →</span></button>
-<button id="mod-flashsale" type="button" class="manage-card"><span class="manage-ico">◇</span><span class="manage-txt"><b>Flash Sale</b><small>Buat dan atur promo waktu terbatas.</small></span><span class="manage-go">Kelola →</span></button>
-<button id="mod-rorders" type="button" class="manage-card"><span class="manage-ico">⌑</span><span class="manage-txt"><b>Order Reseller</b><small>Pantau dan proses pesanan reseller.</small></span><span class="manage-go">Kelola →</span></button>
-<button id="mod-pengaturan" type="button" class="manage-card"><span class="manage-ico">⚙</span><span class="manage-txt"><b>Pengaturan Toko</b><small>Atur informasi dan konfigurasi toko.</small></span><span class="manage-go">Kelola →</span></button>
-<button id="mod-activity" type="button" class="manage-card"><span class="manage-ico">◌</span><span class="manage-txt"><b>Aktivitas Admin</b><small>Lihat riwayat aktivitas administrator.</small></span><span class="manage-go">Lihat →</span></button>
+<div class="dp-tbl-zone">
+<div class="dp-tbl-wrap">
+<div id="dashOrdersTable" class="dp-tbl">
+<span class="dp-th">ORDER</span><span class="dp-th">RESELLER</span><span class="dp-th">TOTAL</span><span class="dp-th">STATUS</span><span class="dp-th">WAKTU</span>
 </div>
 </div>
+<i class="dp-tbl-fade"></i>
+</div>
+</section>
+<section class="dash-panel">
+<div class="dp-head">
+<div><h3>Kondisi Stok</h3><p>Perlu perhatian</p></div>
+<button id="dashStockAll" type="button" class="dp-link">Kelola →</button>
+</div>
+<div id="dashLowStockBody"></div>
+</section>
+<section class="dash-panel">
+<div class="dp-head">
+<div><h3>Flash Sale</h3><p>Promo toko</p></div>
+<button id="dashFlashAll" type="button" class="dp-link">Kelola →</button>
+</div>
+<div id="dashFlashBody"></div>
+</section>
+<section class="dash-panel">
+<div class="dp-head"><div><h3>Akses Cepat</h3></div></div>
+<div class="dp-qa-grid">
+<button id="quickAddPublic" type="button" class="dp-qa"><span class="dp-qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg></span><span><b>Tambah Paket Publik</b><small>Kelola katalog publik</small></span></button>
+<button id="quickAddReseller" type="button" class="dp-qa"><span class="dp-qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg></span><span><b>Tambah Paket Reseller</b><small>Kelola katalog reseller</small></span></button>
+<button id="quickAddStock" type="button" class="dp-qa"><span class="dp-qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span><span><b>Tambah Stok</b><small>Isi data kredensial</small></span></button>
+<button id="quickSettings" type="button" class="dp-qa"><span class="dp-qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></span><span><b>Pengaturan</b><small>Konfigurasi toko</small></span></button>
+</div>
+</section>
+<section class="dash-panel">
+<div class="dp-head"><div><h3>Manajemen</h3><p>Modul toko</p></div></div>
+<button id="mod-produk" type="button" class="dp-mrow"><span class="dp-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.8"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.8"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.8"/></svg></span><span class="dp-mt"><b>Katalog Publik</b><small>Atur paket yang terlihat pelanggan umum.</small></span><span class="dp-ml">Kelola →</span></button>
+<button id="mod-rprice" type="button" class="dp-mrow"><span class="dp-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg></span><span class="dp-mt"><b>Pricelist & Stok Reseller</b><small>Kelola harga dan stok khusus reseller.</small></span><span class="dp-ml">Kelola →</span></button>
+<button id="mod-flashsale" type="button" class="dp-mrow"><span class="dp-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></span><span class="dp-mt"><b>Flash Sale</b><small>Buat dan atur promo waktu terbatas.</small></span><span class="dp-ml">Kelola →</span></button>
+<button id="mod-rorders" type="button" class="dp-mrow"><span class="dp-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></span><span class="dp-mt"><b>Order Reseller</b><small>Pantau dan proses pesanan reseller.</small></span><span class="dp-ml">Kelola →</span></button>
+<button id="mod-pengaturan" type="button" class="dp-mrow"><span class="dp-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg></span><span class="dp-mt"><b>Pengaturan Toko</b><small>Atur informasi dan konfigurasi toko.</small></span><span class="dp-ml">Kelola →</span></button>
+<button id="mod-activity" type="button" class="dp-mrow"><span class="dp-mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg></span><span class="dp-mt"><b>Aktivitas Admin</b><small>Lihat riwayat aktivitas administrator.</small></span><span class="dp-ml">Lihat →</span></button>
+</section>
 </section>
 <section id="section-produk" class="section hidden">
 <div class="prod-bar">
@@ -552,14 +581,14 @@
 </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-<script src="js/admin-ui.js?v=19" defer></script>
-<script src="js/admin-modules.js?v=19" defer></script>
-<script src="js/admin.js?v=19" defer></script>
-<script src="js/admin-reseller-pricelist.js?v=19" defer></script>
-<script src="js/admin-stock.js?v=19" defer></script>
-<script src="js/admin-orders.js?v=19" defer></script>
-<script src="js/admin-resellers.js?v=19" defer></script>
-<script src="js/admin-dashboard.js?v=19" defer></script>
-<script src="js/admin-activity.js?v=19" defer></script>
+<script src="js/admin-ui.js?v=20" defer></script>
+<script src="js/admin-modules.js?v=20" defer></script>
+<script src="js/admin.js?v=20" defer></script>
+<script src="js/admin-reseller-pricelist.js?v=20" defer></script>
+<script src="js/admin-stock.js?v=20" defer></script>
+<script src="js/admin-orders.js?v=20" defer></script>
+<script src="js/admin-resellers.js?v=20" defer></script>
+<script src="js/admin-dashboard.js?v=20" defer></script>
+<script src="js/admin-activity.js?v=20" defer></script>
 </body>
 </html>
