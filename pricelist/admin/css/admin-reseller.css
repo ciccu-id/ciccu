@@ -1,17 +1,39 @@
 @media(max-width:767px){
-body:has(#section-reseller:not(.hidden)) .adm-topbar{display:none}
-#section-reseller{gap:.5rem}
-.rsl-header{position:sticky;top:0;z-index:20;background:var(--w);border:none;border-bottom:1px solid var(--blue-200);border-radius:0;padding:0;margin:-.75rem -.75rem .75rem;box-shadow:0 4px 10px -4px rgba(67,47,46,.12);display:flex;flex-direction:column}
-.rsl-subtab-row{display:flex;align-items:stretch;gap:0;border-bottom:none;padding:0 .25rem}
-.rsl-subtab-cell{flex:1;display:flex;align-items:center;justify-content:center;gap:.375rem;padding:.625rem .25rem .5rem;background:none;border:none;font-size:.625rem;font-weight:700;color:var(--choco-400);cursor:pointer;position:relative;transition:color .15s}
-.rsl-subtab-cell.active{color:var(--choco-700);font-weight:900}
-.rsl-subtab-cell.active::after{content:'';position:absolute;left:.75rem;right:.75rem;bottom:.25rem;height:2px;background:var(--choco-600);border-radius:2px}
-.rsl-subtab-cell svg{width:.875rem;height:.875rem;flex-shrink:0}
-.rsl-action-row{display:flex;align-items:center;gap:.4rem;padding:.375rem .5rem .5rem;background:var(--blue-50);border-top:1px solid var(--blue-100)}
+html:has(body #mainContent[style*="flex"] #section-reseller:not(.hidden)){font-size:clamp(10.5px,3.55vw,14px)}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)){background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-size:100% 100%}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .adm-shell,body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .adm-main,body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .adm-content{background:transparent}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .adm-topbar{display:none}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav{background:var(--choco-600);border-top:none;border-radius:1.3rem 1.3rem 0 0;box-shadow:0 -.35rem 1.2rem rgba(67,47,46,.3);display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem;padding:.45rem .45rem calc(.5rem + env(safe-area-inset-bottom,0px))}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav-item{color:rgba(255,248,221,.6);border-radius:1rem;padding:.5rem 0 .45rem;gap:.22rem;position:relative}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav-item svg{width:1.22rem;height:1.22rem}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav-item span{font-size:.68rem;font-weight:700;white-space:nowrap}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav-item.active{background:var(--butter-200);color:var(--choco-700);font-weight:800}
+body:has(#mainContent[style*="flex"] #section-reseller:not(.hidden)) .bnav-item.active::after{content:"";position:absolute;bottom:.16rem;left:50%;transform:translateX(-50%);width:1rem;height:.18rem;border-radius:99px;background:var(--choco-700)}
+#section-reseller{gap:.5rem;background:transparent;margin:-1rem -.75rem 0;padding:0 .75rem 1rem;min-height:calc(100vh - 4rem)}
+#section-reseller .section{gap:.5rem}
+.rsl-header{display:flex;flex-direction:column;background:transparent;border:none;padding:0;margin:0;box-shadow:none;position:static}
+.rsl-subtab-row{display:none}
+.rsl-action-row{display:flex;align-items:center;gap:.45rem;background:var(--choco-600);border:none;border-radius:0 0 1.1rem 1.1rem;padding:calc(.6rem + env(safe-area-inset-top,0px)) .7rem .6rem;margin:0 -.75rem .85rem;position:sticky;top:0;z-index:20;box-shadow:0 .35rem .9rem rgba(67,47,46,.35)}
 #section-reseller:not(:has(#subtab-rprice.active)) .rsl-action-row{display:none}
-#section-reseller:not(:has(#subtab-rprice.active)) .rsl-subtab-row{padding-bottom:.25rem}
+.rsl-icon-btn{width:2.6rem;height:2.6rem;border-radius:.9rem;background:rgba(254,239,184,.12);color:var(--butter-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;border:1px solid rgba(254,239,184,.28);cursor:pointer}
+.rsl-icon-btn:hover{background:rgba(254,239,184,.22);color:var(--butter-100)}
+.rsl-icon-btn svg{width:1.12rem;height:1.12rem}
+.rsl-search{flex:1;min-width:0;height:2.6rem;border:1px solid rgba(254,239,184,.3);border-radius:.9rem;padding:0 .85rem;font-size:.8125rem;background:rgba(254,239,184,.14);outline:none;font-weight:600;color:var(--butter-100);transition:border-color .2s,box-shadow .2s}
+.rsl-search:focus{border-color:rgba(254,239,184,.55);box-shadow:0 0 0 3px rgba(254,239,184,.15)}
+.rsl-search::placeholder{color:rgba(254,239,184,.55)}
+#section-reseller:has(#subtab-rorders.active) .rsl-orders-row{position:sticky;top:0;z-index:20;background:var(--choco-600);border-top:none;border-radius:0 0 1.1rem 1.1rem;padding:calc(.6rem + env(safe-area-inset-top,0px)) .7rem .6rem;margin:0 -.75rem .85rem;box-shadow:0 .35rem .9rem rgba(67,47,46,.35)}
+#section-reseller:has(#subtab-rorders.active) .ord-dd .dd-btn{width:2rem;height:2rem;padding:0;justify-content:center;background:rgba(254,239,184,.12);border-color:rgba(254,239,184,.28);color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-dd .dd-btn svg{color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-dd.dd-active .dd-btn{background:var(--butter-200);border-color:var(--butter-300);color:var(--choco-700)}
+#section-reseller:has(#subtab-rorders.active) .ord-refresh{background:rgba(254,239,184,.12);border-color:rgba(254,239,184,.28);color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-search{background:rgba(254,239,184,.14);border-color:rgba(254,239,184,.3);color:var(--butter-100)}
+#section-reseller:has(#subtab-rorders.active) .ord-search::placeholder{color:rgba(254,239,184,.55)}
+#section-reseller:has(#subtab-raccounts.active) .rsl-header{display:none}
+#section-reseller .pkg-status-col{display:flex}
 }
 @media(min-width:768px){.rsl-header{display:none}}
+#section-reseller .pkg-section-header{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin:.25rem 0 .5rem}
+#section-reseller .pkg-section-label{margin:0;font-size:.5625rem;color:var(--choco-500)}
 .rsl-icon-btn{width:2rem;height:2rem;border-radius:8px;background:var(--w);color:var(--choco-600);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;border:1px solid var(--blue-200);cursor:pointer}
 .rsl-icon-btn:hover{background:var(--blue-100);color:var(--choco-700)}
 .rsl-icon-btn svg{width:1rem;height:1rem}
