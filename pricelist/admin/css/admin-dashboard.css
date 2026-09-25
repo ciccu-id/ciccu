@@ -1,8 +1,7 @@
 @media(max-width:767px){
 html:has(body #mainContent[style*="flex"] #section-dashboard:not(.hidden)){font-size:clamp(10.5px,3.55vw,14px)}
-body:has(#mainContent[style*="flex"] #section-dashboard:not(.hidden)){background-color:var(--blue-300)}
 }
-#section-dashboard{background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-attachment:fixed;margin:-1rem -.75rem 0;padding:1rem .75rem calc(1rem + env(safe-area-inset-bottom,0px));min-height:calc(100vh - 4rem);border-radius:0}
+#section-dashboard{background:transparent;margin:-1rem -.75rem calc(-1rem - env(safe-area-inset-bottom,0px));padding:1rem .75rem calc(1rem + env(safe-area-inset-bottom,0px));min-height:calc(100vh - 4rem);border-radius:0}
 @media(min-width:768px){#section-dashboard{margin:-1.25rem -1.5rem -3rem;padding:1.25rem 1.5rem 3rem}}
 @media(min-width:1024px){#section-dashboard{margin:-1.5rem -2rem -3rem;padding:1.5rem 2rem 3rem}}
 .dash-titlehead{position:relative;padding-top:.15rem}
