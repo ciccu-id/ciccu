@@ -3,8 +3,7 @@ function dashHeaders(){return{'x-admin-password':sessionPass}}
 function fmtRpFull(n){n=n||0;return'Rp '+Number(n).toLocaleString('id-ID')}
 function fmtRpShort(n){n=n||0;if(n>=1e9)return'Rp '+(n/1e9).toFixed(1)+' M';if(n>=1e6)return'Rp '+(n/1e6).toFixed(1)+' jt';if(n>=1e3)return'Rp '+Math.round(n/1e3)+' rb';return'Rp '+n}
 function pad2(n){return String(n).padStart(2,'0')}
-function relTime(s){var t=Date.parse(String(s||'').replace(' ','T')+'Z');if(isNaN(t))return'-';var diff=Date.now()-t;if(diff<0)diff=0;var m=Math.floor(diff/60000);if(m<1)return'baru';if(m<60)return m+' mnt';var h=Math.floor(m/60);if(h<24)return h+' jam';var d=Math.floor(h/24);return d+' hri'}
-function fmtDTshort(s){if(!s)return'-';var d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' • '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+function fmtDTshort(s){if(!s)return'-';var t=Date.parse(String(s||'').replace(' ','T')+'Z');if(isNaN(t))return s;var d=new Date(t);return d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' • '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
 function goRes(sub){if(typeof switchTab==='function')switchTab(sub)}
 function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v}
 function dashSvg(d){var NS='http://www.w3.org/2000/svg';var s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');var p=document.createElementNS(NS,'path');p.setAttribute('d',d);s.appendChild(p);return s}
@@ -46,7 +45,7 @@ tb.appendChild(e);return;
 var map={delivered:['SELESAI','ok'],pending_payment:['MENUNGGU','amber'],needs_attention:['PERHATIAN','bad'],cancelled:['BATAL','off'],refunded:['REFUND','bad']};
 rows.forEach(function(r){
 var tr=ce('div','dp-tr');
-tr.appendChild(ce('span','oid','#'+r.id));
+tr.appendChild(ce('span','oid',r.order_code||('#'+r.id)));
 var c2=ce('span');
 c2.appendChild(ce('i','dp-ava',(r.username||'?').slice(0,2).toUpperCase()));
 c2.appendChild(document.createTextNode(r.username||'?'));
@@ -56,7 +55,7 @@ var c4=ce('span');
 var m=map[r.status]||[r.status,'off'];
 c4.appendChild(ce('span','dp-chip '+m[1],m[0]));
 tr.appendChild(c4);
-tr.appendChild(ce('span',null,relTime(r.created_at)));
+tr.appendChild(ce('span','when',fmtDTshort(r.created_at)));
 tb.appendChild(tr);
 });
 }
