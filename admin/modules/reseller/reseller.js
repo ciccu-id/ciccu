@@ -1,5 +1,5 @@
 (function(M){
-var root=null;
+var root=null,headRef=null;
 function buildAppList(){
 return Sec.json('/api/admin/rpricelist').then(function(rows){
 rows=rows||[];
@@ -28,10 +28,16 @@ var btnAdd=document.getElementById('btnRslAddApp');
 if(btnAdd)btnAdd.addEventListener('click',function(){AppModals.openAdd()});
 var search=document.getElementById('rpriceSearch');
 if(search)search.addEventListener('input',debounce(function(){M.setFilter(search.value)},250));
+headRef=root.querySelector('.reseller-head');
+if(headRef)TopbarControls.attach(headRef);
 AppModals.onChanged(function(){M.loadGroups()});
 return Promise.all([M.groupsInit(),M.stockInit()]);
 }
-function destroy(){root=null}
+function destroy(){
+if(headRef)TopbarControls.detach(headRef);
+headRef=null;
+root=null;
+}
 M.init=init;
 M.destroy=destroy;
 })(AdminModules.reseller=AdminModules.reseller||{});
