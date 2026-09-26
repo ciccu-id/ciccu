@@ -1,5 +1,5 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
-import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
+import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit,expireReservations}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
 import{reserveOrderStock}from'../../lib/fulfillment.js';
 const RESERVATION_TTL_MINUTES=20;
@@ -144,6 +144,7 @@ const flash=await getFlashReseller(env);
 return json(flash);
 }
 if(p==='/catalog'&&m==='GET'){
+try{await expireReservations(env)}catch(e){}
 const rows=await listCatalog(env);
 const flash=await getFlashReseller(env);
 const out=rows.map(r=>Object.assign({},r,{flash_active:!!(flash.active&&hasFlashPrice(r))}));
@@ -202,6 +203,7 @@ return json({order_id:orderId,total:total,provider:prov.name,instruction:cr.inst
 }
 if(p==='/orders'&&m==='GET'){
 const u=new URL(request.url);
+try{await expireReservations(env)}catch(e){}
 const rows=await listOrders(env,session.id,u.searchParams.get('limit'),u.searchParams.get('offset'));
 if(rows&&rows.length){
 const ids=rows.map(o=>o.id);
