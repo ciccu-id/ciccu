@@ -1,4 +1,4 @@
-import{nowStr}from'./auth-reseller.js';
+import{nowStr,addMinutes}from'./auth-reseller.js';
 function clampInt(v,d,m){const n=parseInt(v,10);if(isNaN(n))return d;return Math.max(0,Math.min(m,n))}
 async function generateOrderCode(env){
 const alphabet='0123456789';
@@ -25,7 +25,7 @@ export async function updateVariant(env,id,data){
 await env.DB.prepare('UPDATE rsl_pricelist SET app_name=?,category=?,duration=?,price=?,status=?,notes=?,sort_order=?,app_sort_order=?,flash_price=?,flash_sort_order=? WHERE id=?').bind(data.app_name,data.category,data.duration,data.price,data.status,data.notes||'',data.sort_order||9999,data.app_sort_order||9999,data.flash_price||'',data.flash_sort_order||9999,id).run();
 }
 export async function deleteVariant(env,id){
-await env.DB.prepare('DELETE FROM rsl_stock_items WHERE variant_id=? AND status=?').bind(id,'available').run();
+await env.DB.prepare("DELETE FROM rsl_stock_items WHERE variant_id=? AND status IN ('available','reserved')").bind(id).run();
 await env.DB.prepare('DELETE FROM rsl_pricelist WHERE id=?').bind(id).run();
 }
 export async function getTemplate(env,appName){return env.DB.prepare('SELECT fields FROM rsl_cred_templates WHERE app_name=?').bind(appName).first()}
@@ -33,6 +33,26 @@ export async function setTemplate(env,appName,fieldsArr){await env.DB.prepare('I
 export async function countAvailable(env,variantId){
 const r=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_stock_items WHERE variant_id=? AND status='available'").bind(variantId).first();
 return r?r.c:0;
+}
+export async function countReserved(env,variantId){
+const r=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_stock_items WHERE variant_id=? AND status='reserved'").bind(variantId).first();
+return r?r.c:0;
+}
+export async function reserveStock(env,orderItemId,variantId,qty,ttlMinutes){
+const lim=clampInt(qty,0,99);
+if(lim<1)return 0;
+const ttl=clampInt(ttlMinutes,20,120);
+if(ttl<1)return 0;
+const r=await env.DB.prepare("UPDATE rsl_stock_items SET status='reserved',order_item_id=?,reserved_at=?,reservation_expires_at=? WHERE id IN (SELECT id FROM rsl_stock_items WHERE variant_id=? AND status='available' ORDER BY id LIMIT ?)").bind(orderItemId,nowStr(),addMinutes(ttl),variantId,lim).run();
+return(r.meta&&r.meta.changes)||0;
+}
+export async function releaseReservation(env,orderItemId){
+const r=await env.DB.prepare("UPDATE rsl_stock_items SET status='available',order_item_id=NULL,reserved_at=NULL,reservation_expires_at=NULL WHERE order_item_id=? AND status='reserved'").bind(orderItemId).run();
+return(r.meta&&r.meta.changes)||0;
+}
+export async function expireReservations(env){
+const r=await env.DB.prepare("UPDATE rsl_stock_items SET status='available',order_item_id=NULL,reserved_at=NULL,reservation_expires_at=NULL WHERE status='reserved' AND reservation_expires_at<=?").bind(nowStr()).run();
+return(r.meta&&r.meta.changes)||0;
 }
 export async function listStock(env,variantId,status,limit,offset){
 const lim=clampInt(limit,50,200),off=clampInt(offset,0,100000);
@@ -76,6 +96,10 @@ await env.DB.prepare('DELETE FROM rsl_orders WHERE id=?').bind(orderId).run();
 throw e;
 }
 return orderId;
+}
+export async function listOrderItems(env,orderId){
+const r=await env.DB.prepare('SELECT id,variant_id,qty FROM rsl_order_items WHERE order_id=? ORDER BY id').bind(orderId).all();
+return r.results;
 }
 export async function getOrder(env,orderId,resellerId){
 const q=resellerId?'SELECT * FROM rsl_orders WHERE id=? AND reseller_id=?':'SELECT * FROM rsl_orders WHERE id=?';
