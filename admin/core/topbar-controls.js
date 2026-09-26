@@ -1,22 +1,25 @@
 var TopbarControls=(function(){
 var mq=window.matchMedia?window.matchMedia('(min-width:768px)'):null;
-var bound=false,slot=null,reg=[];
+var bound=false,slot=null,cur=null;
 function getSlot(){if(!slot)slot=document.getElementById('topbarControls');return slot}
 function isDesktop(){return mq?mq.matches:(window.innerWidth>=768)}
-function toTopbar(rec){
+function toTopbar(){
+if(!cur)return;
 var s=getSlot();if(!s)return;
-if(rec.node.parentNode===s)return;
-s.appendChild(rec.node);
-rec.node.classList.add('tc-in-topbar');
+var node=cur.node;
+if(node.parentNode===s)return;
+s.appendChild(node);
+node.classList.add('tc-in-topbar');
 }
-function toOrigin(rec){
-var p=rec.parent;
-if(!p||rec.node.parentNode===p){rec.node.classList.remove('tc-in-topbar');return}
-if(rec.next&&rec.next.parentNode===p)p.insertBefore(rec.node,rec.next);
-else p.appendChild(rec.node);
-rec.node.classList.remove('tc-in-topbar');
+function toOrigin(){
+if(!cur)return;
+var node=cur.node,p=cur.parent,nx=cur.next;
+if(node.parentNode===p){node.classList.remove('tc-in-topbar');return}
+if(nx&&nx.parentNode===p)p.insertBefore(node,nx);
+else if(p)p.appendChild(node);
+node.classList.remove('tc-in-topbar');
 }
-function place(){var d=isDesktop();for(var i=0;i<reg.length;i++){if(d)toTopbar(reg[i]);else toOrigin(reg[i])}}
+function place(){if(isDesktop())toTopbar();else toOrigin()}
 function onChange(){place()}
 function ensureListener(){
 if(bound||!mq)return;
@@ -26,15 +29,15 @@ bound=true;
 }
 function attach(node){
 if(!node)return;
-for(var i=0;i<reg.length;i++){if(reg[i].node===node)return}
-reg.push({node:node,parent:node.parentNode,next:node.nextSibling});
+if(cur&&cur.node===node){place();return}
+if(cur)toOrigin();
+cur={node:node,parent:node.parentNode,next:node.nextSibling};
 ensureListener();
 place();
 }
 function detach(node){
-for(var i=0;i<reg.length;i++){
-if(reg[i].node===node){toOrigin(reg[i]);reg.splice(i,1);return}
-}
+if(!node)return;
+if(cur&&cur.node===node){toOrigin();cur=null}
 }
 return{attach:attach,detach:detach};
 })();
