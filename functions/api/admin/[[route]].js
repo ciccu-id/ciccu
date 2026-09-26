@@ -1,5 +1,6 @@
 import{isSecure,randomHex,nowStr,hashNewPassword,addHours}from'../../lib/auth-reseller.js';
 import{getAdminSession,revokeAdminSession,clearAdminCookie}from'../../lib/auth-admin.js';
+import{encryptJSON}from'../../lib/crypto-creds.js';
 import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder,allocateStock}from'../../lib/fulfillment.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
@@ -312,7 +313,8 @@ const raw=b.fields;
 if(!raw||typeof raw!=='object'||Array.isArray(raw))return err('fields wajib objek',400);
 const f=cleanFields(raw);
 if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
-const up=await env.DB.prepare("UPDATE rsl_stock_items SET fields=?,buyer_note=? WHERE id=? AND status IN ('available','disabled')").bind(JSON.stringify(f),String(b.buyer_note||'').slice(0,500),id).run();
+const enc=await encryptJSON(env,f);
+const up=await env.DB.prepare("UPDATE rsl_stock_items SET fields=?,buyer_note=? WHERE id=? AND status IN ('available','disabled')").bind(enc,String(b.buyer_note||'').slice(0,500),id).run();
 if(!up.meta||!up.meta.changes)return err('Stok terkunci (terjual) atau tidak ditemukan',409);
 const si=await env.DB.prepare('SELECT variant_id FROM rsl_stock_items WHERE id=?').bind(id).first();
 if(si){const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(si.variant_id).first();if(v)await setTemplate(env,v.app_name,Object.keys(f));}
@@ -382,7 +384,10 @@ if(st!=='pending_payment'&&st!=='cancelled')return err('Status tujuan tidak vali
 const cur=await env.DB.prepare('SELECT status FROM rsl_orders WHERE id=?').bind(id).first();
 if(!cur)return err('Order tidak ditemukan',404);
 if(st==='pending_payment'){await setOrderStatus(env,id,'pending_payment')}
-else{await env.DB.prepare("UPDATE rsl_orders SET status='cancelled',cancelled_at=? WHERE id=?").bind(nowStr(),id).run()}
+else{
+await env.DB.prepare("UPDATE rsl_orders SET status='cancelled',cancelled_at=? WHERE id=?").bind(nowStr(),id).run();
+await env.DB.prepare("UPDATE rsl_stock_items SET status='available',order_item_id=NULL,reserved_at=NULL,reservation_expires_at=NULL WHERE status='reserved' AND order_item_id IN (SELECT id FROM rsl_order_items WHERE order_id=?)").bind(id).run();
+}
 await audit(env,'admin',actorId,'order.set_status','order',id,{from:cur.status,to:st},ip);
 return json({success:true});
 }
