@@ -1,4 +1,4 @@
-import{isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
+import{isSecure,randomHex,nowStr,hashNewPassword,addHours}from'../../lib/auth-reseller.js';
 import{getAdminSession,revokeAdminSession,clearAdminCookie}from'../../lib/auth-admin.js';
 import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder,allocateStock}from'../../lib/fulfillment.js';
@@ -38,8 +38,20 @@ if(i===3||i===7||i===11||i===15)out+='-';
 }
 return 'CICCU-'+out;
 }
-async function purgeExpiredTokens(env){
-await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(nowStr()).run();
+async function purgeRegTokens(env){
+const now=nowStr();
+try{await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=? OR (consumed_at IS NOT NULL AND consumed_at<=?)').bind(now,addHours(-24)).run()}
+catch(e){await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(now).run()}
+}
+async function listRegTokens(env){
+await purgeRegTokens(env);
+try{
+const r=await env.DB.prepare('SELECT id,token_prefix,label,duration_hours,created_at,expires_at FROM rsl_reg_tokens WHERE consumed_at IS NULL ORDER BY id DESC').all();
+return r.results;
+}catch(e){
+const r=await env.DB.prepare('SELECT id,token_prefix,label,duration_hours,created_at,expires_at FROM rsl_reg_tokens ORDER BY id DESC').all();
+return r.results;
+}
 }
 function durationMs(str){
 if(!str)return 0;
@@ -534,11 +546,7 @@ await env.DB.prepare('DELETE FROM rsl_resellers WHERE id=?').bind(id).run();
 await audit(env,'admin',actorId,old.status==='pending'?'reseller.reject':'reseller.delete','reseller',id,{username:old.username},ip);
 return json({success:true});
 }
-if(q==='/reg-tokens'&&m==='GET'){
-await purgeExpiredTokens(env);
-const r=await env.DB.prepare('SELECT id,token_prefix,label,duration_hours,created_at,expires_at FROM rsl_reg_tokens ORDER BY id DESC').all();
-return json(r.results);
-}
+if(q==='/reg-tokens'&&m==='GET'){return json(await listRegTokens(env))}
 if(q==='/reg-tokens'&&m==='POST'){
 const dh=num(b.duration_hours);
 if([24,168,720].indexOf(dh)<0)return err('Durasi tidak valid',400);
