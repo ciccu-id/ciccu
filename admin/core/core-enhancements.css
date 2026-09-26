@@ -22,3 +22,10 @@ body:has(#pageRoot > .page-host) .bnav-item.active{background:var(--butter-200);
 .modal-body-scroll .add-field-btn{margin-top:.625rem}
 .stk-card .kebab-menu{background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-md);box-shadow:var(--sh-lg);padding:.25rem}
 .stk-card .kebab-item{font-size:.625rem;padding:.45rem .625rem}
+@media(min-width:768px){
+.topbar-controls{display:flex;align-items:center;gap:.5rem;flex:none}
+.topbar-controls:empty{display:none}
+.topbar-controls .tc-in-topbar{position:static;background:transparent;border:none;box-shadow:none;padding:0;margin:0;border-radius:0;overflow:visible;flex:none}
+.topbar-controls .public-search,.topbar-controls .reseller-search,.topbar-controls .pesanan-search,.topbar-controls .akses-search{flex:1 1 20rem;min-width:16rem;max-width:30rem}
+body:has(#pageRoot .page-beranda) .adm-topbar{display:none}
+}
