@@ -1,3 +1,6 @@
+@media(max-width:767px){
+.adm-topbar{display:none}
+}
 .adm-input .dd{width:100%;min-width:0}
 .adm-input .dd .dd-btn{height:40px;border:1.5px solid var(--tint-line);border-radius:.6rem;box-shadow:none;font-size:13px;font-weight:700;color:var(--choco-700);padding:0 12px;justify-content:flex-start}
 .adm-input .dd .dd-btn svg{margin-left:auto}
