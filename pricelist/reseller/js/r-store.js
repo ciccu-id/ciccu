@@ -1,4 +1,4 @@
-import{RES,ce,svgI,resFmtIDR,resNum,resApi,resToast,persistCart,restoreCart,cartCount,cartTotal}from'./r-core.js';
+import{RES,ce,svgI,resFmtIDR,resNum,resApi,resToast,persistCart,restoreCart,cartCount,cartTotal}from'./r-core.js?v=6';
 export async function loadCatalog(){
 try{
 const rows=await resApi('/api/reseller/catalog');
