@@ -1,13 +1,14 @@
 var Reg=(function(){
 var REGISTRY={
 beranda:{title:'Dashboard',files:['beranda.view.js','beranda.js'],css:'beranda.css'},
-public:{title:'Katalog Publik',files:['public.view.js','public.groups.js','public.js'],css:'public.css'},
+rekapan:{title:'Rekapan',files:['rekapan.view.js','rekapan.js'],css:'rekapan.css'},
+public:{title:'Pricelist Public',files:['public.view.js','public.groups.js','public.js'],css:'public.css'},
+flashpub:{title:'Flashsale Public',files:['flashpub.js'],css:null},
 reseller:{title:'Pricelist & Stok',files:['reseller.view.js','reseller.groups.js','reseller.stock.js','reseller.js'],css:'reseller.css'},
 pesanan:{title:'Order Reseller',files:['pesanan.view.js','pesanan.cards.js','pesanan.receipt.js','pesanan.js'],css:'pesanan.css'},
-akses:{title:'Akun Reseller',files:['akses.view.js','akses.tokens.js','akses.accounts.js','akses.js'],css:'akses.css'},
-flashsale:{title:'Flash Sale',files:['flashsale.view.js','flashsale.js'],css:'flashsale.css'},
-pengaturan:{title:'Pengaturan',files:['pengaturan.view.js','pengaturan.js'],css:'pengaturan.css'},
-aktivitas:{title:'Aktivitas Admin',files:['aktivitas.view.js','aktivitas.js'],css:'aktivitas.css'}
+akses:{title:'Akses Reseller',files:['akses.view.js','akses.tokens.js','akses.accounts.js','akses.js'],css:'akses.css'},
+flashrsl:{title:'Flashsale Reseller',files:['flashrsl.js'],css:null},
+pengaturan:{title:'Pengaturan',files:['pengaturan.view.js','pengaturan.js'],css:'pengaturan.css'}
 };
 var cssLoaded={};
 function title(name){var r=REGISTRY[name];return r?r.title:'Admin'}
