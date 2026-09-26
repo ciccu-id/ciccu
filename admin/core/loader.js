@@ -12,6 +12,7 @@ document.head.appendChild(s);
 });
 }
 function showError(host,msg){
+if(!host)return;
 while(host.firstChild)host.removeChild(host.firstChild);
 var box=ce('div','page-error');
 box.appendChild(ce('p',null,'⚠ Module gagal dimuat'));
@@ -19,6 +20,8 @@ box.appendChild(ce('p',null,String(msg||'Kesalahan tidak diketahui')));
 host.appendChild(box);
 }
 function mount(name,host){
+if(!host)host=document.getElementById('pageRoot');
+if(!host)return Promise.reject(new Error('Elemen host tidak ditemukan untuk module: '+name));
 while(host.firstChild)host.removeChild(host.firstChild);
 host.className='page-host page-'+name;
 return Reg.loadCss(name).then(function(){
