@@ -1,0 +1,27 @@
+.page-public{gap:.85rem}
+.public-head{display:flex;align-items:center;gap:.45rem}
+.public-icon{width:2.6rem;height:2.6rem;border-radius:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;cursor:pointer}
+.public-icon svg{width:1.1rem;height:1.1rem}
+.public-search{flex:1;min-width:0;height:2.6rem;border-radius:.9rem;padding:0 .85rem;font-size:.8125rem;outline:none;font-weight:600;transition:border-color .2s,box-shadow .2s;font-family:inherit}
+@media(max-width:767px){
+html:has(#pageRoot .page-public){font-size:clamp(10.5px,3.55vw,14px)}
+body:has(#pageRoot .page-public){background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-size:100% 100%}
+body:has(#pageRoot .page-public) .adm-topbar{display:none}
+body:has(#pageRoot .page-public) .adm-content{padding-top:0}
+body:has(#pageRoot .page-public) .bnav{background:var(--choco-600);border-top:none;border-radius:1.3rem 1.3rem 0 0;box-shadow:0 -.35rem 1.2rem rgba(67,47,46,.3)}
+body:has(#pageRoot .page-public) .bnav-item{color:rgba(255,248,221,.6)}
+body:has(#pageRoot .page-public) .bnav-item.active{background:var(--butter-200);color:var(--choco-700);font-weight:800}
+.public-head{position:sticky;top:0;z-index:20;background:var(--choco-600);border-radius:0 0 1.1rem 1.1rem;padding:calc(.6rem + env(safe-area-inset-top,0px)) .7rem .6rem;margin:0 -.75rem .85rem;box-shadow:0 .35rem .9rem rgba(67,47,46,.35);overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+.public-head::-webkit-scrollbar{display:none}
+.public-icon{background:rgba(254,239,184,.12);border:1px solid rgba(254,239,184,.28);color:var(--butter-100)}
+.public-icon:active{background:rgba(254,239,184,.2)}
+.public-search{border:1px solid rgba(254,239,184,.3);background:rgba(254,239,184,.14);color:var(--butter-100);min-width:10rem}
+.public-search::placeholder{color:rgba(254,239,184,.55)}
+}
+@media(min-width:768px){
+.public-head{background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-lg);padding:.5rem;box-shadow:var(--sh-sm)}
+.public-icon{background:var(--w);border:1px solid var(--blue-200);color:var(--choco-600)}
+.public-icon:hover{background:var(--blue-100)}
+.public-search{border:1px solid var(--blue-200);background:var(--w);color:var(--choco-600)}
+.public-search:focus{border-color:var(--choco-600);box-shadow:0 0 0 3px rgba(67,47,46,.08)}
+}
