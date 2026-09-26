@@ -1,4 +1,5 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
+import{getAdminSession,revokeAdminSession,clearAdminCookie}from'../../lib/auth-admin.js';
 import{getVariant,listCatalog,createVariant,updateVariant,deleteVariant,getTemplate,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder,allocateStock}from'../../lib/fulfillment.js';
 import{getProvider}from'../../lib/payment/provider.js';
@@ -7,7 +8,7 @@ function truncate(s,m){return s?String(s).slice(0,m):''}
 function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
 const num=s=>parseInt(s,10);
-function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
+function slugify(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
 const LOGO_MAP={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','hbo go':'hbogoasia.id','wetv vip':'wetv.vip','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'editing','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
 const LOGO_CT=['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','image/x-icon','image/vnd.microsoft.icon'];
 const APP_TYPES=['streaming','music','editing','study','game','lainnya'];
@@ -89,13 +90,18 @@ export async function onRequest(context){
 const{request,env}=context;
 const url=new URL(request.url);const p=url.pathname;const m=request.method;
 if(m==='OPTIONS')return new Response(null,{headers:corsHeaders});
-const json=(d,s=200)=>new Response(JSON.stringify(d),{headers:{...corsHeaders,'Content-Type':'application/json','Cache-Control':'no-store'},status:s});
+const json=(d,s=200,h={})=>new Response(JSON.stringify(d),{headers:{...corsHeaders,...h,'Content-Type':'application/json','Cache-Control':'no-store'},status:s});
 const err=(msg,s=500)=>json({error:msg},s);
-if(request.headers.get('x-admin-password')!==env.ADMIN_PASSWORD)return err('Password salah atau sesi tidak valid',403);
-const ip=request.headers.get('cf-connecting-ip')||'';
 try{
+const pwHeader=request.headers.get('x-admin-password');
+const adminSession=await getAdminSession(env,request);
+if(pwHeader!==env.ADMIN_PASSWORD&&!adminSession)return err('Password salah atau sesi tidak valid',403);
+const actorId=adminSession?adminSession.id:null;
+const ip=request.headers.get('cf-connecting-ip')||'';
 const b=m!=='GET'?await request.json().catch(()=>({})):null;
 const q=p.replace(/^\/api\/admin/,'')||'/';
+if(q==='/logout'&&m==='POST'){await revokeAdminSession(env,request);return json({success:true},200,{'Set-Cookie':clearAdminCookie(isSecure(request))})}
+if(q==='/session'&&m==='GET')return json({authenticated:true,session_id:actorId});
 if(q==='/settings'&&m==='GET'){
 const{results}=await env.DB.prepare('SELECT * FROM store_settings WHERE id=1').all();
 if(!results||!results.length)return json({});
@@ -167,7 +173,7 @@ if(!b.order||!Array.isArray(b.order)||b.order.length>100)return err('Data tidak 
 const stmts=b.order.map(i=>{const id=num(i.id),fso=num(i.flash_sort_order);return(isNaN(id)||isNaN(fso))?null:env.DB.prepare('UPDATE rsl_pricelist SET flash_sort_order=? WHERE id=?').bind(fso,id)}).filter(Boolean);
 if(!stmts.length)return err('Data tidak valid',400);
 await env.DB.batch(stmts);
-await audit(env,'admin',null,'rflashsale.reorder','app',null,{count:stmts.length},ip);
+await audit(env,'admin',actorId,'rflashsale.reorder','app',null,{count:stmts.length},ip);
 return json({success:true});
 }
 if(q==='/reorder-apps'&&m==='PUT'){
@@ -238,7 +244,7 @@ const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.du
 if(!an||!cat||!dur||!pr)return err('Data tidak lengkap',400);
 const st=(b.status==='Sold')?'Sold':'Ready';
 const id=await createVariant(env,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999,flash_price:fp});
-await audit(env,'admin',null,'rpricelist.create','variant',id,{app:an},ip);
+await audit(env,'admin',actorId,'rpricelist.create','variant',id,{app:an},ip);
 return json({success:true,id:id},201);
 }
 if(q==='/rpricelist/reorder-apps'&&m==='PUT'){
@@ -246,7 +252,7 @@ if(!b.order||!Array.isArray(b.order)||b.order.length>100)return err('Data tidak 
 const stmts=b.order.map(i=>{const aso=num(i.app_sort_order);return(isNaN(aso)||!i.app_name)?null:env.DB.prepare('UPDATE rsl_pricelist SET app_sort_order=? WHERE app_name=?').bind(aso,truncate(i.app_name,100))}).filter(Boolean);
 if(!stmts.length)return err('Data tidak valid',400);
 await env.DB.batch(stmts);
-await audit(env,'admin',null,'rpricelist.reorder-apps','app',null,{count:stmts.length},ip);
+await audit(env,'admin',actorId,'rpricelist.reorder-apps','app',null,{count:stmts.length},ip);
 return json({success:true});
 }
 const rpm=q.match(/^\/rpricelist\/(\d+)$/);
@@ -256,13 +262,13 @@ const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.du
 if(!an||!cat||!dur||!pr)return err('Data tidak lengkap',400);
 const st=(b.status==='Sold')?'Sold':'Ready';
 await updateVariant(env,id,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999,flash_price:fp});
-await audit(env,'admin',null,'rpricelist.update','variant',id,{app:an},ip);
+await audit(env,'admin',actorId,'rpricelist.update','variant',id,{app:an},ip);
 return json({success:true});
 }
 if(rpm&&m==='DELETE'){
 const id=num(rpm[1]);
 await deleteVariant(env,id);
-await audit(env,'admin',null,'rpricelist.delete','variant',id,{},ip);
+await audit(env,'admin',actorId,'rpricelist.delete','variant',id,{},ip);
 return json({success:true});
 }
 if(q==='/cred-templates'&&m==='GET'){const r=await env.DB.prepare('SELECT app_name,fields,updated_at FROM rsl_cred_templates ORDER BY app_name').all();return json(r.results)}
@@ -273,7 +279,7 @@ let arr=[];
 if(Array.isArray(b.fields))arr=b.fields.map(f=>String(f).trim()).filter(Boolean).slice(0,30);
 else if(typeof b.fields==='string')arr=b.fields.split(',').map(s=>s.trim()).filter(Boolean).slice(0,30);
 await setTemplate(env,app,arr);
-await audit(env,'admin',null,'template.set','app',null,{app,count:arr.length},ip);
+await audit(env,'admin',actorId,'template.set','app',null,{app,count:arr.length},ip);
 return json({success:true});
 }
 const sm=q.match(/^\/stock\/(\d+)(\/(disable|enable))?$/);
@@ -288,7 +294,7 @@ if(!Object.keys(f).length)return err('Minimal satu field diperlukan',400);
 const nid=await addStock(env,id,f,b.buyer_note);
 const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(id).first();
 if(v)await setTemplate(env,v.app_name,Object.keys(f));
-await audit(env,'admin',null,'stock.add','variant',id,{stock:nid,fields:Object.keys(f).length},ip);
+await audit(env,'admin',actorId,'stock.add','variant',id,{stock:nid,fields:Object.keys(f).length},ip);
 return json({success:true,id:nid},201);
 }
 if(m==='PUT'&&!sub){
@@ -300,17 +306,17 @@ const up=await env.DB.prepare("UPDATE rsl_stock_items SET fields=?,buyer_note=? 
 if(!up.meta||!up.meta.changes)return err('Stok terkunci (terjual) atau tidak ditemukan',409);
 const si=await env.DB.prepare('SELECT variant_id FROM rsl_stock_items WHERE id=?').bind(id).first();
 if(si){const v=await env.DB.prepare('SELECT app_name FROM rsl_pricelist WHERE id=?').bind(si.variant_id).first();if(v)await setTemplate(env,v.app_name,Object.keys(f));}
-await audit(env,'admin',null,'stock.update','stock',id,{fields:Object.keys(f).length},ip);
+await audit(env,'admin',actorId,'stock.update','stock',id,{fields:Object.keys(f).length},ip);
 return json({success:true});
 }
-if(m==='POST'&&sub==='disable'){await disableStock(env,id);await audit(env,'admin',null,'stock.disable','stock',id,{},ip);return json({success:true})}
+if(m==='POST'&&sub==='disable'){await disableStock(env,id);await audit(env,'admin',actorId,'stock.disable','stock',id,{},ip);return json({success:true})}
 if(m==='POST'&&sub==='enable'){
 const en=await env.DB.prepare("UPDATE rsl_stock_items SET status='available' WHERE id=? AND status='disabled'").bind(id).run();
 if(!en.meta||!en.meta.changes)return err('Stok tidak berstatus nonaktif',409);
-await audit(env,'admin',null,'stock.enable','stock',id,{},ip);
+await audit(env,'admin',actorId,'stock.enable','stock',id,{},ip);
 return json({success:true});
 }
-if(m==='DELETE'&&!sub){await deleteAvailableStock(env,id);await audit(env,'admin',null,'stock.delete','stock',id,{},ip);return json({success:true});
+if(m==='DELETE'&&!sub){await deleteAvailableStock(env,id);await audit(env,'admin',actorId,'stock.delete','stock',id,{},ip);return json({success:true});
 }
 }
 if(q.startsWith('/low-stock')&&m==='GET'){const rows=await lowStock(env,url.searchParams.get('threshold'));return json(rows)}
@@ -349,17 +355,17 @@ if(!note)return err('Catatan revisi wajib diisi',400);
 const chk=await env.DB.prepare('SELECT id FROM rsl_order_items WHERE id=? AND order_id=?').bind(itemId,orderId).first();
 if(!chk)return err('Item order tidak ditemukan',404);
 const rid=await addOrderRevision(env,itemId,f,note,'admin');
-await audit(env,'admin',null,'order.revision','order_item',itemId,{order:orderId,fields:Object.keys(f).length},ip);
+await audit(env,'admin',actorId,'order.revision','order_item',itemId,{order:orderId,fields:Object.keys(f).length},ip);
 return json({success:true,id:rid},201);
 }
 const om=q.match(/^\/orders\/(\d+)(\/(settle|fulfill|refund|process|set-status))?$/);
 if(om){
 const id=num(om[1]);const act=om[3];
 if(m==='GET'&&!act){const o=await getOrderAdmin(env,id);if(!o)return err('Order tidak ditemukan',404);if(o.delivered_at&&o.items)o.items.forEach(it=>{const ms=durationMs(it.duration);it.expires_at=ms>0?addMsToIso(o.delivered_at,ms):null});return json(o)}
-if(m==='POST'&&act==='settle'){const r=await manualSettle(env,id,null,ip);return json(r)}
-if(m==='POST'&&act==='fulfill'){const r=await retryFulfill(env,id,null,ip);return json(r)}
-if(m==='POST'&&act==='refund'){const r=await refundOrder(env,id,null,ip,!!b.return_stock);return json(r)}
-if(m==='POST'&&act==='process'){const r=await allocateStock(env,id);await audit(env,'admin',null,'order.manual_process','order',id,r,ip);return json(r)}
+if(m==='POST'&&act==='settle'){const r=await manualSettle(env,id,actorId,ip);return json(r)}
+if(m==='POST'&&act==='fulfill'){const r=await retryFulfill(env,id,actorId,ip);return json(r)}
+if(m==='POST'&&act==='refund'){const r=await refundOrder(env,id,actorId,ip,!!b.return_stock);return json(r)}
+if(m==='POST'&&act==='process'){const r=await allocateStock(env,id);await audit(env,'admin',actorId,'order.manual_process','order',id,r,ip);return json(r)}
 if(m==='POST'&&act==='set-status'){
 const st=String(b.status||'');
 if(st!=='pending_payment'&&st!=='cancelled')return err('Status tujuan tidak valid',400);
@@ -367,7 +373,7 @@ const cur=await env.DB.prepare('SELECT status FROM rsl_orders WHERE id=?').bind(
 if(!cur)return err('Order tidak ditemukan',404);
 if(st==='pending_payment'){await setOrderStatus(env,id,'pending_payment')}
 else{await env.DB.prepare("UPDATE rsl_orders SET status='cancelled',cancelled_at=? WHERE id=?").bind(nowStr(),id).run()}
-await audit(env,'admin',null,'order.set_status','order',id,{from:cur.status,to:st},ip);
+await audit(env,'admin',actorId,'order.set_status','order',id,{from:cur.status,to:st},ip);
 return json({success:true});
 }
 }
@@ -395,7 +401,7 @@ const r=await fetchLogoToR2(env,name,rawUrl);
 if(r.ok){await env.DB.prepare('UPDATE app_metadata SET logo_path=? WHERE app_name=?').bind(r.slug,name).run()}
 else{logoError=r.error}
 }
-await audit(env,'admin',null,'app.create','app',null,{name:name,type:at},ip);
+await audit(env,'admin',actorId,'app.create','app',null,{name:name,type:at},ip);
 return json({success:true,created:true,logo_error:logoError},201);
 }
 const amq=q.match(/^\/app-metadata\/(.+)$/);
@@ -421,7 +427,7 @@ env.DB.prepare('UPDATE rsl_pricelist SET app_name=? WHERE app_name=?').bind(nn,o
 env.DB.prepare('UPDATE app_forms SET app_name=? WHERE app_name=?').bind(nn,oldName),
 env.DB.prepare('UPDATE app_metadata SET app_name=? WHERE app_name=?').bind(nn,oldName)
 ]);
-await audit(env,'admin',null,'app.rename','app',null,{old:oldName,new:nn},ip);
+await audit(env,'admin',actorId,'app.rename','app',null,{old:oldName,new:nn},ip);
 name=nn;
 }
 }
@@ -451,7 +457,7 @@ const sets=[];const args=[];
 if(logoPath!==undefined){sets.push('logo_path=?');args.push(logoPath)}
 if(hasType){sets.push('app_type=?');args.push(at)}
 if(sets.length){args.push(name);await env.DB.prepare('UPDATE app_metadata SET '+sets.join(',')+' WHERE app_name=?').bind(...args).run()}
-await audit(env,'admin',null,'app.update','app',null,{name:name},ip);
+await audit(env,'admin',actorId,'app.update','app',null,{name:name},ip);
 return json({success:true,new_name:name});
 }
 if(amq&&m==='DELETE'){
@@ -460,7 +466,7 @@ const row=await env.DB.prepare('SELECT logo_path FROM app_metadata WHERE app_nam
 if(row&&row.logo_path){try{await env.LOGOS.delete('logos/'+row.logo_path)}catch(e){}}
 const del=await env.DB.prepare('DELETE FROM app_metadata WHERE app_name=?').bind(name).run();
 if(!del.meta||!del.meta.changes)return err('Aplikasi tidak ditemukan',404);
-await audit(env,'admin',null,'app.delete','app',null,{name:name},ip);
+await audit(env,'admin',actorId,'app.delete','app',null,{name:name},ip);
 return json({success:true});
 }
 if(q==='/logo-ingest'&&m==='POST'){
@@ -476,7 +482,7 @@ return json({success:true,slug:slug,logo_path:''});
 const r=await fetchLogoToR2(env,name,rawUrl);
 if(!r.ok)return err(r.error,502);
 await env.DB.prepare('INSERT INTO app_metadata(app_name,logo_path) VALUES(?,?) ON CONFLICT(app_name) DO UPDATE SET logo_path=excluded.logo_path').bind(name,r.slug).run();
-await audit(env,'admin',null,'logo.ingest','app',null,{name:name,slug:r.slug},ip);
+await audit(env,'admin',actorId,'logo.ingest','app',null,{name:name,slug:r.slug},ip);
 return json({success:true,slug:r.slug,logo_path:r.slug,url:'/api/logo/'+r.slug});
 }
 if(q==='/logo-suggestions'&&m==='GET'){
@@ -500,7 +506,7 @@ const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').b
 if(ex)return err('Username sudah dipakai',400);
 const h=await hashNewPassword(password);
 await env.DB.prepare('INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name) VALUES(?,?,?,?,?)').bind(username,h.hash,h.salt,h.iter,dn||username).run();
-await audit(env,'admin',null,'reseller.create','reseller',null,{username:username},ip);
+await audit(env,'admin',actorId,'reseller.create','reseller',null,{username:username},ip);
 return json({success:true},201);
 }
 const rm=q.match(/^\/resellers\/(\d+)$/);
@@ -517,8 +523,8 @@ if(b.password){const pw=String(b.password).slice(0,200);if(pw.length<8)return er
 if(!sets.length)return err('Tidak ada perubahan',400);
 args.push(id);
 await env.DB.prepare('UPDATE rsl_resellers SET '+sets.join(',')+' WHERE id=?').bind(...args).run();
-if(b.status!==undefined&&old.status==='pending'&&b.status==='active')await audit(env,'admin',null,'reseller.approve','reseller',id,{},ip);
-else await audit(env,'admin',null,'reseller.update','reseller',id,{},ip);
+if(b.status!==undefined&&old.status==='pending'&&b.status==='active')await audit(env,'admin',actorId,'reseller.approve','reseller',id,{},ip);
+else await audit(env,'admin',actorId,'reseller.update','reseller',id,{},ip);
 return json({success:true});
 }
 if(rm&&m==='DELETE'){
@@ -527,7 +533,7 @@ const old=await env.DB.prepare('SELECT username,status FROM rsl_resellers WHERE 
 if(!old)return err('Reseller tidak ditemukan',404);
 await env.DB.prepare('UPDATE rsl_sessions SET revoked_at=? WHERE reseller_id=? AND revoked_at IS NULL').bind(nowStr(),id).run();
 await env.DB.prepare('DELETE FROM rsl_resellers WHERE id=?').bind(id).run();
-await audit(env,'admin',null,old.status==='pending'?'reseller.reject':'reseller.delete','reseller',id,{username:old.username},ip);
+await audit(env,'admin',actorId,old.status==='pending'?'reseller.reject':'reseller.delete','reseller',id,{username:old.username},ip);
 return json({success:true});
 }
 if(q==='/reg-tokens'&&m==='GET'){
@@ -545,7 +551,7 @@ const now=nowStr();
 const base=Date.parse(now.replace(' ','T')+'Z');
 const expires=new Date(base+dh*3600000).toISOString().replace('T',' ').slice(0,19);
 await env.DB.prepare('INSERT INTO rsl_reg_tokens(token_hash,token_prefix,label,duration_hours,created_at,expires_at) VALUES(?,?,?,?,?,?)').bind(hash,token.slice(0,10),label,dh,now,expires).run();
-await audit(env,'admin',null,'reg.token.create','token',null,{label:label,duration_hours:dh},ip);
+await audit(env,'admin',actorId,'reg.token.create','token',null,{label:label,duration_hours:dh},ip);
 return json({success:true,token:token,expires_at:expires},201);
 }
 const rtm=q.match(/^\/reg-tokens\/(\d+)$/);
@@ -553,7 +559,7 @@ if(rtm&&m==='DELETE'){
 const id=num(rtm[1]);
 const del=await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(id).run();
 if(!del.meta||!del.meta.changes)return err('Token tidak ditemukan',404);
-await audit(env,'admin',null,'reg.token.revoke','token',id,{},ip);
+await audit(env,'admin',actorId,'reg.token.revoke','token',id,{},ip);
 return json({success:true});
 }
 return err('Endpoint tidak ditemukan',404);
