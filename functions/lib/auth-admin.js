@@ -1,10 +1,11 @@
-import{sha256hex,randomHex,nowStr,addHours,isSecure,parseCookies}from'./auth-reseller.js';
+import{sha256hex,randomHex,nowStr,addHours}from'./auth-reseller.js';
 export const ADMIN_SESSION_COOKIE='adm_sid';
-export const ADMIN_SESSION_PATH='/api/admin';
+export const ADMIN_SESSION_PATH='/api';
 export const ADMIN_SESSION_HOURS=8;
 const ADMIN_IDLE_MS=1800000;
 const ADMIN_TOUCH_MS=60000;
-function adminToken(request){const c=parseCookies(request.headers.get('cookie')||'')[ADMIN_SESSION_COOKIE];return c&&c.length>=32?c.slice(0,128):null}
+function parseCookieHeader(header){const out={};(header||'').split(';').forEach(p=>{const i=p.indexOf('=');if(i>0)out[p.slice(0,i).trim()]=decodeURIComponent(p.slice(i+1).trim())});return out}
+function adminToken(request){const c=parseCookieHeader(request.headers.get('cookie')||'')[ADMIN_SESSION_COOKIE];return c&&c.length>=32?c.slice(0,128):null}
 export async function createAdminSession(env,request,mfaVerified=false){await env.DB.prepare('DELETE FROM admin_sessions WHERE expires_at<=? OR (revoked_at IS NOT NULL AND revoked_at<=?)').bind(nowStr(),addHours(-24)).run();const token=randomHex(32);const hash=await sha256hex(token);const ip=request.headers.get('cf-connecting-ip')||'';const ua=String(request.headers.get('user-agent')||'').slice(0,300);const uaHash=await sha256hex(ua);await env.DB.prepare('INSERT INTO admin_sessions(session_hash,expires_at,ip,ua_hash,mfa_verified) VALUES(?,?,?,?,?)').bind(hash,addHours(ADMIN_SESSION_HOURS),ip,uaHash,mfaVerified?1:0).run();return token}
 export async function getAdminSession(env,request){const token=adminToken(request);if(!token)return null;const hash=await sha256hex(token);const row=await env.DB.prepare('SELECT id,created_at,last_used_at,expires_at,revoked_at,mfa_verified FROM admin_sessions WHERE session_hash=?').bind(hash).first();if(!row||row.revoked_at||row.expires_at<=nowStr())return null;const base=row.last_used_at||row.created_at;const bt=Date.parse(String(base).replace(' ','T')+'Z');if(isNaN(bt)||Date.now()-bt>ADMIN_IDLE_MS){await env.DB.prepare('UPDATE admin_sessions SET revoked_at=? WHERE id=? AND revoked_at IS NULL').bind(nowStr(),row.id).run();return null}const now=Date.now();const lt=row.last_used_at?Date.parse(String(row.last_used_at).replace(' ','T')+'Z'):0;if(!lt||now-lt>ADMIN_TOUCH_MS)await env.DB.prepare('UPDATE admin_sessions SET last_used_at=? WHERE id=?').bind(nowStr(),row.id).run();return{id:row.id,mfa_verified:!!row.mfa_verified}}
 export async function revokeAdminSession(env,request){const token=adminToken(request);if(!token)return;const hash=await sha256hex(token);await env.DB.prepare('UPDATE admin_sessions SET revoked_at=? WHERE session_hash=? AND revoked_at IS NULL').bind(nowStr(),hash).run()}
