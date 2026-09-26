@@ -1,5 +1,5 @@
-import{isSecure,randomHex,nowStr,hashNewPassword,addHours}from'../../lib/auth-reseller.js';
-import{getAdminSession,revokeAdminSession,clearAdminCookie}from'../../lib/auth-admin.js';
+import{isSecure,nowStr,hashNewPassword,addHours}from'../../lib/auth-reseller.js';
+import{getAdminSession,revokeAdminSession,clearAdminCookie,createAdminSession,adminCookieValue}from'../../lib/auth-admin.js';
 import{encryptJSON}from'../../lib/crypto-creds.js';
 import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder,allocateStock}from'../../lib/fulfillment.js';
@@ -9,6 +9,7 @@ function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
 const num=s=>parseInt(s,10);
 function slugify(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
+function safeEqual(a,b){a=String(a||'');b=String(b||'');if(a.length!==b.length)return false;let r=0;for(let i=0;i<a.length;i++)r|=a.charCodeAt(i)^b.charCodeAt(i);return r===0}
 const LOGO_MAP={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','hbo go':'hbogoasia.id','wetv vip':'wetv.vip','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'editing','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
 const LOGO_CT=['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','image/x-icon','image/vnd.microsoft.icon'];
 const APP_TYPES=['streaming','music','editing','study','game','lainnya'];
@@ -53,6 +54,12 @@ return r.results;
 const r=await env.DB.prepare('SELECT id,token_prefix,label,duration_hours,created_at,expires_at FROM rsl_reg_tokens ORDER BY id DESC').all();
 return r.results;
 }
+}
+async function verifyTurnstile(token,secret){
+if(!token||!secret)return false;
+const fd=new FormData();fd.append('secret',secret);fd.append('response',token);
+const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});
+const o=await r.json();return!!o.success;
 }
 function durationMs(str){
 if(!str)return 0;
@@ -105,12 +112,19 @@ if(m==='OPTIONS')return new Response(null,{headers:corsHeaders});
 const json=(d,s=200,h={})=>new Response(JSON.stringify(d),{headers:{...corsHeaders,...h,'Content-Type':'application/json','Cache-Control':'no-store'},status:s});
 const err=(msg,s=500)=>json({error:msg},s);
 try{
+const q=p.replace(/^\/api\/admin/,'')||'/';
+const b=m!=='GET'?await request.json().catch(()=>({})):null;
+if(q==='/login'&&m==='POST'){
+if(!env.ADMIN_PASSWORD)return err('Konfigurasi admin belum lengkap',500);
+if(!await verifyTurnstile(b&&b.turnstileResponse,env.TURNSTILE_SECRET))return err('Captcha tidak valid',400);
+if(!safeEqual(b&&b.password,env.ADMIN_PASSWORD))return err('Password salah',403);
+const token=await createAdminSession(env,request,false);
+return json({success:true},200,{'Set-Cookie':adminCookieValue(token,isSecure(request))});
+}
 const adminSession=await getAdminSession(env,request);
 if(!adminSession)return err('Sesi admin tidak valid. Silakan masuk kembali.',403);
 const actorId=adminSession.id;
 const ip=request.headers.get('cf-connecting-ip')||'';
-const b=m!=='GET'?await request.json().catch(()=>({})):null;
-const q=p.replace(/^\/api\/admin/,'')||'/';
 if(q==='/logout'&&m==='POST'){await revokeAdminSession(env,request);return json({success:true},200,{'Set-Cookie':clearAdminCookie(isSecure(request))})}
 if(q==='/session'&&m==='GET')return json({authenticated:true,session_id:actorId});
 if(q==='/settings'&&m==='GET'){
