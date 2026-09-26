@@ -1,4 +1,7 @@
 @media(max-width:767px){
+html,body{overflow-x:hidden}
+}
+@media(max-width:767px){
 html:has(#pageRoot > .page-host){font-size:clamp(10.5px,3.55vw,14px)}
 body:has(#pageRoot > .page-host){background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-size:100% 100%}
 body:has(#pageRoot > .page-host) .adm-topbar{display:none}
@@ -7,6 +10,8 @@ body:has(#pageRoot > .page-host) .bnav{background:var(--choco-600);border-top:no
 body:has(#pageRoot > .page-host) .bnav-item{color:rgba(255,248,221,.6)}
 body:has(#pageRoot > .page-host) .bnav-item.active{background:var(--butter-200);color:var(--choco-700);font-weight:800}
 }
+.page-host{min-width:0;overflow-wrap:break-word}
+.page-host img{max-width:100%;height:auto}
 .adm-input .dd{width:100%;min-width:0}
 .adm-input .dd .dd-btn{height:40px;border:1.5px solid var(--tint-line);border-radius:.6rem;box-shadow:none;font-size:13px;font-weight:700;color:var(--choco-700);padding:0 12px;justify-content:flex-start}
 .adm-input .dd .dd-btn svg{margin-left:auto}
