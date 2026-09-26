@@ -2,6 +2,7 @@ import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFail
 import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit,expireReservations}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
 import{reserveOrderStock}from'../../lib/fulfillment.js';
+import{checkLoginThrottle,recordLoginFail,clearLoginThrottle}from'../../lib/throttle.js';
 const RESERVATION_TTL_MINUTES=20;
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
@@ -119,12 +120,15 @@ const username=String(b.username||'').trim().slice(0,50);
 const password=String(b.password||'').slice(0,200);
 if(!username||!password)return err('Username dan password wajib diisi',400);
 if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
+const thr=await checkLoginThrottle(env,ip);
+if(!thr.ok)return json({error:'Terlalu banyak percobaan gagal dari jaringan Anda. Coba lagi dalam '+thr.retry_after+' menit.'},429);
 const r=await env.DB.prepare('SELECT * FROM rsl_resellers WHERE username=?').bind(username).first();
-if(!r){await safeAudit(env,'reseller',null,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
+if(!r){await recordLoginFail(env,ip);await safeAudit(env,'reseller',null,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 if(isLocked(r))return err('Akun terkunci sementara. Coba lagi nanti',423);
 const ok=await verifyPassword(password,r);
-if(!ok){await recordFailure(env,r.id);await safeAudit(env,'reseller',r.id,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
+if(!ok){await recordLoginFail(env,ip);await recordFailure(env,r.id);await safeAudit(env,'reseller',r.id,'login.fail',null,null,{username:username},ip);return err('Username atau password salah',401)}
 await resetFailures(env,r.id);
+await clearLoginThrottle(env,ip);
 if(r.status==='pending'){await safeAudit(env,'reseller',r.id,'login.pending',null,null,{},ip);return err('Akun Anda masih menunggu konfirmasi admin.',403)}
 if(r.status==='suspended'){await safeAudit(env,'reseller',r.id,'login.suspended',null,null,{},ip);return err('Akun Anda dinonaktifkan. Hubungi admin.',403)}
 const token=await createSession(env,r,request);
