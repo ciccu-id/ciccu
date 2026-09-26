@@ -12,17 +12,17 @@ if(!ex)return code;
 }
 throw new Error('Gagal membuat kode order unik setelah 10 percobaan');
 }
-export async function getVariant(env,id){return env.DB.prepare('SELECT id,app_name,category,duration,price,status,notes FROM rsl_pricelist WHERE id=?').bind(id).first()}
+export async function getVariant(env,id){return env.DB.prepare('SELECT id,app_name,category,duration,price,status,notes,flash_price,flash_sort_order FROM rsl_pricelist WHERE id=?').bind(id).first()}
 export async function listCatalog(env){
-const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,p.price,p.status,p.notes,p.sort_order,p.app_sort_order,(SELECT COUNT(*) FROM rsl_stock_items s WHERE s.variant_id=p.id AND s.status='available') AS stock_available,f.form_fields FROM rsl_pricelist p LEFT JOIN app_forms f ON p.app_name=f.app_name ORDER BY COALESCE(p.app_sort_order,9999),COALESCE(p.sort_order,9999),p.id").all();
+const r=await env.DB.prepare("SELECT p.id,p.app_name,p.category,p.duration,p.price,p.status,p.notes,p.sort_order,p.app_sort_order,p.flash_price,p.flash_sort_order,(SELECT COUNT(*) FROM rsl_stock_items s WHERE s.variant_id=p.id AND s.status='available') AS stock_available,f.form_fields FROM rsl_pricelist p LEFT JOIN app_forms f ON p.app_name=f.app_name ORDER BY COALESCE(p.app_sort_order,9999),COALESCE(p.sort_order,9999),p.id").all();
 return r.results;
 }
 export async function createVariant(env,data){
-const r=await env.DB.prepare('INSERT INTO rsl_pricelist(app_name,category,duration,price,status,notes,sort_order,app_sort_order) VALUES(?,?,?,?,?,?,?,?)').bind(data.app_name,data.category,data.duration,data.price,data.status||'Ready',data.notes||'',data.sort_order||9999,data.app_sort_order||9999).run();
+const r=await env.DB.prepare('INSERT INTO rsl_pricelist(app_name,category,duration,price,status,notes,sort_order,app_sort_order,flash_price,flash_sort_order) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(data.app_name,data.category,data.duration,data.price,data.status||'Ready',data.notes||'',data.sort_order||9999,data.app_sort_order||9999,data.flash_price||'',data.flash_sort_order||9999).run();
 return r.meta.last_row_id;
 }
 export async function updateVariant(env,id,data){
-await env.DB.prepare('UPDATE rsl_pricelist SET app_name=?,category=?,duration=?,price=?,status=?,notes=?,sort_order=?,app_sort_order=? WHERE id=?').bind(data.app_name,data.category,data.duration,data.price,data.status,data.notes||'',data.sort_order||9999,data.app_sort_order||9999,id).run();
+await env.DB.prepare('UPDATE rsl_pricelist SET app_name=?,category=?,duration=?,price=?,status=?,notes=?,sort_order=?,app_sort_order=?,flash_price=?,flash_sort_order=? WHERE id=?').bind(data.app_name,data.category,data.duration,data.price,data.status,data.notes||'',data.sort_order||9999,data.app_sort_order||9999,data.flash_price||'',data.flash_sort_order||9999,id).run();
 }
 export async function deleteVariant(env,id){
 await env.DB.prepare('DELETE FROM rsl_stock_items WHERE variant_id=? AND status=?').bind(id,'available').run();
