@@ -1,9 +1,8 @@
-import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
+import{isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
 import{getAdminSession,revokeAdminSession,clearAdminCookie}from'../../lib/auth-admin.js';
-import{getVariant,listCatalog,createVariant,updateVariant,deleteVariant,getTemplate,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
+import{listCatalog,createVariant,updateVariant,deleteVariant,setTemplate,countAvailable,listStock,addStock,disableStock,deleteAvailableStock,lowStock,audit,listOrdersAdmin,getOrderAdmin,addOrderRevision,setOrderStatus,countNeedsAttention}from'../../lib/db.js';
 import{manualSettle,retryFulfill,refundOrder,allocateStock}from'../../lib/fulfillment.js';
-import{getProvider}from'../../lib/payment/provider.js';
-const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type, x-admin-password'};
+const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
 function truncate(s,m){return s?String(s).slice(0,m):''}
 function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
@@ -93,10 +92,9 @@ if(m==='OPTIONS')return new Response(null,{headers:corsHeaders});
 const json=(d,s=200,h={})=>new Response(JSON.stringify(d),{headers:{...corsHeaders,...h,'Content-Type':'application/json','Cache-Control':'no-store'},status:s});
 const err=(msg,s=500)=>json({error:msg},s);
 try{
-const pwHeader=request.headers.get('x-admin-password');
 const adminSession=await getAdminSession(env,request);
-if(pwHeader!==env.ADMIN_PASSWORD&&!adminSession)return err('Password salah atau sesi tidak valid',403);
-const actorId=adminSession?adminSession.id:null;
+if(!adminSession)return err('Sesi admin tidak valid. Silakan masuk kembali.',403);
+const actorId=adminSession.id;
 const ip=request.headers.get('cf-connecting-ip')||'';
 const b=m!=='GET'?await request.json().catch(()=>({})):null;
 const q=p.replace(/^\/api\/admin/,'')||'/';
