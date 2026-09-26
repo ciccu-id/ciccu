@@ -1,8 +1,6 @@
 (function(M){
 var templates=[],mgrVariant=null,ctx=null,mgrModal=null,mgrListWrap=null;
-function loadTemplates(){
-return Sec.json('/api/admin/cred-templates').then(function(rows){templates=Array.isArray(rows)?rows:[]}).catch(function(){templates=[]});
-}
+function loadTemplates(){return Sec.json('/api/admin/cred-templates').then(function(rows){templates=Array.isArray(rows)?rows:[]}).catch(function(){templates=[]})}
 function memoryFields(appName){
 if(!Array.isArray(templates))templates=[];
 var t=templates.find(function(x){return String(x.app_name||'').toLowerCase()===String(appName||'').toLowerCase()});
@@ -11,6 +9,7 @@ try{var a=JSON.parse(t.fields);return Array.isArray(a)?a.slice(0,30):[]}catch(e)
 }
 function stockPill(st){
 if(st==='available')return{cls:'green',txt:'Tersedia'};
+if(st==='reserved')return{cls:'amber',txt:'Dipesan'};
 if(st==='disabled')return{cls:'gray',txt:'Nonaktif'};
 return{cls:'red',txt:'Terjual'};
 }
@@ -29,7 +28,7 @@ var pl=stockPill(it.status);
 idgrp.appendChild(ce('span','pill '+pl.cls,pl.txt));
 head.appendChild(idgrp);
 var kw=null,menu=null;
-if(it.status!=='sold'){
+if(it.status==='available'||it.status==='disabled'){
 kw=ce('div','kebab-wrap');
 var kb=ce('button','kebab-btn','⋮');
 kb.type='button';
@@ -60,6 +59,12 @@ f.appendChild(ce('span','stk-field-val',String(obj[k])));
 fields.appendChild(f);
 });
 card.appendChild(fields);
+if(it.status==='reserved'){
+var rn=ce('div','stk-note');
+rn.appendChild(ce('span','stk-note-ico','⏳'));
+rn.appendChild(ce('span','stk-note-txt','Stok sedang dikunci pesanan dan akan kembali otomatis jika belum dibayar.'));
+card.appendChild(rn);
+}
 if(it.buyer_note&&String(it.buyer_note).trim()!==''){
 var note=ce('div','stk-note');
 note.appendChild(ce('span','stk-note-ico','📝'));
@@ -67,7 +72,11 @@ note.appendChild(ce('span','stk-note-txt',String(it.buyer_note)));
 card.appendChild(note);
 }
 if(menu)card.appendChild(menu);
-var dateTxt=(it.status==='sold'&&it.sold_at)?('terjual '+String(it.sold_at).slice(0,16)):('dibuat '+String(it.created_at||'').slice(0,16));
+var dateTxt;
+if(it.status==='sold'&&it.sold_at)dateTxt='terjual '+String(it.sold_at).slice(0,16);
+else if(it.status==='reserved'&&it.reservation_expires_at)dateTxt='dikunci sampai '+fmtDT(it.reservation_expires_at);
+else if(it.status==='reserved')dateTxt='sedang dipesan';
+else dateTxt='dibuat '+String(it.created_at||'').slice(0,16);
 card.appendChild(ce('span','stk-card-date',dateTxt));
 return card;
 }
