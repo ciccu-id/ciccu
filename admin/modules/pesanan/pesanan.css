@@ -15,6 +15,7 @@
 html:has(#pageRoot .page-pesanan){font-size:clamp(10.5px,3.55vw,14px)}
 body:has(#pageRoot .page-pesanan){background:linear-gradient(180deg,var(--blue-100) 0%,var(--blue-200) 45%,var(--blue-300) 100%);background-size:100% 100%}
 body:has(#pageRoot .page-pesanan) .adm-topbar{display:none}
+body:has(#pageRoot .page-pesanan) .adm-content{padding-top:0}
 body:has(#pageRoot .page-pesanan) .bnav{background:var(--choco-600);border-top:none;border-radius:1.3rem 1.3rem 0 0;box-shadow:0 -.35rem 1.2rem rgba(67,47,46,.3)}
 body:has(#pageRoot .page-pesanan) .bnav-item{color:rgba(255,248,221,.6)}
 body:has(#pageRoot .page-pesanan) .bnav-item.active{background:var(--butter-200);color:var(--choco-700);font-weight:800}
