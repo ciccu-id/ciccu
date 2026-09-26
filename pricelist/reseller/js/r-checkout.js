@@ -1,5 +1,5 @@
-import{RES,ce,resFmtIDR,resApi,resToast,cartTotal}from'./r-core.js';
-import{clearCart}from'./r-store.js';
+import{RES,ce,resFmtIDR,resApi,resToast,cartTotal}from'./r-core.js?v=6';
+import{clearCart}from'./r-store.js?v=6';
 function parseFormFields(str){
 if(!str)return[];
 try{if(String(str).trim().startsWith('['))return JSON.parse(str).map(function(i){return i.name||i})}catch(e){}
