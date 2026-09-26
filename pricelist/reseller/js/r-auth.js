@@ -1,5 +1,5 @@
-import{RES,resApi,resToast,setResToken}from'./r-core.js';
-import{clearCart}from'./r-store.js';
+import{RES,resApi,resToast,setResToken}from'./r-core.js?v=6';
+import{clearCart}from'./r-store.js?v=6';
 const RES_TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 const tw={login:null,reg:null};
 let authMode='login';
