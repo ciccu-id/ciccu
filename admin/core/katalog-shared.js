@@ -3,19 +3,6 @@ function pkgStatusReady(p){return!p.status||String(p.status).toLowerCase()==='re
 function allSold(packages){return packages.length>0&&packages.every(function(p){return p.status&&String(p.status).toLowerCase()!=='ready'})}
 function appSortVal(p){return(p.app_sort_order&&p.app_sort_order>0)?p.app_sort_order:9999}
 function pkgSortVal(p){return(p.sort_order&&p.sort_order>0)?p.sort_order:9999}
-function groupApps(rows,searchKey){
-var grouped={},appOrder={},appFirst={};
-rows.forEach(function(r){
-if(!grouped[r.app_name])grouped[r.app_name]=[];
-grouped[r.app_name].push(r);
-var o=appSortVal(r);
-if(!appOrder[r.app_name]||o<appOrder[r.app_name])appOrder[r.app_name]=o;
-if(!appFirst[r.app_name]||r.id<appFirst[r.app_name])appFirst[r.app_name]=r.id;
-});
-var kk=(searchKey||'').toLowerCase();
-var metaKeys=Object.keys(Apps.metaSync?Apps.metaSync():{});
-return{grouped:grouped,appOrder:appOrder,appFirst:appFirst};
-}
 function sortApps(grouped,appOrder,appFirst){
 return Object.keys(grouped).sort(function(a,b){return(appOrder[a]-appOrder[b])||(appFirst[a]-appFirst[b])});
 }
@@ -95,12 +82,9 @@ header.appendChild(logo);
 }
 var hinfo=ce('div','app-header-info');
 var nameRow=ce('h3','app-header-name'+(sold?' sold':''),appName);
-if(sold){
-var sb=ce('span',null,'Habis');
-nameRow.appendChild(sb);
-}
+if(sold)nameRow.appendChild(ce('span','app-header-sold-badge','Habis'));
 hinfo.appendChild(nameRow);
-hinfo.appendChild(ce('p','app-header-form',formFields.length>0?'📋 Formulir Pesanan: '+formFields.join(', '):'🌸 Tidak memakai formulir'));
+hinfo.appendChild(ce('p','app-header-form',formFields.length>0?'📋 Form Order: '+formFields.join(', '):'🌸 Tidak memakai formulir'));
 var countWrap=ce('div','app-header-count');
 if(meta&&meta.app_type&&meta.app_type!=='lainnya')countWrap.appendChild(ce('span',null,meta.app_type));
 countWrap.appendChild(ce('span',null,packages.length+' Paket'));
@@ -117,7 +101,7 @@ var ki1=ce('button','kebab-item','✏️ Edit Aplikasi');ki1.type='button';
 ki1.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');if(opts.onEditApp)opts.onEditApp(appName)});
 var kiPkg=ce('button','kebab-item','＋ Tambah Paket');kiPkg.type='button';
 kiPkg.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');if(opts.onAddPkg)opts.onAddPkg(appName)});
-var ki2=ce('button','kebab-item','📋 Formulir Pesanan');ki2.type='button';
+var ki2=ce('button','kebab-item','📋 Form Order');ki2.type='button';
 ki2.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');if(opts.onFormBuilder)opts.onFormBuilder(appName,formFields)});
 var ki3=ce('button','kebab-item danger','🗑 Hapus Aplikasi');ki3.type='button';
 ki3.addEventListener('click',function(e){e.stopPropagation();kebab.classList.remove('open');if(opts.onDeleteApp)opts.onDeleteApp(appName,packages.map(function(p){return p.id}))});
@@ -187,12 +171,20 @@ s.foot.appendChild(ModalKit.btn('Batal','cancel-btn',s.close));
 s.foot.appendChild(save);
 document.body.appendChild(s.overlay);
 }
+function admField(labelText,inputEl){
+var wrap=ce('div','adm-field');
+wrap.appendChild(ce('label',null,labelText));
+var box=ce('div','adm-input');
+box.appendChild(inputEl);
+wrap.appendChild(box);
+return{wrap:wrap,box:box};
+}
 function openPkgModal(variant,appPrefill,onSave,opts){
 opts=opts||{};
 var isEdit=!!variant;
 var s=ModalKit.shell({title:isEdit?'Edit Paket':'Tambah Paket',sub:isEdit?(variant.app_name+' • '+variant.category+' • '+variant.duration):(appPrefill||''),scroll:true});
 var f={app_name:variant?variant.app_name:(appPrefill||''),category:variant?variant.category:'',duration:variant?variant.duration:'',price:variant?variant.price:'',status:variant?variant.status:'Ready',notes:variant?(variant.notes||''):''};
-var fields=[
+var fieldDefs=[
 {id:'pkgAppName',label:'Nama Aplikasi',value:f.app_name,type:'text'},
 {id:'pkgCategory',label:'Kategori',value:f.category,type:'text'},
 {id:'pkgDuration',label:'Durasi',value:f.duration,type:'text'},
@@ -200,27 +192,27 @@ var fields=[
 {id:'pkgNotes',label:'Catatan',value:f.notes,type:'text'}
 ];
 var inputs={};
-fields.forEach(function(fd){
-var wrap=ce('div','adm-field');
-wrap.appendChild(ce('label',null,fd.label));
-var inp=ce('input','adm-input');inp.type=fd.type;inp.value=fd.value;inp.autocomplete='off';
-wrap.appendChild(inp);
-s.body.appendChild(wrap);
+fieldDefs.forEach(function(fd){
+var inp=document.createElement('input');
+inp.type=fd.type;inp.value=fd.value;inp.autocomplete='off';
+var af=admField(fd.label,inp);
+s.body.appendChild(af.wrap);
 inputs[fd.id]=inp;
 });
 var statusWrap=ce('div','adm-field');
 statusWrap.appendChild(ce('label',null,'Status'));
+var statusBox=ce('div','adm-input adm-input-select');
 var statusSlot=ce('div');
-statusWrap.appendChild(statusSlot);
+statusBox.appendChild(statusSlot);
+statusWrap.appendChild(statusBox);
 s.body.appendChild(statusWrap);
 var dd=DD.build({options:[{value:'Ready',label:'Ready'},{value:'Sold',label:'Sold'}],value:f.status||'Ready'});
 statusSlot.appendChild(dd.el);
 if(opts.showFlash){
-var flashWrap=ce('div','adm-field');
-flashWrap.appendChild(ce('label',null,'Harga Flash (opsional)'));
-var flashInp=ce('input','adm-input');flashInp.type='text';flashInp.value=variant?variant.flash_price||'':'';flashInp.autocomplete='off';
-flashWrap.appendChild(flashInp);
-s.body.appendChild(flashWrap);
+var flashInp=document.createElement('input');
+flashInp.type='text';flashInp.value=variant?variant.flash_price||'':'';flashInp.autocomplete='off';
+var afFlash=admField('Harga Flash (opsional)',flashInp);
+s.body.appendChild(afFlash.wrap);
 inputs.pkgFlash=flashInp;
 }
 var save=ModalKit.btn(isEdit?'Simpan Perubahan':'Tambah Paket','submit-btn',function(){
