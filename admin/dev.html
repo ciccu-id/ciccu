@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<title>Ciccu Admin — Mode Uji</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Quicksand:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="core/core.css?v=23">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+<div id="loginOverlay" class="login-overlay hidden">
+<div class="login-box">
+<img src="/images/icon-192.png" alt="logo" class="login-logo">
+<h1 class="login-title">Ciccu Admin</h1>
+<p class="login-sub">Mode uji module</p>
+<input id="adminPasswordInput" type="password" class="login-input" placeholder="Password admin" autocomplete="current-password">
+<div class="cf-turnstile" id="turnstileWidget"></div>
+<button id="btnLogin" type="button" class="login-btn">Masuk</button>
+</div>
+</div>
+<div class="adm-content">
+<div class="section">
+<div class="toolbar-row">
+<span class="tool-btn purple">MODE UJI</span>
+<button class="tool-btn" type="button" data-nav="beranda">Beranda</button>
+<button class="tool-btn" type="button" data-nav="katalog">Katalog</button>
+<button class="tool-btn" type="button" data-nav="reseller">Reseller</button>
+<button class="tool-btn" type="button" data-nav="pesanan">Pesanan</button>
+<button class="tool-btn" type="button" data-nav="akses">Akses</button>
+<button class="tool-btn" type="button" data-nav="flashsale">Flash Sale</button>
+<button class="tool-btn" type="button" data-nav="pengaturan">Pengaturan</button>
+<button class="tool-btn" type="button" data-nav="aktivitas">Aktivitas</button>
+<button id="btnLogoutTop" class="tool-btn green" type="button">Keluar</button>
+</div>
+<div id="pageRoot" class="page-host"></div>
+</div>
+</div>
+<script src="core/core.js?v=23" defer></script>
+<script src="core/security.js?v=23" defer></script>
+<script src="core/ui.js?v=23" defer></script>
+<script src="core/format.js?v=23" defer></script>
+<script src="core/clock.js?v=23" defer></script>
+<script src="core/apps.js?v=23" defer></script>
+<script src="core/registry.js?v=23" defer></script>
+<script src="core/loader.js?v=23" defer></script>
+<script src="core/router.js?v=23" defer></script>
+<script src="core/dd.js?v=23" defer></script>
+<script src="core/modals-tools.js?v=23" defer></script>
+<script src="core/modals-app.js?v=23" defer></script>
+<script src="core/boot.js?v=23" defer></script>
+</body>
+</html>
