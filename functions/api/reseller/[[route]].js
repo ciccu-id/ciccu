@@ -1,6 +1,8 @@
 import{getSession,createSession,revokeSession,verifyPassword,isLocked,recordFailure,resetFailures,sessionCookieValue,clearCookieValue,isSecure,randomHex,nowStr,hashNewPassword}from'../../lib/auth-reseller.js';
 import{getVariant,listCatalog,countAvailable,createOrder,getOrder,listOrders,listOrderCredentials,appendPayment,audit}from'../../lib/db.js';
 import{getProvider}from'../../lib/payment/provider.js';
+import{reserveOrderStock}from'../../lib/fulfillment.js';
+const RESERVATION_TTL_MINUTES=20;
 async function verifyTurnstile(token,secret){if(!token)return false;const fd=new FormData();fd.append('secret',secret);fd.append('response',token);const r=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',body:fd});const o=await r.json();return!!o.success}
 function parsePrice(str){if(!str)return 0;const s=String(str).toUpperCase();const n=parseInt(s.replace(/[^0-9]/g,''),10)||0;return s.includes('K')?n*1000:n}
 function parseFields(str){if(!str)return{};try{const o=JSON.parse(str);return(o&&typeof o==='object'&&!Array.isArray(o))?o:{}}catch(e){return{}}}
@@ -186,9 +188,16 @@ return json({order_id:o.id,total:o.total_amount,status:o.status,reused:true});
 }
 const prov=getProvider(env);
 const orderId=await createOrder(env,session.id,lines,total,prov.name,idem);
+const reserve=await reserveOrderStock(env,orderId,RESERVATION_TTL_MINUTES);
+if(!reserve.ok){
+await env.DB.prepare('DELETE FROM rsl_order_items WHERE order_id=?').bind(orderId).run();
+await env.DB.prepare('DELETE FROM rsl_orders WHERE id=?').bind(orderId).run();
+await safeAudit(env,'reseller',session.id,'checkout.reserve_fail','order',orderId,reserve,ip);
+return err(reserve.reason==='stock'?'Stok tidak cukup atau sedang dikunci pesanan lain.':'Gagal mengunci stok untuk pesanan ini.',409);
+}
 await appendPayment(env,orderId,prov.name,'','pending',total,'created');
 const cr=await prov.createPayment(env,{id:orderId,total_amount:total},lines);
-await safeAudit(env,'reseller',session.id,'checkout','order',orderId,{total:total,items:lines.length},ip);
+await safeAudit(env,'reseller',session.id,'checkout','order',orderId,{total:total,items:lines.length,reserved:reserve.reserved||0},ip);
 return json({order_id:orderId,total:total,provider:prov.name,instruction:cr.instruction||null},201);
 }
 if(p==='/orders'&&m==='GET'){
