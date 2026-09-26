@@ -63,6 +63,15 @@ return n*DAY;
 }
 function isoToUTC(s){if(!s)return null;const t=Date.parse(String(s).replace(' ','T')+'Z');return isNaN(t)?null:t}
 function addMsToIso(iso,ms){const base=isoToUTC(iso);if(base===null)return null;return new Date(base+ms).toISOString().replace('T',' ').slice(0,19)}
+async function getFlashReseller(env){
+const st=await env.DB.prepare('SELECT flash_reseller_name,flash_reseller_description,flash_reseller_start,flash_reseller_end FROM store_settings WHERE id=1').first();
+if(!st)return{name:'',description:'',start:'',end:'',active:false};
+const norm=x=>String(x||'').replace('T',' ').slice(0,16);
+const ns=norm(st.flash_reseller_start),ne=norm(st.flash_reseller_end);
+const nnow=nowStr().slice(0,16);
+return{name:st.flash_reseller_name||'Flash Sale Reseller',description:st.flash_reseller_description||'',start:st.flash_reseller_start||'',end:st.flash_reseller_end||'',active:!!(ns&&ne&&ns<=nnow&&nnow<=ne)};
+}
+function hasFlashPrice(row){return row&&row.flash_price&&String(row.flash_price).trim()!==''}
 const json=(d,s=200,h={})=>new Response(JSON.stringify(d),{status:s,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...h}});
 const err=(m,s=500)=>json({error:m},s);
 async function body(request){const cl=parseInt(request.headers.get('content-length')||'0',10);if(cl>200000)return null;try{return await request.json()}catch(e){return null}}
@@ -127,14 +136,21 @@ return json({success:true},200,{'Set-Cookie':clearCookieValue(isSecure(request))
 }
 if(!session)return err('Sesi tidak valid. Silakan login',401);
 if(p==='/me'&&m==='GET')return json({id:session.id,username:session.username,display_name:session.display_name});
+if(p==='/flash'&&m==='GET'){
+const flash=await getFlashReseller(env);
+return json(flash);
+}
 if(p==='/catalog'&&m==='GET'){
 const rows=await listCatalog(env);
-return json(rows);
+const flash=await getFlashReseller(env);
+const out=rows.map(r=>Object.assign({},r,{flash_active:!!(flash.active&&hasFlashPrice(r))}));
+return json(out);
 }
 if(p==='/checkout'&&m==='POST'){
 const b=await body(request)||{};
 const raw=Array.isArray(b.items)?b.items:[];
 if(!raw.length||raw.length>50)return err('Item tidak valid',400);
+const flash=await getFlashReseller(env);
 const formCache={};
 const lines=[];let total=0;
 for(const it of raw){
@@ -142,7 +158,8 @@ const vid=parseInt(it.variant_id,10);const qty=parseInt(it.qty,10);
 if(isNaN(vid)||isNaN(qty)||qty<1||qty>99)return err('Qty tidak valid',400);
 const v=await getVariant(env,vid);
 if(!v||String(v.status).toLowerCase()!=='ready')return err('Varian tidak tersedia',400);
-const unit=parsePrice(v.price);
+const useFlash=!!(flash.active&&hasFlashPrice(v));
+const unit=parsePrice(useFlash?v.flash_price:v.price);
 if(unit<=0)return err('Harga tidak valid',400);
 const avail=await countAvailable(env,vid);
 if(avail<qty)return err('Stok tidak cukup untuk '+v.app_name+' '+v.category+' '+v.duration,400);
