@@ -8,7 +8,7 @@ function validTime(s){return s&&/^([01]\d|2[0-3]):[0-5]\d$/.test(s)}
 function validDT(s){return!s||/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)}
 const num=s=>parseInt(s,10);
 function slugify(s){return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,64)}
-const LOGO_MAP={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'editing','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
+const LOGO_MAP={'netflix':'netflix.com','disney':'disneyplus.com','youtube':'youtube.com','viu':'viu.com','iqiyi':'iq.com','amazon':'primevideo.com','prime':'primevideo.com','hbo':'hbogoasia.id','wetv':'wetv.vip','we tv':'wetv.vip','vidio':'vidio.com','crunchyroll':'crunchyroll.com','loklok':'loklok.com','loktv':'loklok.com','gagaoolala':'gagaoolala.com','dramabox':'dramaboxapp.com','apple tv':'tv.apple.com','hbo go':'hbogoasia.id','wetv vip':'wetv.vip','bstation':'https://img.icons8.com/color/144/bilibili.png','viki plus':'viki.com','drakor id':'drakorid.co','mango tv':'mgtv.com','mangotv':'mgtv.com','spotify':'open.spotify.com','apple music':'music.apple.com','apple':'music.apple.com','canva':'canva.com','capcut':'capcut.com','alight motion':'alightcreative.com','alight':'alightcreative.com','chatgpt':'openai.com','claude':'anthropic.com','grok':'x.ai','grokai':'x.ai','ms365':'office.com','microsoft':'microsoft.com','turnitin':'turnitin.com','cek turnitin':'turnitin.com','cek ai':'zerogpt.com','duolingo':'https://img.icons8.com/color/144/duolingo-logo.png','picsart':'picsart.com','remini':'remini.ai','wattpad':'wattpad.com','pollar':'editing','ibis paint':'ibispaint.com','quillbot':'quillbot.com','meitu':'meitu.com','camscanner':'camscanner.com','grammarly':'grammarly.com','viki rakuten':'viki.com','wink':'wink.meitu.com','aio drama':'https://img.icons8.com/color/144/clapperboard.png','aiodrama':'https://img.icons8.com/color/144/clapperboard.png','aio':'https://img.icons8.com/color/144/clapperboard.png','ilovepdf':'ilovepdf.com','wps office':'wps.com','robux':'roblox.com','youku':'youku.tv','sushiroll':'sushiroll.co.id'};
 const LOGO_CT=['image/png','image/jpeg','image/webp','image/gif','image/svg+xml','image/x-icon','image/vnd.microsoft.icon'];
 const APP_TYPES=['streaming','music','editing','study','game','lainnya'];
 function cleanFields(raw){
@@ -78,6 +78,13 @@ if(buf.byteLength>307200)return{ok:false,error:'Gambar terlalu besar (maks 300 K
 await env.LOGOS.put('logos/'+slug,buf,{httpMetadata:{contentType:ct,cacheControl:'public, max-age=3600'}});
 return{ok:true,slug:slug};
 }
+function flashActive(startStr,endStr){
+const norm=x=>String(x||'').replace('T',' ').slice(0,16);
+const ns=norm(startStr),ne=norm(endStr);
+if(!ns||!ne)return false;
+const nnow=nowStr().slice(0,16);
+return ns<=nnow&&nnow<=ne;
+}
 export async function onRequest(context){
 const{request,env}=context;
 const url=new URL(request.url);const p=url.pathname;const m=request.method;
@@ -93,7 +100,7 @@ if(q==='/settings'&&m==='GET'){
 const{results}=await env.DB.prepare('SELECT * FROM store_settings WHERE id=1').all();
 if(!results||!results.length)return json({});
 const s=results[0];
-return json({is_manual_closed:s.is_closed===1,auto_schedule:s.auto_schedule===1,open_time:s.open_time,close_time:s.close_time,message:s.close_message||'',flash_sale_start:s.flash_sale_start||'',flash_sale_end:s.flash_sale_end||'',flash_sale_name:s.flash_sale_name||'Flash Sale',flash_sale_description:s.flash_sale_description||''});
+return json({is_manual_closed:s.is_closed===1,auto_schedule:s.auto_schedule===1,open_time:s.open_time,close_time:s.close_time,message:s.close_message||'',flash_sale_start:s.flash_sale_start||'',flash_sale_end:s.flash_sale_end||'',flash_sale_name:s.flash_sale_name||'Flash Sale',flash_sale_description:s.flash_sale_description||'',flash_reseller_start:s.flash_reseller_start||'',flash_reseller_end:s.flash_reseller_end||'',flash_reseller_name:s.flash_reseller_name||'Flash Sale Reseller',flash_reseller_description:s.flash_reseller_description||''});
 }
 if(q==='/stats'&&m==='GET'){
 const oc=await env.DB.prepare('SELECT COUNT(*) AS c FROM rsl_orders').first();
@@ -108,12 +115,15 @@ const st=await env.DB.prepare('SELECT flash_sale_name,flash_sale_start,flash_sal
 const fi=await env.DB.prepare("SELECT COUNT(*) AS c FROM pricelist WHERE flash_price IS NOT NULL AND flash_price<>''").first();
 let flash={name:'',start:'',end:'',active:false,items:0};
 if(st){
-const norm=x=>String(x||'').replace('T',' ').slice(0,16);
-const nnow=nowStr().slice(0,16);
-const ns=norm(st.flash_sale_start),ne=norm(st.flash_sale_end);
-flash={name:st.flash_sale_name||'Flash Sale',start:st.flash_sale_start||'',end:st.flash_sale_end||'',active:!!(ns&&ne&&ns<=nnow&&nnow<=ne),items:fi?fi.c:0};
+flash={name:st.flash_sale_name||'Flash Sale',start:st.flash_sale_start||'',end:st.flash_sale_end||'',active:flashActive(st.flash_sale_start,st.flash_sale_end),items:fi?fi.c:0};
 }
-return json({orders:{total:oc?oc.c:0,delivered:dv?dv.c:0,pending:pd?pd.c:0,needs_attention:na?na.c:0},revenue:dv?dv.rev:0,stock:{available:sa?sa.c:0,low:ls?ls.c:0},recent_orders:ro.results,low_stock:lsl.results,flash_sale:flash});
+const str=await env.DB.prepare('SELECT flash_reseller_name,flash_reseller_start,flash_reseller_end FROM store_settings WHERE id=1').first();
+const fri=await env.DB.prepare("SELECT COUNT(*) AS c FROM rsl_pricelist WHERE flash_price IS NOT NULL AND flash_price<>''").first();
+let flashR={name:'',start:'',end:'',active:false,items:0};
+if(str){
+flashR={name:str.flash_reseller_name||'Flash Sale Reseller',start:str.flash_reseller_start||'',end:str.flash_reseller_end||'',active:flashActive(str.flash_reseller_start,str.flash_reseller_end),items:fri?fri.c:0};
+}
+return json({orders:{total:oc?oc.c:0,delivered:dv?dv.c:0,pending:pd?pd.c:0,needs_attention:na?na.c:0},revenue:dv?dv.rev:0,stock:{available:sa?sa.c:0,low:ls?ls.c:0},recent_orders:ro.results,low_stock:lsl.results,flash_sale:flash,flash_reseller:flashR});
 }
 if(q==='/pricelist'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM pricelist').all();return json(results)}
 if(q==='/forms'&&m==='GET'){const{results}=await env.DB.prepare('SELECT * FROM app_forms').all();return json(results)}
@@ -124,7 +134,14 @@ if(!validTime(ot))return err('Format jam buka tidak valid',400);
 if(!validTime(ct))return err('Format jam tutup tidak valid',400);
 if(!validDT(fs))return err('Format waktu mulai flash sale tidak valid',400);
 if(!validDT(fe))return err('Format waktu selesai flash sale tidak valid',400);
-await env.DB.prepare('UPDATE store_settings SET is_closed=?,auto_schedule=?,open_time=?,close_time=?,close_message=?,flash_sale_start=?,flash_sale_end=?,flash_sale_name=?,flash_sale_description=? WHERE id=1').bind(b.is_closed?1:0,b.auto_schedule?1:0,ot,ct,cm,fs,fe,fn,fd).run();
+const cur=await env.DB.prepare('SELECT flash_reseller_start,flash_reseller_end,flash_reseller_name,flash_reseller_description FROM store_settings WHERE id=1').first();
+const frs=b.flash_reseller_start!==undefined?(b.flash_reseller_start||''):(cur?cur.flash_reseller_start||'':'');
+const fre=b.flash_reseller_end!==undefined?(b.flash_reseller_end||''):(cur?cur.flash_reseller_end||'':'');
+const frn=b.flash_reseller_name!==undefined?truncate(b.flash_reseller_name||'Flash Sale Reseller',100):(cur?cur.flash_reseller_name||'Flash Sale Reseller':'Flash Sale Reseller');
+const frd=b.flash_reseller_description!==undefined?truncate(b.flash_reseller_description||'',200):(cur?cur.flash_reseller_description||'':'');
+if(!validDT(frs))return err('Format waktu mulai flash sale reseller tidak valid',400);
+if(!validDT(fre))return err('Format waktu selesai flash sale reseller tidak valid',400);
+await env.DB.prepare('UPDATE store_settings SET is_closed=?,auto_schedule=?,open_time=?,close_time=?,close_message=?,flash_sale_start=?,flash_sale_end=?,flash_sale_name=?,flash_sale_description=?,flash_reseller_start=?,flash_reseller_end=?,flash_reseller_name=?,flash_reseller_description=? WHERE id=1').bind(b.is_closed?1:0,b.auto_schedule?1:0,ot,ct,cm,fs,fe,fn,fd,frs,fre,frn,frd).run();
 return json({success:true});
 }
 if(q==='/pricelist'&&m==='POST'){
@@ -144,6 +161,14 @@ if(!b.order||!Array.isArray(b.order)||b.order.length>100)return err('Data tidak 
 const stmts=b.order.map(i=>{const id=num(i.id),fso=num(i.flash_sort_order);return(isNaN(id)||isNaN(fso))?null:env.DB.prepare('UPDATE pricelist SET flash_sort_order=? WHERE id=?').bind(fso,id)}).filter(Boolean);
 if(!stmts.length)return err('Data tidak valid',400);
 await env.DB.batch(stmts);return json({success:true});
+}
+if(q==='/rflashsale/reorder'&&m==='PUT'){
+if(!b.order||!Array.isArray(b.order)||b.order.length>100)return err('Data tidak valid',400);
+const stmts=b.order.map(i=>{const id=num(i.id),fso=num(i.flash_sort_order);return(isNaN(id)||isNaN(fso))?null:env.DB.prepare('UPDATE rsl_pricelist SET flash_sort_order=? WHERE id=?').bind(fso,id)}).filter(Boolean);
+if(!stmts.length)return err('Data tidak valid',400);
+await env.DB.batch(stmts);
+await audit(env,'admin',null,'rflashsale.reorder','app',null,{count:stmts.length},ip);
+return json({success:true});
 }
 if(q==='/reorder-apps'&&m==='PUT'){
 if(!b.order||!Array.isArray(b.order)||b.order.length>100)return err('Data tidak valid',400);
@@ -209,10 +234,10 @@ return json({success:true});
 }
 if(q==='/rpricelist'&&m==='GET'){const rows=await listCatalog(env);return json(rows)}
 if(q==='/rpricelist'&&m==='POST'){
-const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.duration,100),pr=truncate(b.price,50),nt=truncate(b.notes||'',500);
+const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.duration,100),pr=truncate(b.price,50),nt=truncate(b.notes||'',500),fp=truncate(b.flash_price||'',50);
 if(!an||!cat||!dur||!pr)return err('Data tidak lengkap',400);
 const st=(b.status==='Sold')?'Sold':'Ready';
-const id=await createVariant(env,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999});
+const id=await createVariant(env,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999,flash_price:fp});
 await audit(env,'admin',null,'rpricelist.create','variant',id,{app:an},ip);
 return json({success:true,id:id},201);
 }
@@ -227,10 +252,10 @@ return json({success:true});
 const rpm=q.match(/^\/rpricelist\/(\d+)$/);
 if(rpm&&m==='PUT'){
 const id=num(rpm[1]);
-const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.duration,100),pr=truncate(b.price,50),nt=truncate(b.notes||'',500);
+const an=truncate(b.app_name,100),cat=truncate(b.category,100),dur=truncate(b.duration,100),pr=truncate(b.price,50),nt=truncate(b.notes||'',500),fp=truncate(b.flash_price||'',50);
 if(!an||!cat||!dur||!pr)return err('Data tidak lengkap',400);
 const st=(b.status==='Sold')?'Sold':'Ready';
-await updateVariant(env,id,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999});
+await updateVariant(env,id,{app_name:an,category:cat,duration:dur,price:pr,status:st,notes:nt,sort_order:num(b.sort_order)||9999,app_sort_order:num(b.app_sort_order)||9999,flash_price:fp});
 await audit(env,'admin',null,'rpricelist.update','variant',id,{app:an},ip);
 return json({success:true});
 }
@@ -285,7 +310,8 @@ if(!en.meta||!en.meta.changes)return err('Stok tidak berstatus nonaktif',409);
 await audit(env,'admin',null,'stock.enable','stock',id,{},ip);
 return json({success:true});
 }
-if(m==='DELETE'&&!sub){await deleteAvailableStock(env,id);await audit(env,'admin',null,'stock.delete','stock',id,{},ip);return json({success:true})}
+if(m==='DELETE'&&!sub){await deleteAvailableStock(env,id);await audit(env,'admin',null,'stock.delete','stock',id,{},ip);return json({success:true});
+}
 }
 if(q.startsWith('/low-stock')&&m==='GET'){const rows=await lowStock(env,url.searchParams.get('threshold'));return json(rows)}
 if(q==='/orders'&&m==='GET'){
