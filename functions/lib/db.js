@@ -1,5 +1,7 @@
 import{nowStr,addMinutes}from'./auth-reseller.js';
+import{encryptJSON,decryptJSON}from'./crypto-creds.js';
 function clampInt(v,d,m){const n=parseInt(v,10);if(isNaN(n))return d;return Math.max(0,Math.min(m,n))}
+async function safeDecrypt(env,val){try{return JSON.stringify(await decryptJSON(env,val))}catch(e){return'{}'}}
 async function generateOrderCode(env){
 const alphabet='0123456789';
 for(let attempt=0;attempt<10;attempt++){
@@ -56,25 +58,32 @@ return(r.meta&&r.meta.changes)||0;
 }
 export async function listStock(env,variantId,status,limit,offset){
 const lim=clampInt(limit,50,200),off=clampInt(offset,0,100000);
+let rows;
 if(!status||status===''){
 const r=await env.DB.prepare('SELECT * FROM rsl_stock_items WHERE variant_id=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(variantId,lim,off).all();
-return r.results;
-}
+rows=r.results;
+}else{
 const r=await env.DB.prepare('SELECT * FROM rsl_stock_items WHERE variant_id=? AND status=? ORDER BY id DESC LIMIT ? OFFSET ?').bind(variantId,status,lim,off).all();
-return r.results;
+rows=r.results;
+}
+for(const row of rows)row.fields=await safeDecrypt(env,row.fields);
+return rows;
 }
 export async function addStock(env,variantId,fieldsObj,buyerNote){
-const r=await env.DB.prepare("INSERT INTO rsl_stock_items(variant_id,fields,status,buyer_note) VALUES(?,?, 'available',?)").bind(variantId,JSON.stringify(fieldsObj),String(buyerNote||'').slice(0,500)).run();
+const enc=await encryptJSON(env,fieldsObj||{});
+const r=await env.DB.prepare("INSERT INTO rsl_stock_items(variant_id,fields,status,buyer_note) VALUES(?,?, 'available',?)").bind(variantId,enc,String(buyerNote||'').slice(0,500)).run();
 return r.meta.last_row_id;
 }
 export async function addStockBulk(env,variantId,arr){
-const stmts=arr.map(f=>env.DB.prepare("INSERT INTO rsl_stock_items(variant_id,fields,status) VALUES(?,?,'available')").bind(variantId,JSON.stringify(f)));
+const encArr=await Promise.all((arr||[]).map(f=>encryptJSON(env,f||{})));
+const stmts=encArr.map(e=>env.DB.prepare("INSERT INTO rsl_stock_items(variant_id,fields,status) VALUES(?,?,'available')").bind(variantId,e));
 if(!stmts.length)return 0;
 const res=await env.DB.batch(stmts);
 return res.length;
 }
 export async function updateStockFields(env,id,fieldsObj,buyerNote){
-await env.DB.prepare("UPDATE rsl_stock_items SET fields=?,buyer_note=? WHERE id=? AND status IN ('available','disabled')").bind(JSON.stringify(fieldsObj),String(buyerNote||'').slice(0,500),id).run();
+const enc=await encryptJSON(env,fieldsObj||{});
+await env.DB.prepare("UPDATE rsl_stock_items SET fields=?,buyer_note=? WHERE id=? AND status IN ('available','disabled')").bind(enc,String(buyerNote||'').slice(0,500),id).run();
 }
 export async function disableStock(env,id){
 await env.DB.prepare("UPDATE rsl_stock_items SET status='disabled' WHERE id=? AND status='available'").bind(id).run();
@@ -116,7 +125,9 @@ return r.results;
 }
 export async function listOrderCredentials(env,orderId){
 const r=await env.DB.prepare("SELECT oi.id AS order_item_id,oi.app_name,oi.category,oi.duration,oi.qty,si.id AS stock_id,si.fields,si.buyer_note FROM rsl_order_items oi LEFT JOIN rsl_stock_items si ON si.order_item_id=oi.id AND si.status='sold' WHERE oi.order_id=? ORDER BY oi.id,si.id").bind(orderId).all();
-return r.results;
+const rows=r.results;
+for(const row of rows)row.fields=await safeDecrypt(env,row.fields);
+return rows;
 }
 export async function appendPayment(env,orderId,provider,txId,status,gross,raw){
 await env.DB.prepare('INSERT INTO rsl_payments(order_id,provider,provider_tx_id,status,gross_amount,raw_status) VALUES(?,?,?,?,?,?)').bind(orderId,provider,txId||'',status,gross,raw||'').run();
@@ -179,12 +190,14 @@ o.payments=pays.results;
 o.credentials=await listOrderCredentials(env,orderId);
 for(const it of o.items){
 const rev=await env.DB.prepare('SELECT id,fields,note,created_by,created_at FROM rsl_order_revisions WHERE order_item_id=? ORDER BY id ASC').bind(it.id).all();
+for(const rv of rev.results)rv.fields=await safeDecrypt(env,rv.fields);
 it.revisions=rev.results;
 }
 return o;
 }
 export async function addOrderRevision(env,orderItemId,fieldsObj,note,createdBy){
-const r=await env.DB.prepare('INSERT INTO rsl_order_revisions(order_item_id,fields,note,created_by,created_at) VALUES(?,?,?,?,?)').bind(orderItemId,JSON.stringify(fieldsObj||{}),String(note||'').slice(0,1000),createdBy||'admin',nowStr()).run();
+const enc=await encryptJSON(env,fieldsObj||{});
+const r=await env.DB.prepare('INSERT INTO rsl_order_revisions(order_item_id,fields,note,created_by,created_at) VALUES(?,?,?,?,?)').bind(orderItemId,enc,String(note||'').slice(0,1000),createdBy||'admin',nowStr()).run();
 return r.meta.last_row_id;
 }
 export async function setOrderStatus(env,orderId,status){
