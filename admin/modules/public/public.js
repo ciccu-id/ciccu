@@ -1,5 +1,5 @@
 (function(M){
-var root=null;
+var root=null,headRef=null;
 function openImport(){
 var s=ModalKit.shell({title:'Import CSV',sub:'Upload file CSV untuk menambah paket secara massal',scroll:true});
 var fileInput=document.createElement('input');
@@ -86,10 +86,16 @@ var btnAddApp=document.getElementById('btnAddApp');
 if(btnAddApp)btnAddApp.addEventListener('click',function(){AppModals.openAdd()});
 var search=document.getElementById('publicSearch');
 if(search)search.addEventListener('input',debounce(function(){M.setFilter(search.value)},250));
+headRef=root.querySelector('.public-head');
+if(headRef)TopbarControls.attach(headRef);
 AppModals.onChanged(function(){M.loadGroups()});
 return M.groupsInit();
 }
-function destroy(){root=null}
+function destroy(){
+if(headRef)TopbarControls.detach(headRef);
+headRef=null;
+root=null;
+}
 M.init=init;
 M.destroy=destroy;
 })(AdminModules.public=AdminModules.public||{});
