@@ -1,4 +1,4 @@
-import{RES,ce,svgI,resFmtIDR,resApi,resToast,relTime}from'./r-core.js';
+import{RES,ce,svgI,resFmtIDR,resApi,resToast,relTime}from'./r-core.js?v=6';
 let ORDERS_TIMER=null;
 function fmtRemainRes(iso){
 if(!iso)return{text:'—',mod:'dead'};
