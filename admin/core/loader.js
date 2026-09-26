@@ -23,7 +23,9 @@ function mount(name,host){
 if(!host)host=document.getElementById('pageRoot');
 if(!host)return Promise.reject(new Error('Elemen host tidak ditemukan untuk module: '+name));
 while(host.firstChild)host.removeChild(host.firstChild);
-host.className='page-host page-'+name;
+var wrap=document.createElement('div');
+wrap.className='page-host page-'+name;
+host.appendChild(wrap);
 return Reg.loadCss(name).then(function(){
 var files=Reg.files(name);
 var chain=Promise.resolve();
@@ -35,7 +37,7 @@ return chain;
 var mod=AdminModules[name];
 if(!mod)return Promise.reject(new Error('Namespace module tidak ditemukan: '+name));
 if(typeof mod.init!=='function')return Promise.reject(new Error('Module tidak punya fungsi init: '+name));
-return mod.init(host);
+return mod.init(wrap);
 }).catch(function(err){
 showError(host,err&&err.message?err.message:String(err));
 throw err;
