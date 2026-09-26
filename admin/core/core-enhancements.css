@@ -1,0 +1,10 @@
+.adm-input .dd{width:100%;min-width:0}
+.adm-input .dd .dd-btn{height:40px;border:1.5px solid var(--tint-line);border-radius:.6rem;box-shadow:none;font-size:13px;font-weight:700;color:var(--choco-700);padding:0 12px;justify-content:flex-start}
+.adm-input .dd .dd-btn svg{margin-left:auto}
+.adm-input .dd.open .dd-btn{border-color:var(--choco-600);box-shadow:0 0 0 3px rgba(67,47,46,.08)}
+.adm-input .dd .dd-menu{border-radius:.6rem;border-color:var(--tint-line);box-shadow:var(--sh-md)}
+.app-header-sold-badge{font-size:.5rem;background:var(--brick-50);color:var(--brick-500);border:1px solid var(--brick-200);padding:.125rem .375rem;border-radius:.25rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.modal-body-scroll .form-fields{margin-bottom:0}
+.modal-body-scroll .add-field-btn{margin-top:.625rem}
+.stk-card .kebab-menu{background:var(--w);border:1px solid var(--blue-200);border-radius:var(--r-md);box-shadow:var(--sh-lg);padding:.25rem}
+.stk-card .kebab-item{font-size:.625rem;padding:.45rem .625rem}
