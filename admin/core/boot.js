@@ -2,8 +2,8 @@ document.addEventListener('DOMContentLoaded',function(){
 var loginEl=document.getElementById('loginOverlay');
 var shellEl=document.getElementById('shell');
 var navCb=document.getElementById('navToggle');
-function showLogin(){if(loginEl)loginEl.style.display='flex';if(shellEl)shellEl.style.display='none'}
-function showShell(){if(loginEl)loginEl.style.display='none';if(shellEl)shellEl.style.display='flex'}
+function showLogin(){if(loginEl)loginEl.classList.remove('hidden');if(shellEl)shellEl.classList.add('hidden')}
+function showShell(){if(loginEl)loginEl.classList.add('hidden');if(shellEl)shellEl.classList.remove('hidden')}
 Sec.onShowLogin(showLogin);
 Sec.onLoggedIn(function(){showShell();Router.start()});
 Sec.onExpired(function(){Router.reset();showLogin();Sec.renderCaptcha()});
