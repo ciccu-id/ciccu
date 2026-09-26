@@ -11,6 +11,12 @@ s.onerror=function(){reject(new Error('Gagal memuat berkas: '+src))};
 document.head.appendChild(s);
 });
 }
+function makeSpinner(){
+var spin=ce('div','loading-state');
+spin.appendChild(ce('div','loader'));
+spin.appendChild(ce('p',null,'Menyiapkan halaman...'));
+return spin;
+}
 function showError(host,msg){
 if(!host)return;
 while(host.firstChild)host.removeChild(host.firstChild);
@@ -26,6 +32,19 @@ while(host.firstChild)host.removeChild(host.firstChild);
 var wrap=document.createElement('div');
 wrap.className='page-host page-'+name;
 host.appendChild(wrap);
+var spin=makeSpinner();
+host.appendChild(spin);
+var mo=null;
+function dropSpin(){
+if(mo){mo.disconnect();mo=null}
+if(spin.parentNode)spin.parentNode.removeChild(spin);
+}
+if(typeof MutationObserver!=='undefined'){
+mo=new MutationObserver(function(){
+if(wrap.firstChild)dropSpin();
+});
+mo.observe(wrap,{childList:true});
+}
 return Reg.loadCss(name).then(function(){
 var files=Reg.files(name);
 var chain=Promise.resolve();
@@ -38,7 +57,11 @@ var mod=AdminModules[name];
 if(!mod)return Promise.reject(new Error('Namespace module tidak ditemukan: '+name));
 if(typeof mod.init!=='function')return Promise.reject(new Error('Module tidak punya fungsi init: '+name));
 return mod.init(wrap);
+}).then(function(out){
+dropSpin();
+return out;
 }).catch(function(err){
+dropSpin();
 showError(host,err&&err.message?err.message:String(err));
 throw err;
 });
