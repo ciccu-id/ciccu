@@ -97,15 +97,16 @@ if(!/^[A-Za-z0-9_]{1,15}$/.test(xuser))return err('Akun X wajib 1-15 karakter ta
 if(password.length<8||password.length>30)return err('Password wajib 8-30 karakter',400);
 if(!token)return err('Token pendaftaran wajib diisi',400);
 if(!await verifyTurnstile(b.turnstileResponse,env.TURNSTILE_SECRET))return err('Verifikasi keamanan tidak valid',400);
-await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(nowStr()).run();
+const now=nowStr();
+await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE expires_at<=?').bind(now).run();
 const hash=await sha256hex(token);
-const row=await env.DB.prepare('SELECT id,expires_at FROM rsl_reg_tokens WHERE token_hash=?').bind(hash).first();
-if(!row||row.expires_at<=nowStr())return err('Token tidak valid atau telah kedaluwarsa',404);
-const ex=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
-if(ex)return err('Username sudah dipakai',400);
+const dupe=await env.DB.prepare('SELECT id FROM rsl_resellers WHERE username=?').bind(username).first();
+if(dupe)return err('Username sudah dipakai',400);
+const consume=await env.DB.prepare('UPDATE rsl_reg_tokens SET consumed_at=? WHERE token_hash=? AND consumed_at IS NULL AND expires_at>?').bind(now,hash,now).run();
+const changed=consume&&consume.meta&&consume.meta.changes?consume.meta.changes:0;
+if(changed!==1)return err('Token tidak valid, sudah dipakai, atau telah kedaluwarsa',404);
 const h=await hashNewPassword(password);
 const ins=await env.DB.prepare("INSERT INTO rsl_resellers(username,pass_hash,pass_salt,pass_iter,display_name,whatsapp,x_username,status) VALUES(?,?,?,?,?,?,?,'pending')").bind(username,h.hash,h.salt,h.iter,name,wa,xuser).run();
-await env.DB.prepare('DELETE FROM rsl_reg_tokens WHERE id=?').bind(row.id).run();
 const newId=ins.meta?ins.meta.last_row_id:null;
 await safeAudit(env,'guest',newId,'reseller.register','reseller',newId,{username:username},ip);
 return json({success:true,status:'pending',message:'Pendaftaran berhasil. Akun menunggu konfirmasi admin.'},201);
@@ -175,9 +176,14 @@ formJson=JSON.stringify(cleaned);
 lines.push({variant_id:vid,app_name:v.app_name,category:v.category,duration:v.duration,qty:qty,unit_price:unit,form_data:formJson});
 total+=unit*qty;
 }
-const idem=String(b.idempotency_key||'').slice(0,128)||randomHex(16);
-const ex=await env.DB.prepare('SELECT id FROM rsl_orders WHERE idempotency_key=?').bind(idem).first();
-if(ex){const o=await getOrder(env,ex.id,session.id);return json({order_id:ex.id,total:o?o.total_amount:0,status:o?o.status:'',reused:true})}
+const rawIdem=String(b.idempotency_key||'').trim().slice(0,100);
+const idem=session.id+':'+(rawIdem||randomHex(16));
+const ex=await env.DB.prepare('SELECT id FROM rsl_orders WHERE idempotency_key=? AND reseller_id=?').bind(idem,session.id).first();
+if(ex){
+const o=await getOrder(env,ex.id,session.id);
+if(!o)return err('Idempotency key tidak valid',409);
+return json({order_id:o.id,total:o.total_amount,status:o.status,reused:true});
+}
 const prov=getProvider(env);
 const orderId=await createOrder(env,session.id,lines,total,prov.name,idem);
 await appendPayment(env,orderId,prov.name,'','pending',total,'created');
