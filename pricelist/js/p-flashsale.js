@@ -2,7 +2,8 @@ import{ce,extractNumK}from'./p-core.js';
 import{S,getLogoUrl}from'./p-state.js';
 export const FlashSale={
 startMs:null,endMs:null,timer:null,active:false,name:'Flash Sale',desc:'',items:[],wasUpcoming:false,el:null,itemsEl:null,onAdd:null,onExpire:null,
-init:function(s){this.stop();this.name=s.name||'Flash Sale';this.desc=s.description||'';this.itemsEl=null;this.active=false;
+init:function(s){
+this.stop();this.name=s.name||'Flash Sale';this.desc=s.description||'';this.itemsEl=null;
 if(!s.start||!s.end)return;
 this.startMs=this.parseWIB(s.start);this.endMs=this.parseWIB(s.end);
 if(!this.startMs||!this.endMs||this.endMs<=this.startMs)return;
