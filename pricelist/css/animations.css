@@ -1,0 +1,21 @@
+.loader{border:3px solid rgba(67,47,46,.15);border-left-color:var(--choco-600);border-radius:50%;width:24px;height:24px;animation:spin 1s linear infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.fade-in-down{animation:fadeInDown .5s ease-out forwards;opacity:0;transform:translateY(-15px)}
+@keyframes fadeInDown{to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease-out forwards;opacity:0}
+@keyframes fadeIn{to{opacity:1}}
+.slide-up{animation:slideUp .3s ease-out forwards;opacity:0;transform:translateY(20px)}
+@keyframes slideUp{to{opacity:1;transform:translateY(0)}}
+.float-slow{animation:floatSlow 4s ease-in-out infinite}
+@keyframes floatSlow{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-6px) rotate(5deg)}}
+.float-slow-rev{animation:floatSlowRev 5s ease-in-out infinite}
+@keyframes floatSlowRev{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(6px) rotate(-5deg)}}
+.shimmer{background:linear-gradient(90deg,var(--blue-50) 25%,var(--butter-100) 50%,var(--blue-50) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.cart-icon-wrap.bounce{animation:cartBounce .3s ease-out}
+@keyframes cartBounce{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+.badge-flash{animation:pulse 2s infinite}
+.pkg-badge-flash{animation:pulse 2s infinite}
+.cart-badge.bump{animation:bump .25s}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.25)}100%{transform:scale(1)}}
