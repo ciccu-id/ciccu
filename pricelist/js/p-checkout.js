@@ -4,6 +4,7 @@ import{guardClosed}from'./p-modals.js';
 import{toggleSummaryList}from'./p-cart.js';
 const WA_NUMBER='6283877337798';
 const QRIS_URL='https://ciccu.biz.id/qris';
+const FIELD_MAXLEN=500;
 var overlayEl=null,bodyEl=null,totalEl=null;
 export function createCheckoutPanel(){
 overlayEl=ce('div','checkout-overlay');overlayEl.classList.add('hidden');
@@ -120,6 +121,7 @@ fieldDiv.appendChild(ce('label',null,fieldName));
 var input=ce('input');
 input.setAttribute('type','text');
 input.setAttribute('placeholder','Ketik '+fieldName);
+input.setAttribute('maxlength',String(FIELD_MAXLEN));
 if(!S.cart[ci].formData)S.cart[ci].formData=[];
 if(!S.cart[ci].formData[fi2])S.cart[ci].formData[fi2]={};
 if(S.cart[ci].formData[fi2][fieldName])input.value=S.cart[ci].formData[fi2][fieldName];
@@ -140,6 +142,7 @@ var okDiv=ce('div','checkout-same-ok');
 okDiv.appendChild(svgI(ICON.check,'.875rem','.875rem'));
 okDiv.appendChild(ce('p',null,'Data akan disalin otomatis.'));
 itemDiv.appendChild(okDiv);
+}
 }
 }
 body.appendChild(itemDiv);
@@ -175,9 +178,9 @@ var key2=String(it.app).toLowerCase().trim();
 var fields2=parseFormFields(S.appForms[key2]||'');
 var flashTag=it.isFlash?' (⚡ Flash Sale)':'';
 text+='  ⊹  ☆̲  '+it.app+' — '+it.dur+'\n';
-text+='⊹  𓈒  ——— paket :  '+it.cat+'\n';
+text+='⊹    ——— paket :  '+it.cat+'\n';
 text+='⊹   ♡ ——— total   :  '+it.qty+' pcs\n';
-text+='⊹ ꒰  ♡ ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
+text+='⊹ ꒰   ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
 if(fields2.length>0){
 text+='\n*DATA USER*\n';
 if(it.useFirstItemData){
@@ -209,5 +212,6 @@ text=text.trimEnd()+'\n\n';
 text+='ఌ︎. 𓈄 total order : IDR '+formatSmartPrice(grandTotal)+' ⸝  ︎. ⟡ \n\n';
 text+=' ⑅  bisa bantu untuk prosesnya kak?  ♡  .. thank you   ⊹ (. .*)β \nhave a sweet day  \n\n';
 text+=QRIS_URL;
-window.open('https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(text),'_blank');
+var waUrl='https://wa.me/'+WA_NUMBER+'?text='+encodeURIComponent(text);
+window.open(waUrl,'_blank','noopener,noreferrer');
 }
