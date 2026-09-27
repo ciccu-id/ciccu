@@ -7,6 +7,21 @@ if(!str)return[];
 try{if(String(str).trim().startsWith('['))return JSON.parse(str).map(function(i){return i.name||i})}catch(e){}
 return String(str).split(',').map(function(s){return s.trim()}).filter(Boolean)
 }
+function safeUrl(u,isImg){
+var s=String(u||'');
+if(!s)return'';
+try{
+var x=new URL(s,window.location.origin);
+if(x.protocol==='https:')return x.href;
+if(isImg&&x.protocol==='data:'&&s.indexOf('data:image/')===0)return s
+}catch(e){}
+return''
+}
+function idemKey(items){
+var s=JSON.stringify(items),h=5381;
+for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;
+return'res_'+h.toString(16)
+}
 function ensureItemForm(item){
 if(!item.form_fields){
 var found=null;
@@ -201,7 +216,7 @@ if(!RES.cart.length){resToast('Keranjang masih kosong.');return}
 const verr=validateForms();
 if(verr){resToast(verr,true);return}
 const items=buildItems();
-const idem='res_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+const idem=idemKey(items);
 btn.disabled=true;
 btn.textContent='Memproses...';
 try{
@@ -250,18 +265,22 @@ function renderInstruction(instr){
 const wrap=ce('div','r-pay-instr');
 if(typeof instr==='string'){wrap.appendChild(ce('p','r-pay-text',instr));return wrap}
 if(typeof instr!=='object'||instr===null)return wrap;
-if(instr.type==='qris'&&instr.qr_url){
+if(instr.type==='qris'){
+const q=safeUrl(instr.qr_url,true);
+if(q){
 const img=document.createElement('img');
-img.src=instr.qr_url;
+img.src=q;
 img.className='r-pay-qr';
 img.alt='QRIS';
 wrap.appendChild(img)
 }
-if(instr.redirect_url){
+}
+const ru=safeUrl(instr.redirect_url);
+if(ru){
 const a=document.createElement('a');
-a.href=instr.redirect_url;
+a.href=ru;
 a.target='_blank';
-a.rel='noopener';
+a.rel='noopener noreferrer';
 a.className='r-pay-link';
 a.textContent='Lanjut ke Pembayaran →';
 wrap.appendChild(a)
