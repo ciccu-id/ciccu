@@ -1,18 +1,17 @@
-import{RES}from'./r-core.js';
+import{RES,setResToken}from'./r-core.js';
 import{resApi,resToast}from'./r-api.js';
-import{setResToken}from'./r-core.js';
 import{clearCart}from'./r-store.js';
 const RES_TURNSTILE_SITE_KEY='0x4AAAAAADpiSjv84N_2_kvG';
 const tw={login:null,reg:null};
-let authMode='login';
 let mqDesktop=null;
+let turnstileWarned=false;
 function ensureTurnstile(cb){
 if(window.turnstile){cb();return}
 let n=0;
 const iv=setInterval(function(){
 n++;
 if(window.turnstile){clearInterval(iv);cb()}
-else if(n>40)clearInterval(iv)
+else if(n>40){clearInterval(iv);if(!turnstileWarned){turnstileWarned=true;resToast('Verifikasi keamanan gagal dimuat. Periksa koneksi atau nonaktifkan pemblokir iklan.',true)}}
 },250)
 }
 function renderTurnstiles(){
@@ -21,11 +20,13 @@ const elR=document.getElementById('resTurnstileReg');
 if(!window.turnstile)return;
 if(elL){
 if(tw.login!==null){try{turnstile.remove(tw.login)}catch(e){}}
-tw.login=turnstile.render(elL,{sitekey:RES_TURNSTILE_SITE_KEY})
+tw.login=null;
+try{tw.login=turnstile.render(elL,{sitekey:RES_TURNSTILE_SITE_KEY})}catch(e){console.error('Turnstile login render failed:',e)}
 }
 if(elR){
 if(tw.reg!==null){try{turnstile.remove(tw.reg)}catch(e){}}
-tw.reg=turnstile.render(elR,{sitekey:RES_TURNSTILE_SITE_KEY})
+tw.reg=null;
+try{tw.reg=turnstile.render(elR,{sitekey:RES_TURNSTILE_SITE_KEY})}catch(e){console.error('Turnstile register render failed:',e)}
 }
 }
 function getTurnstileToken(which){
@@ -69,7 +70,6 @@ const auth=document.getElementById('auth');
 const forms=document.getElementById('resForms');
 if(!auth)return;
 const reg=mode==='register';
-authMode=mode;
 if(mqDesktop&&mqDesktop.matches&&forms)forms.style.height=forms.offsetHeight+'px';
 auth.classList.toggle('register-mode',reg);
 const ovTitle=document.getElementById('overlayTitle');
@@ -111,7 +111,7 @@ const lv=document.getElementById('resLoginView');
 const mv=document.getElementById('resMainView');
 if(lv)lv.classList.add('hidden');
 if(mv)mv.classList.remove('hidden');
-const greet=document.getElementById('resUserGreeting');
+const greet=document.getElementById('resUserGreet');
 if(greet&&RES.session){greet.textContent='Halo, '+(RES.session.display_name||RES.session.username)}
 }
 async function handleLoginSubmit(e){
@@ -208,7 +208,14 @@ const regForm=document.getElementById('resRegForm');
 if(regForm)regForm.addEventListener('submit',handleRegisterSubmit);
 const logoutBtn=document.getElementById('resLogoutBtn');
 if(logoutBtn)logoutBtn.addEventListener('click',handleLogout);
-document.addEventListener('res:session-expired',function(){RES.session=null;setResToken(null);clearCart();showLoginView();resToast('Sesi berakhir. Silakan login ulang.')});
+document.addEventListener('res:session-expired',function(){
+RES.session=null;
+setResToken(null);
+clearCart();
+showLoginView();
+setMode('login');
+resToast('Sesi berakhir. Silakan login ulang.')
+});
 checkSession().then(function(ok){
 if(ok){showMainView();document.dispatchEvent(new CustomEvent('res:logged-in'))}
 else{showLoginView()}
