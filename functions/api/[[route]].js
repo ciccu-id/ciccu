@@ -1,5 +1,3 @@
-import{createAdminSession,ADMIN_SESSION_COOKIE}from'../lib/auth-admin.js';
-import{isSecure}from'../lib/auth-reseller.js';
 const corsHeaders={'Access-Control-Allow-Origin':'https://ciccu.biz.id','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
 async function verifyTurnstile(token,secret){
 if(!token)return false;
@@ -18,13 +16,8 @@ return new Response(JSON.stringify(data),{headers:h,status});
 };
 const err=(msg,status=500)=>jsonResp({error:msg},status);
 try{
+if(path==='/api/login')return err('Endpoint login lama sudah tidak dipakai. Gunakan /api/admin/login.',410);
 const body=method==='POST'?await request.json().catch(()=>({})):null;
-if(path==='/api/login'&&method==='POST'){
-if(!await verifyTurnstile(body.turnstileResponse,env.TURNSTILE_SECRET))return err('Captcha tidak valid',400);
-if(body.password!==env.ADMIN_PASSWORD)return err('Password salah',403);
-const token=await createAdminSession(env,request,false);
-return jsonResp({success:true},200,0,{'Set-Cookie':ADMIN_SESSION_COOKIE+'='+token+'; Path=/api; HttpOnly; SameSite=Strict'+(isSecure(request)?'; Secure':'')+'; Max-Age=28800'});
-}
 if(path==='/api/settings'&&method==='GET'){
 const{results}=await env.DB.prepare('SELECT * FROM store_settings WHERE id = 1').all();
 if(!results||!results.length)return jsonResp({is_closed:false,message:'',flash_sale_start:'',flash_sale_end:'',flash_sale_name:'Flash Sale',flash_sale_description:''},200,5);
@@ -65,4 +58,3 @@ console.error('Server error:',e);
 return err('Terjadi kesalahan di server.',500);
 }
 }
-
