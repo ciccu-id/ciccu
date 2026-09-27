@@ -1,0 +1,51 @@
+.r-fs-section{background:linear-gradient(180deg,var(--butter-100),var(--butter-50));border:1px solid var(--butter-300);border-radius:var(--r-xl);box-shadow:var(--sh-lg);overflow:hidden}
+.r-fs-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem .875rem}
+.r-fs-head-left{flex:1;min-width:0;text-align:left}
+.r-fs-title{font-size:.875rem;font-weight:900;color:var(--choco-600);display:flex;align-items:center;gap:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-fs-desc{font-size:.5625rem;color:var(--choco-400);font-weight:700;margin-top:.15rem;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-fs-head-right{display:flex;flex-direction:column;align-items:flex-end;gap:.15rem;flex-shrink:0}
+.r-fs-status{font-size:.4375rem;color:var(--choco-500);font-weight:900;text-transform:uppercase;letter-spacing:.1em}
+.r-fs-pill{background:var(--choco-600);color:var(--butter-100);font-weight:900;font-size:.8125rem;padding:.3rem .625rem;border-radius:9999px;font-variant-numeric:tabular-nums;letter-spacing:.02em;box-shadow:var(--sh-sm);line-height:1}
+.r-fs-divider{border-top:1px solid var(--butter-200)}
+.r-fs-items{display:flex;gap:.5rem;overflow-x:auto;padding:.75rem .875rem;-ms-overflow-style:none;scrollbar-width:none}
+.r-fs-items::-webkit-scrollbar{display:none}
+.r-fs-card{flex-shrink:0;width:7.5rem;background:var(--w);border:1px solid var(--butter-200);border-radius:var(--r-md);padding:.5rem;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--sh-sm)}
+.r-fs-card-badge{position:absolute;top:.25rem;right:.25rem;font-size:.375rem;font-weight:900;color:var(--choco-700);background:var(--butter-100);border:1px solid var(--butter-300);padding:.05rem .25rem;border-radius:.25rem;animation:rfsPulse 2s infinite}
+.r-fs-card-top{display:flex;align-items:center;gap:.35rem;margin-bottom:.25rem}
+.r-fs-card-logo{width:1.375rem;height:1.375rem;border-radius:var(--r-sm);background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;padding:.1rem;color:var(--choco-600)}
+.r-fs-card-logo span{font-weight:900;font-size:.625rem;line-height:1}
+.r-fs-card-name{font-size:.625rem;font-weight:900;color:var(--choco-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-fs-card-pkg{font-size:.4375rem;color:var(--choco-400);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-fs-card-prices{display:flex;align-items:flex-end;gap:.25rem;margin-top:.35rem}
+.r-fs-card-old{font-size:.4375rem;color:var(--choco-400);text-decoration:line-through;font-weight:700}
+.r-fs-card-new{font-size:.75rem;font-weight:900;color:var(--choco-700);line-height:1}
+.r-fs-card-btn{margin-top:.4rem;width:100%;padding:.3rem;font-size:.5rem;font-weight:700;border-radius:9999px;border:1px solid var(--blue-200);background:var(--w);color:var(--choco-600);transition:all .15s}
+.r-fs-card-btn:hover{background:var(--blue-50)}
+.r-fs-card-btn:active{transform:scale(.95)}
+.r-fs-card-btn.active{background:var(--choco-600);color:var(--butter-100);border-color:var(--choco-600)}
+.r-fs-card-btn.disabled{background:var(--blue-50);color:var(--choco-400);border-color:var(--blue-200);cursor:not-allowed}
+.r-fs-card-btn.sold{background:var(--brick-50);color:var(--brick-400);border-color:var(--brick-200);cursor:not-allowed}
+.r-price-old{font-size:.5625rem;color:var(--choco-400);text-decoration:line-through;font-weight:700;margin-right:.25rem}
+.r-price.flash{color:var(--choco-700)}
+.r-ci-flash{font-size:.5rem;font-weight:900;color:var(--choco-700);margin-left:.15rem}
+.r-co-old{font-size:.5625rem;color:var(--choco-400);text-decoration:line-through;font-weight:700}
+.r-co-flash{font-size:.5rem;font-weight:900;color:var(--choco-700)}
+@keyframes rfsPulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media(min-width:640px){
+.r-fs-section{border-radius:var(--r-2xl)}
+.r-fs-header{padding:1rem 1.25rem}
+.r-fs-title{font-size:1rem}
+.r-fs-desc{font-size:.6875rem}
+.r-fs-status{font-size:.5rem}
+.r-fs-pill{font-size:.9375rem;padding:.35rem .75rem}
+.r-fs-items{padding:1rem 1.25rem;gap:.625rem}
+.r-fs-card{width:9rem;padding:.75rem;border-radius:var(--r-lg)}
+.r-fs-card-logo{width:1.625rem;height:1.625rem}
+.r-fs-card-logo span{font-size:.75rem}
+.r-fs-card-name{font-size:.75rem}
+.r-fs-card-pkg{font-size:.5625rem}
+.r-fs-card-old{font-size:.5625rem}
+.r-fs-card-new{font-size:.9375rem}
+.r-fs-card-btn{padding:.4rem;font-size:.625rem}
+}
+@media(prefers-reduced-motion:reduce){.r-fs-card-badge{animation:none!important}}
