@@ -12,6 +12,8 @@
 .r-co-group-name{font-size:.75rem;font-weight:900;color:var(--choco-700)}
 .r-co-group-count{font-size:.5625rem;font-weight:700;color:var(--choco-400)}
 .r-co-group-body{display:flex;flex-direction:column;gap:.625rem;padding:.625rem .75rem}
+details.r-co-group>.r-co-group-body{display:none}
+details.r-co-group[open]>.r-co-group-body{display:flex}
 .r-co-item{display:flex;flex-direction:column;gap:.5rem;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--r-md);padding:.625rem}
 .r-co-item-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
 .r-co-item-info{min-width:0}
