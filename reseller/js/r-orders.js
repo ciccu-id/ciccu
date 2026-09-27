@@ -36,6 +36,16 @@ function startTicker(){
 if(ORDERS_TIMER)return;
 ORDERS_TIMER=setInterval(tickAll,1000)
 }
+function stopTicker(){
+if(ORDERS_TIMER){
+clearInterval(ORDERS_TIMER);
+ORDERS_TIMER=null
+}
+}
+function syncTicker(){
+if(RES.view==='orders'&&!document.hidden)startTicker();
+else stopTicker()
+}
 function cdTag(iso){
 const t=ce('span','r-cd-tag','—');
 t.setAttribute('data-cd',iso);
@@ -76,17 +86,21 @@ while(list.firstChild)list.removeChild(list.firstChild);
 list.appendChild(ce('div','r-loading','Memuat pesanan...'));
 try{
 const rows=await resApi('/api/reseller/orders?limit=50');
+if(RES.view!=='orders')return;
 while(list.firstChild)list.removeChild(list.firstChild);
 if(!rows||!rows.length){
 list.appendChild(ce('div','r-empty','Belum ada pesanan.'));
+stopTicker();
 return
 }
 rows.forEach(function(o){list.appendChild(renderOrderCard(o))});
-startTicker();
+syncTicker();
 tickAll()
 }catch(e){
+if(RES.view!=='orders')return;
 while(list.firstChild)list.removeChild(list.firstChild);
-list.appendChild(ce('div','r-empty','Gagal memuat pesanan.'))
+list.appendChild(ce('div','r-empty','Gagal memuat pesanan.'));
+stopTicker()
 }
 }
 function renderOrderCard(o){
@@ -266,7 +280,17 @@ overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remov
 document.body.appendChild(overlay)
 }
 export function initOrders(){
-document.addEventListener('res:logged-in',function(){if(RES.view==='orders')loadOrders()});
-document.addEventListener('res:view-changed',function(e){if(e.detail&&e.detail.view==='orders')loadOrders()});
-document.addEventListener('res:checkout-success',function(){if(RES.view==='orders')loadOrders()})
+document.addEventListener('res:logged-in',function(){
+if(RES.view==='orders')loadOrders()
+});
+document.addEventListener('res:view-changed',function(e){
+if(e.detail&&e.detail.view==='orders')loadOrders();
+else stopTicker()
+});
+document.addEventListener('res:checkout-success',function(){
+if(RES.view==='orders')loadOrders()
+});
+document.addEventListener('res:logged-out',stopTicker);
+document.addEventListener('res:session-expired',stopTicker);
+document.addEventListener('visibilitychange',syncTicker)
 }
