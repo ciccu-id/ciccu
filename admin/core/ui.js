@@ -31,7 +31,7 @@ if(cfg.prompt)setTimeout(function(){inp.focus()},60);
 }
 function uiToast(m){toast(m)}
 function uiAlert(m,t){open({alert:true,title:t||'Perhatian',msg:m,okText:'Tutup'})}
-function uiConfirm(m,t,cb,o){o=o||{};open({title:t||'Konfirmasi',msg:m,okText:o.okText||'Ya',danger:!!o.danger,cb:cb})}
+function uiConfirm(m,t,cb,o){if(typeof t==='function'){o=cb||{};cb=t;t='Konfirmasi'}o=o||{};open({title:t||'Konfirmasi',msg:m,okText:o.okText||'Ya',danger:!!o.danger,cb:cb})}
 function uiPrompt(m,t,cb,o){o=o||{};open({prompt:true,title:t||'Isi Data',msg:m,okText:o.okText||'Simpan',placeholder:o.placeholder||'',cb:cb})}
 window.uiToast=uiToast;window.uiAlert=uiAlert;window.uiConfirm=uiConfirm;window.uiPrompt=uiPrompt;
 return{toast:uiToast,alert:uiAlert,confirm:uiConfirm,prompt:uiPrompt,close:close};
