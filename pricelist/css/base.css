@@ -1,0 +1,19 @@
+:root{--blue-50:#eef4f9;--blue-100:#dce9f2;--blue-200:#c4dae8;--blue-300:#a3c2d8;--blue-400:#7fa5c2;--butter-50:#fffdf2;--butter-100:#fff8dd;--butter-200:#feefb8;--butter-300:#f5dd8a;--butter-400:#e8c95f;--choco-400:#6b5452;--choco-500:#55403e;--choco-600:#432f2e;--choco-700:#332423;--w:#fff;--sage-50:#f0f7f2;--sage-200:#c8e0d0;--sage-500:#7ba888;--sage-600:#5f8f6e;--brick-50:#fdf3f3;--brick-200:#ecc9c9;--brick-400:#c26d6d;--brick-500:#a85555;--r-sm:.375rem;--r-md:.625rem;--r-lg:.875rem;--r-xl:1.25rem;--r-2xl:1.5rem;--sh-sm:0 1px 2px rgba(67,47,46,.06);--sh-md:0 3px 6px -1px rgba(67,47,46,.09);--sh-lg:0 8px 14px -3px rgba(67,47,46,.1);--sh-xl:0 16px 24px -5px rgba(67,47,46,.12)}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Quicksand',sans-serif;background:linear-gradient(165deg,var(--blue-100),var(--butter-50) 50%,var(--blue-50));background-attachment:fixed;color:var(--choco-600);min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent;font-size:13px}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background:radial-gradient(60rem 40rem at 110% -10%,rgba(254,239,184,.5),transparent 60%),radial-gradient(50rem 35rem at -10% 110%,rgba(196,218,232,.45),transparent 60%);z-index:-1}
+img{max-width:100%;display:block}
+button{cursor:pointer;font-family:inherit;border:none;background:none}
+input,textarea,select{font-family:inherit}
+.container{width:100%;margin:0 auto;padding:1rem .875rem 6.5rem;position:relative;z-index:0}
+@media(min-width:768px){.container{max-width:56rem;padding:2rem 1.5rem 7rem}}
+@media(min-width:1024px){.container{max-width:72rem;padding:2.5rem 2rem 7rem}}
+.hidden{display:none!important}
+.section-label{font-size:.625rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--choco-400);margin:0 0 .5rem .125rem;display:flex;align-items:center;gap:.375rem}
+.font-logo{font-family:'Fredoka',sans-serif;font-weight:700;letter-spacing:.5px}
+.custom-scroll::-webkit-scrollbar{width:5px;height:5px}
+.custom-scroll::-webkit-scrollbar-thumb{background:var(--blue-200);border-radius:10px}
+.custom-scroll::-webkit-scrollbar-track{background:transparent}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+::selection{background:var(--butter-200);color:var(--choco-600)}
