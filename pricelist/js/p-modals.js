@@ -92,3 +92,4 @@ requestAnimationFrame(function(){if(scOk)scOk.focus()});
 }
 export function hideStoreClosed(){if(closedEl)closedEl.classList.add('hidden')}
 export function guardClosed(){if(S.storeClosed){showStoreClosed();return true}return false}
+
