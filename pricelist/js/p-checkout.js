@@ -1,11 +1,12 @@
 import{ce,svgI,ICON,waIcon,formatSmartPrice,extractNumK,parseFormFields}from'./p-core.js';
 import{S,getLogoUrl}from'./p-state.js';
-import{guardClosed}from'./p-modals.js';
+import{guardClosed,dialogA11y}from'./p-modals.js';
 import{toggleSummaryList}from'./p-cart.js';
 const WA_NUMBER='6283877337798';
 const QRIS_URL='https://ciccu.biz.id/qris';
 const FIELD_MAXLEN=500;
 let overlayEl=null,bodyEl=null,totalEl=null;
+let ckA11y=null,ckSavedFocus=null,ckOpen=false;
 export function createCheckoutPanel(){
 overlayEl=ce('div','checkout-overlay');overlayEl.classList.add('hidden');
 const backdrop=ce('div','checkout-backdrop');backdrop.addEventListener('click',closeCheckout);overlayEl.appendChild(backdrop);
@@ -18,16 +19,23 @@ const foot=ce('div','checkout-foot');
 const totalRow=ce('div','checkout-total-row');totalRow.appendChild(ce('span',null,'Total Pesanan:'));totalEl=ce('strong',null,'0K');totalRow.appendChild(totalEl);foot.appendChild(totalRow);
 const waBtn=ce('button','btn btn-green');waBtn.type='button';waBtn.appendChild(waIcon('1.125rem','1.125rem'));waBtn.appendChild(ce('span',null,'Kirim Pesanan ke WA'));waBtn.addEventListener('click',checkoutWA);foot.appendChild(waBtn);
 panel.appendChild(foot);overlayEl.appendChild(panel);document.body.appendChild(overlayEl);
+ckA11y=dialogA11y(overlayEl,panel,{isActive:function(){return ckOpen},onEscape:function(){closeCheckout()}});
 }
 export function openCheckout(){
-if(guardClosed())return;if(!S.cart.length)return;
+if(guardClosed())return;if(!S.cart.length)return;if(ckOpen)return;
 renderForms();if(S.summaryOpen)toggleSummaryList();
-if(overlayEl){overlayEl.classList.remove('hidden');const panel=overlayEl.querySelector('.checkout-panel');if(panel)panel.classList.add('open')}
+ckOpen=true;ckSavedFocus=document.activeElement;
+overlayEl.classList.remove('hidden');
+const panel=overlayEl.querySelector('.checkout-panel');if(panel)panel.classList.add('open');
+requestAnimationFrame(function(){requestAnimationFrame(function(){if(ckA11y)ckA11y.focusFirst()})});
 }
 export function closeCheckout(){
-if(!overlayEl)return;
+if(!overlayEl)return;if(!ckOpen)return;
+ckOpen=false;
 const panel=overlayEl.querySelector('.checkout-panel');if(panel)panel.classList.remove('open');
 setTimeout(function(){overlayEl.classList.add('hidden')},300);
+if(ckSavedFocus&&typeof ckSavedFocus.focus==='function'){try{ckSavedFocus.focus()}catch(e){}}
+ckSavedFocus=null;
 }
 function renderForms(){
 if(!bodyEl)return;
@@ -121,7 +129,7 @@ const key=String(it.app||'').toLowerCase().trim();const fields=parseFormFields(S
 text+='  ⊹  ☆  '+it.app+' — '+it.dur+'\n';
 text+='⊹    ——— paket :  '+it.cat+'\n';
 text+='⊹   ♡ ——— total   :  '+it.qty+' pcs\n';
-text+='⊹    ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
+text+='⊹ ꒰   ——— harga   :  IDR '+formatSmartPrice(itemTotal)+flashTag+'\n';
 if(fields.length>0){
 text+='\n*DATA USER*\n';
 if(it.useFirstItemData){
