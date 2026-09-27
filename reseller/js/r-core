@@ -1,0 +1,9 @@
+export const RES={session:null,token:null,catalog:[],cart:[],appFilter:'all',search:'',view:'store'};
+export function setResToken(t){RES.token=t||null}
+export function ce(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined&&text!==null)e.textContent=text;return e}
+export function svgI(d,w,h){w=w||'1.25rem';h=h||'1.25rem';var NS='http://www.w3.org/2000/svg';var s=document.createElementNS(NS,'svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');s.setAttribute('width',w);s.setAttribute('height',h);var p=document.createElementNS(NS,'path');p.setAttribute('d',d);s.appendChild(p);return s}
+export function resFmt(n){n=n||0;return Number(n).toLocaleString('id-ID')}
+export function resFmtIDR(n){return'Rp '+resFmt(n)}
+export function resNum(s){if(!s)return 0;var str=String(s).toUpperCase().trim();var m=str.match(/(\d+(?:[.,]\d+)?)\s*K/);if(m)return Math.round(parseFloat(m[1].replace(',','.'))*1000);var n=parseFloat(str.replace(/[^0-9.]/g,''));return isNaN(n)?0:Math.round(n)}
+export function relTime(s){if(!s)return'';var t=Date.parse(String(s).replace(' ','T')+'Z');if(isNaN(t))t=Date.parse(s);if(isNaN(t))return'';var diff=Date.now()-t;if(diff<0)diff=0;var m=Math.floor(diff/60000);if(m<1)return'baru saja';if(m<60)return m+' mnt lalu';var h=Math.floor(m/60);if(h<24)return h+' jam lalu';var d=Math.floor(h/24);if(d<7)return d+' hari lalu';return new Date(t).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}
+export function escapeHTML(str){var d=document.createElement('div');d.textContent=(str===null||str===undefined)?'':String(str);return d.innerHTML}
