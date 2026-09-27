@@ -213,7 +213,7 @@ if(rows&&rows.length){
 const ids=rows.map(o=>o.id);
 const it=await env.DB.prepare(`SELECT order_id,duration FROM rsl_order_items WHERE order_id IN (${ids.map(()=>'?').join(',')})`).bind(...ids).all();
 const minMs={};
-it.results.forEach(r=>{const ms=durationMs(r.duration);if(ms>0&&(minMs[r.order_id]===undefined||ms<minMs[r.order_id]))minMs[r.order_id]=ms});
+it.results.forEach(r=>{const ms=durationMs(r.duration);if(ms>0&&(minMs[row.order_id]===undefined||ms<minMs[row.order_id]))minMs[row.order_id]=ms});
 rows.forEach(o=>{
 if(o.status==='delivered'&&o.delivered_at&&minMs[o.id]!==undefined)o.expires_at=addMsToIso(o.delivered_at,minMs[o.id]);
 else o.expires_at=null;
@@ -239,14 +239,26 @@ if(om&&m==='POST'&&om[3]==='reveal'){
 const id=parseInt(om[1],10);
 const o=await getOrder(env,id,session.id);
 if(!o)return err('Order tidak ditemukan',404);
+if(o.status==='refunded')return err('Order telah di-refund. Data akses tidak tersedia.',409);
+if(o.status==='cancelled')return err('Order telah dibatalkan. Data akses tidak tersedia.',409);
 if(o.status!=='delivered')return err('Data belum tersedia',409);
 const rows=await listOrderCredentials(env,id);
+const expMap={};
+rows.forEach(r=>{
+if(expMap[r.order_item_id]===undefined){
+const ms=durationMs(r.duration);
+const exp=(ms>0&&o.delivered_at)?addMsToIso(o.delivered_at,ms):null;
+expMap[r.order_item_id]=!!(exp&&Date.parse(String(exp).replace(' ','T')+'Z')<=Date.now());
+}
+});
 const groups={};
 rows.forEach(r=>{
-if(!groups[r.order_item_id])groups[r.order_item_id]={order_item_id:r.order_item_id,app_name:r.app_name,category:r.category,duration:r.duration,qty:r.qty,credentials:[]};
-if(r.stock_id&&r.fields)groups[r.order_item_id].credentials.push({stock_id:r.stock_id,fields:parseFields(r.fields)});
+if(!groups[r.order_item_id])groups[r.order_item_id]={order_item_id:r.order_item_id,app_name:r.app_name,category:r.category,duration:r.duration,qty:r.qty,expired:!!expMap[r.order_item_id],credentials:[]};
+if(!expMap[r.order_item_id]&&r.stock_id&&r.fields)groups[r.order_item_id].credentials.push({stock_id:r.stock_id,fields:parseFields(r.fields)});
 });
-await safeAudit(env,'reseller',session.id,'credentials.reveal','order',id,{items:Object.keys(groups).length},ip);
+let active=0;
+for(const k in groups){if(!groups[k].expired)active++}
+await safeAudit(env,'reseller',session.id,'credentials.reveal','order',id,{items:active},ip);
 return json(Object.keys(groups).map(k=>groups[k]));
 }
 return err('Endpoint tidak ditemukan',404);
