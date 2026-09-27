@@ -1,6 +1,8 @@
 import{RES,ce,svgI,resFmtIDR,relTime}from'./r-core.js';
 import{resApi,resToast}from'./r-api.js';
+import{rModal}from'./r-ui.js';
 let ORDERS_TIMER=null;
+let _activeModal=null;
 function fmtRemainRes(iso){
 if(!iso)return{text:'—',mod:'dead'};
 const t=Date.parse(String(iso).replace(' ','T')+'Z');
@@ -260,24 +262,20 @@ btn.appendChild(svgI('M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2
 resToast('Disalin.')
 }
 function openModal(title,bodyNode){
-let overlay=document.getElementById('resGenericModal');
-if(overlay)overlay.remove();
-overlay=ce('div','r-modal-overlay');
-overlay.id='resGenericModal';
+if(_activeModal){try{_activeModal.close()}catch(e){}_activeModal=null}
+const overlay=ce('div','r-modal-overlay');
 const box=ce('div','r-modal-box');
 const head=ce('div','r-modal-head');
 head.appendChild(ce('h3',null,title));
-const close=ce('button','r-modal-close','×');
-close.type='button';
-close.addEventListener('click',function(){overlay.remove()});
-head.appendChild(close);
-box.appendChild(head);
-const body=ce('div','r-modal-body');
-body.appendChild(bodyNode);
-box.appendChild(body);
+const close=ce('button','r-modal-close');close.type='button';close.textContent='×';
+head.appendChild(close);box.appendChild(head);
+const body=ce('div','r-modal-body');body.appendChild(bodyNode);box.appendChild(body);
 overlay.appendChild(box);
-overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove()});
-document.body.appendChild(overlay)
+const m=rModal(overlay,box,{});
+_activeModal=m;
+close.addEventListener('click',function(){_activeModal=null;m.close()});
+overlay.addEventListener('click',function(e){if(e.target===overlay){_activeModal=null;m.close()}});
+m.open();
 }
 export function initOrders(){
 document.addEventListener('res:logged-in',function(){
