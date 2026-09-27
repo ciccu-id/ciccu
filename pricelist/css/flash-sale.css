@@ -1,0 +1,44 @@
+.fs-scroll::-webkit-scrollbar{height:4px}
+.fs-scroll::-webkit-scrollbar-thumb{background:var(--butter-300);border-radius:10px}
+.fs-scroll::-webkit-scrollbar-track{background:transparent}
+.fs-section{background:linear-gradient(180deg,var(--butter-100),var(--butter-50));border:1px solid var(--butter-300);border-radius:var(--r-xl);box-shadow:var(--sh-lg);overflow:hidden;margin-bottom:1.25rem}
+@media(min-width:768px){.fs-section{margin-bottom:1.75rem;border-radius:var(--r-2xl)}}
+.fs-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem .875rem}
+@media(min-width:768px){.fs-header{padding:1rem 1.25rem}}
+.fs-head-left{flex:1;min-width:0;text-align:left}
+.fs-title{font-size:.875rem;font-weight:900;color:var(--choco-600);display:flex;align-items:center;gap:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:768px){.fs-title{font-size:1.0625rem}}
+.fs-desc{font-size:.5625rem;color:var(--choco-400);font-weight:700;margin-top:.15rem;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:768px){.fs-desc{font-size:.6875rem}}
+.fs-head-right{display:flex;flex-direction:column;align-items:flex-end;gap:.15rem;flex-shrink:0}
+.fs-status{font-size:.4375rem;color:var(--choco-500);font-weight:900;text-transform:uppercase;letter-spacing:.1em}
+@media(min-width:768px){.fs-status{font-size:.5rem}}
+.fs-pill{background:var(--choco-600);color:var(--butter-100);font-weight:900;font-size:.8125rem;padding:.3rem .625rem;border-radius:9999px;font-variant-numeric:tabular-nums;letter-spacing:.02em;box-shadow:var(--sh-sm);line-height:1}
+@media(min-width:768px){.fs-pill{font-size:.9375rem;padding:.35rem .75rem}}
+.fs-divider{border-top:1px solid var(--butter-200)}
+.fs-items{display:flex;gap:.5rem;overflow-x:auto;padding:.75rem .875rem;-ms-overflow-style:none;scrollbar-width:none}
+.fs-items::-webkit-scrollbar{display:none}
+@media(min-width:768px){.fs-items{padding:1rem 1.25rem;gap:.625rem}}
+.fs-card{flex-shrink:0;width:7.5rem;background:var(--w);border:1px solid var(--butter-200);border-radius:var(--r-md);padding:.5rem;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--sh-sm)}
+@media(min-width:768px){.fs-card{width:9rem;padding:.75rem;border-radius:var(--r-lg)}}
+.fs-card-badge{position:absolute;top:.25rem;right:.25rem;font-size:.375rem;font-weight:900;color:var(--choco-700);background:var(--butter-100);border:1px solid var(--butter-300);padding:.05rem .25rem;border-radius:.25rem}
+.fs-card-top{display:flex;align-items:center;gap:.35rem;margin-bottom:.25rem}
+.fs-card-logo{width:1.375rem;height:1.375rem;border-radius:var(--r-sm);background:var(--blue-50);border:1px solid var(--blue-100);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;padding:.1rem}
+@media(min-width:768px){.fs-card-logo{width:1.625rem;height:1.625rem}}
+.fs-card-logo img{width:100%;height:100%;object-fit:contain;border-radius:.25rem}
+.fs-card-name{font-size:.625rem;font-weight:900;color:var(--choco-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:768px){.fs-card-name{font-size:.75rem}}
+.fs-card-pkg{font-size:.4375rem;color:var(--choco-400);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:768px){.fs-card-pkg{font-size:.5625rem}}
+.fs-card-prices{display:flex;align-items:flex-end;gap:.25rem;margin-top:.35rem}
+.fs-card-old{font-size:.4375rem;color:var(--choco-400);text-decoration:line-through;font-weight:700}
+@media(min-width:768px){.fs-card-old{font-size:.5625rem}}
+.fs-card-new{font-size:.75rem;font-weight:900;color:var(--choco-700);line-height:1}
+@media(min-width:768px){.fs-card-new{font-size:.9375rem}}
+.fs-card-btn{margin-top:.4rem;width:100%;padding:.3rem;font-size:.5rem;font-weight:700;border-radius:9999px;border:1px solid var(--blue-200);background:var(--w);color:var(--choco-600);transition:all .15s}
+@media(min-width:768px){.fs-card-btn{padding:.4rem;font-size:.625rem}}
+.fs-card-btn:hover{background:var(--blue-50)}
+.fs-card-btn:active{transform:scale(.95)}
+.fs-card-btn.active{background:var(--choco-600);color:var(--butter-100);border-color:var(--choco-600)}
+.fs-card-btn.disabled{background:var(--blue-50);color:var(--choco-400);border-color:var(--blue-200);cursor:not-allowed}
+.fs-card-btn.sold{background:var(--brick-50);color:var(--brick-400);border-color:var(--brick-200);cursor:not-allowed}
