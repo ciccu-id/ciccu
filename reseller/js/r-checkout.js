@@ -1,7 +1,8 @@
 import{RES,ce,resFmtIDR}from'./r-core.js';
 import{resApi,resToast}from'./r-api.js';
-import{cartTotal}from'./r-ui.js';
+import{cartTotal,rModal}from'./r-ui.js';
 import{clearCart}from'./r-store.js';
+let _coModal=null,_payModal=null;
 function parseFormFields(str){
 if(!str)return[];
 try{if(String(str).trim().startsWith('['))return JSON.parse(str).map(function(i){return i.name||i})}catch(e){}
@@ -39,31 +40,21 @@ return(item.separateForms&&item.qty>1)?item.qty:1
 }
 function openCheckoutModal(){
 if(!RES.cart.length){resToast('Keranjang masih kosong.');return}
-let overlay=document.getElementById('resCheckoutModal');
-if(overlay)overlay.remove();
-overlay=ce('div','r-modal-overlay');
-overlay.id='resCheckoutModal';
+if(_coModal){try{_coModal.close()}catch(e){}_coModal=null}
+const overlay=ce('div','r-modal-overlay');overlay.id='resCheckoutModal';
 const box=ce('div','r-modal-box');
-const head=ce('div','r-modal-head');
-head.appendChild(ce('h3',null,'Checkout'));
-const close=ce('button','r-modal-close','×');
-close.type='button';
-close.addEventListener('click',function(){overlay.remove()});
-head.appendChild(close);
-box.appendChild(head);
-const body=ce('div','r-modal-body');
-body.id='resCheckoutBody';
-renderCheckoutForms(body);
-box.appendChild(body);
+const head=ce('div','r-modal-head');head.appendChild(ce('h3',null,'Checkout'));
+const close=ce('button','r-modal-close');close.type='button';close.textContent='×';
+head.appendChild(close);box.appendChild(head);
+const body=ce('div','r-modal-body');body.id='resCheckoutBody';renderCheckoutForms(body);box.appendChild(body);
 const foot=ce('div','r-modal-foot');
-const submit=ce('button','r-co-submit','Buat Pesanan');
-submit.type='button';
-submit.addEventListener('click',function(){submitCheckout(submit)});
-foot.appendChild(submit);
-box.appendChild(foot);
+const submit=ce('button','r-co-submit','Buat Pesanan');submit.type='button';submit.addEventListener('click',function(){submitCheckout(submit)});
+foot.appendChild(submit);box.appendChild(foot);
 overlay.appendChild(box);
-overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove()});
-document.body.appendChild(overlay)
+const m=rModal(overlay,box,{});_coModal=m;
+close.addEventListener('click',function(){_coModal=null;m.close()});
+overlay.addEventListener('click',function(e){if(e.target===overlay){_coModal=null;m.close()}});
+m.open(true);
 }
 function renderCheckoutForms(body){
 while(body.firstChild)body.removeChild(body.firstChild);
@@ -221,8 +212,7 @@ btn.disabled=true;
 btn.textContent='Memproses...';
 try{
 const data=await resApi('/api/reseller/checkout',{method:'POST',body:{items:items,idempotency_key:idem}});
-const m=document.getElementById('resCheckoutModal');
-if(m)m.remove();
+if(_coModal){try{_coModal.close()}catch(e){}_coModal=null}
 clearCart();
 showPaymentInstruction(data);
 document.dispatchEvent(new CustomEvent('res:checkout-success',{detail:data}))
@@ -233,18 +223,12 @@ btn.textContent='Buat Pesanan'
 }
 }
 function showPaymentInstruction(data){
-let overlay=document.getElementById('resPaymentModal');
-if(overlay)overlay.remove();
-overlay=ce('div','r-modal-overlay');
-overlay.id='resPaymentModal';
+if(_payModal){try{_payModal.close()}catch(e){}_payModal=null}
+const overlay=ce('div','r-modal-overlay');overlay.id='resPaymentModal';
 const box=ce('div','r-modal-box');
-const head=ce('div','r-modal-head');
-head.appendChild(ce('h3',null,'Pesanan Dibuat'));
-const close=ce('button','r-modal-close','×');
-close.type='button';
-close.addEventListener('click',function(){overlay.remove()});
-head.appendChild(close);
-box.appendChild(head);
+const head=ce('div','r-modal-head');head.appendChild(ce('h3',null,'Pesanan Dibuat'));
+const close=ce('button','r-modal-close');close.type='button';close.textContent='×';
+head.appendChild(close);box.appendChild(head);
 const body=ce('div','r-modal-body');
 body.appendChild(ce('p','r-pay-info','Order '+(data.order_code||('#'+data.order_id))+' • Total '+resFmtIDR(data.total)));
 body.appendChild(ce('p','r-pay-info','Metode: '+(data.provider||'-')));
@@ -252,14 +236,14 @@ if(data.instruction){body.appendChild(renderInstruction(data.instruction))}
 else{body.appendChild(ce('p','r-pay-info','Menunggu pembayaran. Cek halaman Pesanan untuk status terbaru.'))}
 box.appendChild(body);
 const foot=ce('div','r-modal-foot');
-const okBtn=ce('button','r-co-submit','Mengerti');
-okBtn.type='button';
-okBtn.addEventListener('click',function(){overlay.remove()});
-foot.appendChild(okBtn);
-box.appendChild(foot);
+const okBtn=ce('button','r-co-submit','Mengerti');okBtn.type='button';
+foot.appendChild(okBtn);box.appendChild(foot);
 overlay.appendChild(box);
-overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove()});
-document.body.appendChild(overlay)
+const m=rModal(overlay,box,{});_payModal=m;
+close.addEventListener('click',function(){_payModal=null;m.close()});
+okBtn.addEventListener('click',function(){_payModal=null;m.close()});
+overlay.addEventListener('click',function(e){if(e.target===overlay){_payModal=null;m.close()}});
+m.open();
 }
 function renderInstruction(instr){
 const wrap=ce('div','r-pay-instr');
