@@ -49,12 +49,15 @@ await env.DB.prepare("UPDATE rsl_orders SET status='delivered',paid_at=COALESCE(
 return{ok:true};
 }
 export async function markPaymentSettle(env,orderId,provider,txId,gross,raw){
-const order=await env.DB.prepare('SELECT id,status FROM rsl_orders WHERE id=?').bind(orderId).first();
+const claim=await env.DB.prepare("UPDATE rsl_orders SET paid_at=? WHERE id=? AND paid_at IS NULL AND status='pending_payment'").bind(nowStr(),orderId).run();
+const claimed=(claim.meta&&claim.meta.changes)||0;
+if(claimed===0){
+const order=await env.DB.prepare('SELECT id,status,paid_at FROM rsl_orders WHERE id=?').bind(orderId).first();
 if(!order)return{ok:false,reason:'not_found'};
-if(order.status==='delivered')return{ok:true,reason:'already'};
-if(order.status!=='pending_payment')return{ok:false,reason:'state'};
+if(order.status==='delivered'||order.paid_at)return{ok:true,reason:'already'};
+return{ok:false,reason:'state'};
+}
 await appendPayment(env,orderId,provider,txId,'settle',gross,raw);
-await env.DB.prepare("UPDATE rsl_orders SET paid_at=? WHERE id=? AND paid_at IS NULL").bind(nowStr(),orderId).run();
 return allocateStock(env,orderId);
 }
 export async function markPaymentFailed(env,orderId,provider,txId,status,gross,raw){
