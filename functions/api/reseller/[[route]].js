@@ -213,7 +213,7 @@ if(rows&&rows.length){
 const ids=rows.map(o=>o.id);
 const it=await env.DB.prepare(`SELECT order_id,duration FROM rsl_order_items WHERE order_id IN (${ids.map(()=>'?').join(',')})`).bind(...ids).all();
 const minMs={};
-it.results.forEach(r=>{const ms=durationMs(r.duration);if(ms>0&&(minMs[row.order_id]===undefined||ms<minMs[row.order_id]))minMs[row.order_id]=ms});
+it.results.forEach(r=>{const ms=durationMs(r.duration);if(ms>0&&(minMs[r.order_id]===undefined||ms<minMs[r.order_id]))minMs[r.order_id]=ms});
 rows.forEach(o=>{
 if(o.status==='delivered'&&o.delivered_at&&minMs[o.id]!==undefined)o.expires_at=addMsToIso(o.delivered_at,minMs[o.id]);
 else o.expires_at=null;
