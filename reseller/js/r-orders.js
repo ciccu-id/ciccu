@@ -206,6 +206,14 @@ return frag
 rows.forEach(function(g){
 const group=ce('div','r-cred-group');
 group.appendChild(ce('p','r-cred-title',g.app_name+' • '+g.category+' • '+g.duration+' (qty '+g.qty+')'));
+if(g.expired===true){
+const exp=ce('p','r-cred-expired','Masa aktif telah berakhir. Data akses tidak lagi tersedia.');
+exp.style.color='#a85555';
+exp.style.fontWeight='700';
+group.appendChild(exp);
+frag.appendChild(group);
+return
+}
 if(!g.credentials||!g.credentials.length){
 group.appendChild(ce('p','r-cred-empty','Belum ada kredensial untuk item ini.'));
 frag.appendChild(group);
