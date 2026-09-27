@@ -76,7 +76,15 @@ const itemDiv=ce('div','r-co-item');
 const top=ce('div','r-co-item-top');
 const info=ce('div','r-co-item-info');
 info.appendChild(ce('p','r-co-name',item.category+' • '+item.duration));
-info.appendChild(ce('p','r-co-meta','Harga '+resFmtIDR(item.unit)+' × '+item.qty));
+const metaP=ce('p','r-co-meta');
+if(item.isFlash){
+metaP.appendChild(ce('span','r-co-old',item.originalPrice));
+metaP.appendChild(ce('span','r-co-flash',' ⚡'));
+metaP.appendChild(ce('span',null,' '+resFmtIDR(item.unit)+' × '+item.qty))
+}else{
+metaP.textContent='Harga '+resFmtIDR(item.unit)+' × '+item.qty
+}
+info.appendChild(metaP);
 top.appendChild(info);
 top.appendChild(ce('span','r-co-price',resFmtIDR(item.unit*item.qty)));
 itemDiv.appendChild(top);
@@ -266,5 +274,11 @@ if(instr.notes)wrap.appendChild(ce('p','r-pay-note',instr.notes));
 return wrap
 }
 export function initCheckout(){
-document.addEventListener('res:open-checkout',function(){openCheckoutModal()})
+document.addEventListener('res:open-checkout',function(){openCheckoutModal()});
+document.addEventListener('res:flash-expired',function(){
+const m=document.getElementById('resCheckoutModal');
+if(!m)return;
+const body=m.querySelector('#resCheckoutBody');
+if(body)renderCheckoutForms(body)
+})
 }
