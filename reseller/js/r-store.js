@@ -1,21 +1,35 @@
 import{RES,ce,svgI,resFmtIDR,resNum}from'./r-core.js';
 import{resApi,resToast}from'./r-api.js';
 import{persistCart,restoreCart,cartCount,cartTotal}from'./r-ui.js';
+import{FlashSale}from'./r-flashsale.js';
 export async function loadCatalog(){
+var grid=document.getElementById('resGrid');
 try{
 const rows=await resApi('/api/reseller/catalog');
-RES.catalog=rows||[];
-const grid=document.getElementById('resGrid');
+RES.catalog=rows||[]
+}catch(e){
+if(grid){while(grid.firstChild)grid.removeChild(grid.firstChild);grid.appendChild(ce('div','r-empty','Gagal memuat katalog.'))}
+return
+}
+var flash=null;
+try{flash=await resApi('/api/reseller/flash')}catch(e){}
+FlashSale.init(flash||{});
+FlashSale.setItems(RES.catalog);
+renderFlashSection();
 if(grid)renderGrid(grid);
 updateCartUI()
-}catch(e){
-const grid=document.getElementById('resGrid');
-if(grid){
-while(grid.firstChild)grid.removeChild(grid.firstChild);
-grid.appendChild(ce('div','r-empty','Gagal memuat katalog.'))
 }
+function renderFlashSection(){
+var grid=document.getElementById('resGrid');
+if(!grid||!grid.parentNode)return;
+var old=document.getElementById('rFsMount');
+if(old&&old.parentNode)old.parentNode.removeChild(old);
+var sec=FlashSale.render();
+if(!sec)return;
+sec.id='rFsMount';
+grid.parentNode.insertBefore(sec,grid)
 }
-}
+function findVariant(vid){for(var i=0;i<RES.catalog.length;i++){if(RES.catalog[i].id===vid)return RES.catalog[i]}return null}
 export function renderStore(container){
 while(container.firstChild)container.removeChild(container.firstChild);
 container.appendChild(ce('p','r-section-label','Katalog Wholesale'));
@@ -80,6 +94,8 @@ return
 }
 rows.forEach(function(c){
 const out=isOut(c);
+const eff=FlashSale.getEffectivePrice(c);
+const showFlash=eff.isFlash&&!out;
 const card=ce('div','r-card'+(out?' out':''));
 const top=ce('div','r-card-top');
 const logo=ce('div','r-logo-ph',c.app_name.charAt(0).toUpperCase());
@@ -90,7 +106,12 @@ card.appendChild(top);
 card.appendChild(ce('p','r-name',c.app_name));
 card.appendChild(ce('p','r-pkg',c.category+' • '+c.duration));
 const pr=ce('div','r-price-row');
-pr.appendChild(ce('span','r-price',c.price));
+if(showFlash){
+pr.appendChild(ce('span','r-price-old',c.price));
+pr.appendChild(ce('span','r-price flash',eff.price))
+}else{
+pr.appendChild(ce('span','r-price',c.price))
+}
 card.appendChild(pr);
 const foot=ce('div','r-foot');
 foot.appendChild(ce('span','r-count',c.stock_available+' stok'));
@@ -131,22 +152,31 @@ return{cls:'ok',txt:'Ready'}
 }
 function addVariantToCart(c){
 if(isOut(c)){resToast('Stok habis.');return}
+const eff=FlashSale.getEffectivePrice(c);
+const unit=resNum(eff.price);
+if(unit<=0){resToast('Harga tidak valid.');return}
 let found=null;
 for(let i=0;i<RES.cart.length;i++){
 if(RES.cart[i].variant_id===c.id){found=RES.cart[i];break}
 }
 if(found){
 if(found.qty>=c.stock_available){resToast('Melebihi stok tersedia.');return}
-found.qty++
+found.qty++;
+found.price_str=eff.price;
+found.unit=unit;
+found.isFlash=eff.isFlash;
+found.originalPrice=eff.originalPrice
 }else{
 RES.cart.push({
 variant_id:c.id,
 app_name:c.app_name,
 category:c.category,
 duration:c.duration,
-price_str:c.price,
-unit:resNum(c.price),
+price_str:eff.price,
+unit:unit,
 qty:1,
+isFlash:eff.isFlash,
+originalPrice:eff.originalPrice,
 form_fields:c.form_fields||'',
 separateForms:false,
 useFirstItemData:false,
@@ -156,6 +186,21 @@ formData:[{}]
 persistCart();
 updateCartUI();
 resToast('Ditambahkan ke keranjang.')
+}
+function addFlashToCart(vid){const c=findVariant(vid);if(c)addVariantToCart(c)}
+function onFlashExpire(){
+var changed=false;
+for(var i=0;i<RES.cart.length;i++){
+var it=RES.cart[i];
+if(it.isFlash){
+var v=findVariant(it.variant_id);
+if(v){it.price_str=v.price;it.unit=resNum(v.price);it.isFlash=false;it.originalPrice=v.price;changed=true}
+}
+}
+if(changed){persistCart();updateCartUI()}
+var grid=document.getElementById('resGrid');
+if(grid)renderGrid(grid);
+document.dispatchEvent(new CustomEvent('res:flash-expired'))
 }
 function changeCartQty(idx,delta){
 const item=RES.cart[idx];
@@ -189,7 +234,9 @@ logo.appendChild(ce('span',null,item.app_name.charAt(0).toUpperCase()));
 left.appendChild(logo);
 const info=ce('div');
 info.appendChild(ce('p','r-ci-name',item.app_name));
-info.appendChild(ce('p','r-ci-pkg',item.category+' • '+item.duration));
+const pkgP=ce('p','r-ci-pkg',item.category+' • '+item.duration);
+if(item.isFlash)pkgP.appendChild(ce('span','r-ci-flash',' ⚡'));
+info.appendChild(pkgP);
 left.appendChild(info);
 const right=ce('div','r-ci-right');
 right.appendChild(ce('span','r-ci-price',resFmtIDR(item.unit*item.qty)));
@@ -210,7 +257,7 @@ list.appendChild(row)
 function createCartBar(){
 if(document.getElementById('resCartBar'))return;
 const bar=ce('div','r-cartbar');
-bar.id='resCartBar';
+bar.id='rCartBar';
 const inner=ce('div','r-cart-inner');
 const head=ce('div','r-cart-head');
 const left=ce('div','r-cart-left');
@@ -254,6 +301,8 @@ updateCartUI()
 }
 export function initStore(){
 restoreCart();
+FlashSale.onAdd=addFlashToCart;
+FlashSale.onExpire=onFlashExpire;
 document.addEventListener('res:logged-in',function(){
 const container=document.getElementById('resStoreView');
 if(container)renderStore(container)
