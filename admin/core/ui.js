@@ -1,5 +1,5 @@
 var Ui=(function(){
-var root=null,dlg=null,state=null;
+var root=null,dlg=null,state=null,_uiOpen=false;
 function ensureRoot(){if(root)return root;root=ce('div','ui-toast-root');document.body.appendChild(root);return root}
 function toast(msg){var r=ensureRoot();var t=ce('div','ui-toast',msg);r.appendChild(t);setTimeout(function(){t.classList.add('out');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t)},300)},2200)}
 function ensureDlg(){
@@ -17,7 +17,7 @@ if(s.prompt){var inp=dlg.querySelector('.ui-dlg-input');s.cb(inp.value)}else{s.c
 dlg.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
 return dlg;
 }
-function close(){if(!dlg)return;dlg.classList.remove('on');state=null}
+function close(){if(!dlg||!_uiOpen)return;_uiOpen=false;dlg.classList.remove('on');state=null;unlockScroll()}
 function open(cfg){
 var d=ensureDlg();state=cfg;
 d.querySelector('.ui-dlg-title').textContent=cfg.title||'';
@@ -27,6 +27,7 @@ if(cfg.prompt){inp.style.display='';inp.value=cfg.value||'';inp.placeholder=cfg.
 var ok=d.querySelector('.ui-dlg-ok');ok.textContent=cfg.okText||'OK';ok.className='ui-dlg-ok'+(cfg.danger?' danger':'');
 d.querySelector('.ui-dlg-cancel').style.display=cfg.alert?'none':'';
 d.classList.add('on');
+if(!_uiOpen){_uiOpen=true;lockScroll()}
 if(cfg.prompt)setTimeout(function(){inp.focus()},60);
 }
 function uiToast(m){toast(m)}
