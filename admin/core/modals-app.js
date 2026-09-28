@@ -52,9 +52,13 @@ aside.appendChild(head);
 var body=ce('div','sheet-body');
 aside.appendChild(body);
 wrap.appendChild(back);wrap.appendChild(aside);
-function shut(){wrap.classList.remove('on');setTimeout(function(){if(wrap.parentNode)wrap.parentNode.removeChild(wrap)},300)}
+var _locked=false;
+function doLock(){if(_locked)return;_locked=true;lockScroll()}
+function doUnlock(){if(!_locked)return;_locked=false;unlockScroll()}
+function shut(){doUnlock();wrap.classList.remove('on');setTimeout(function(){if(wrap.parentNode)wrap.parentNode.removeChild(wrap)},300)}
 closeBtn.addEventListener('click',shut);
 back.addEventListener('click',shut);
+doLock();
 document.body.appendChild(wrap);
 requestAnimationFrame(function(){wrap.classList.add('on')});
 return{wrap:wrap,body:body,close:shut};
