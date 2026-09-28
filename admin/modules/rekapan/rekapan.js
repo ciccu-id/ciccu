@@ -87,7 +87,7 @@ return Sec.json('/api/admin/rekap/stock-summary').then(function(rows){
 clear(box);rows=rows||[];
 if(!rows.length){box.appendChild(ce('div','rekap-empty','Belum ada aplikasi reseller.'));return}
 rows.forEach(function(r){box.appendChild(stockCard(r))});
-}).catch(function(){clear(box);box.appendChild(ce('div','rekap-error','Gagal memuat pintasan stok.')});
+}).catch(function(){clear(box);box.appendChild(ce('div','rekap-error','Gagal memuat pintasan stok.'))});
 }
 function loadFinance(){
 var box=document.getElementById('rekapFinanceSummary');if(!box)return Promise.resolve();
@@ -98,7 +98,7 @@ var kpis=[['settle','SETTLE',fmtRpShort(s.settle||0),fmtRp(s.settle||0)],['refun
 kpis.forEach(function(k){
 var d=ce('div','rekap-kpi '+k[0]);d.appendChild(ce('span',null,k[1]));d.appendChild(ce('strong',null,k[2]));d.appendChild(ce('small',null,k[3]));box.appendChild(d);
 });
-}).catch(function(){clear(box);box.appendChild(ce('div','rekap-error','Gagal memuat ringkasan keuangan.')});
+}).catch(function(){clear(box);box.appendChild(ce('div','rekap-error','Gagal memuat ringkasan keuangan.'))});
 }
 function renderSold(r){
 var c=card();
