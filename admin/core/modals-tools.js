@@ -17,9 +17,22 @@ box.appendChild(body);
 var foot=ce('div','modal-actions');
 box.appendChild(foot);
 overlay.appendChild(back);overlay.appendChild(box);
-function shut(){if(overlay.parentNode)overlay.parentNode.removeChild(overlay)}
+var _locked=false,_obs=null;
+function doLock(){if(_locked)return;_locked=true;lockScroll()}
+function doUnlock(){if(!_locked)return;_locked=false;unlockScroll()}
+function shut(){
+if(_obs){try{_obs.disconnect()}catch(e){}_obs=null}
+doUnlock();
+if(overlay.parentNode)overlay.parentNode.removeChild(overlay);
+}
 closeBtn.addEventListener('click',shut);
 back.addEventListener('click',shut);
+if(typeof MutationObserver!=='undefined'){
+_obs=new MutationObserver(function(){
+if(overlay.parentNode){doLock();if(_obs){try{_obs.disconnect()}catch(e){}_obs=null}}
+});
+_obs.observe(document.body,{childList:true});
+}
 return{overlay:overlay,box:box,body:body,foot:foot,close:shut};
 },
 btn:function(label,cls,fn){var b=ce('button',cls||'cancel-btn',label);b.type='button';if(fn)b.addEventListener('click',fn);return b}
