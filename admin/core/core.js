@@ -13,3 +13,24 @@ set:function(k,v){try{sessionStorage.setItem(k,JSON.stringify(v))}catch(e){}},
 del:function(k){try{sessionStorage.removeItem(k)}catch(e){}},
 clearAll:function(){try{sessionStorage.clear()}catch(e){}}
 };
+var _scrollLockCount=0,_scrollLockY=0;
+function _readScrollY(){return window.scrollY||window.pageYOffset||document.documentElement.scrollTop||0}
+function lockScroll(){
+if(_scrollLockCount===0){
+_scrollLockY=_readScrollY();
+var b=document.body.style;
+b.position='fixed';b.top=(-_scrollLockY)+'px';b.left='0';b.right='0';b.width='100%';
+var sw=window.innerWidth-document.documentElement.clientWidth;
+if(sw>0)b.paddingRight=sw+'px';
+}
+_scrollLockCount++;
+}
+function unlockScroll(){
+if(_scrollLockCount<=0)return;
+_scrollLockCount--;
+if(_scrollLockCount===0){
+var b=document.body.style;
+b.position='';b.top='';b.left='';b.right='';b.width='';b.paddingRight='';
+window.scrollTo(0,_scrollLockY);
+}
+}
